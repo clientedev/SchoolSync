@@ -40,12 +40,12 @@ class Teacher(db.Model):
     email = db.Column(String(120), nullable=True)
     phone = db.Column(String(20), nullable=True)
     observations = db.Column(Text, nullable=True)  # Teacher observations field
-    user_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)  # Linked user account
+    # user_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)  # Linked user account - TEMPORARILY DISABLED
     created_at = db.Column(DateTime, default=datetime.utcnow)
     
     # Relationships
     evaluations = relationship('Evaluation', back_populates='teacher')
-    user = relationship('User', backref='teacher_profile')
+    # user = relationship('User', backref='teacher_profile')  # TEMPORARILY DISABLED
     
     def __repr__(self):
         return f'<Teacher {self.name}>'
