@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from app import app, db
 from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment, User, Semester, CurricularUnit, ScheduledEvaluation, DigitalSignature
 from forms import TeacherForm, CourseForm, EvaluatorForm, EvaluationForm, LoginForm, UserForm, UserEditForm, ChangePasswordForm
-from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import, generate_courses_excel_template, process_courses_excel_import, generate_curricular_units_excel_template, process_curricular_units_excel_import
+from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import, generate_courses_excel_template, process_courses_excel_import, generate_curricular_units_excel_template, process_curricular_units_excel_import, get_or_create_current_semester
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -37,8 +37,8 @@ def logout():
 @login_required
 def index():
     """Dashboard - Main page"""
-    # Get current semester
-    current_semester = Semester.query.filter_by(is_active=True).first()
+    # Get or create current semester based on current date
+    current_semester = get_or_create_current_semester()
     
     # Get statistics
     total_teachers = Teacher.query.count()
@@ -105,6 +105,45 @@ def index():
         avg_planning = sum(eval.calculate_planning_percentage() for eval in completed_evaluations) / len(completed_evaluations)
         avg_class = sum(eval.calculate_class_percentage() for eval in completed_evaluations) / len(completed_evaluations)
     
+    # Create monthly scheduling dashboard data
+    monthly_schedule_summary = {}
+    current_year = datetime.now().year
+    month_names = [
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ]
+    
+    # Initialize all months
+    for i in range(1, 13):
+        monthly_schedule_summary[i] = {
+            'name': month_names[i-1],
+            'scheduled': 0,
+            'completed': 0,
+            'teachers': []
+        }
+    
+    # Get scheduled evaluations for current semester
+    if current_semester:
+        scheduled_evaluations = ScheduledEvaluation.query.filter_by(
+            semester_id=current_semester.id
+        ).all()
+        
+        for scheduled in scheduled_evaluations:
+            month = scheduled.scheduled_month
+            if month in monthly_schedule_summary:
+                monthly_schedule_summary[month]['scheduled'] += 1
+                if scheduled.is_completed:
+                    monthly_schedule_summary[month]['completed'] += 1
+                
+                # Add teacher info
+                teacher_info = {
+                    'name': scheduled.teacher.name,
+                    'curricular_unit': scheduled.curricular_unit.name,
+                    'is_completed': scheduled.is_completed,
+                    'scheduled_date': scheduled.scheduled_date.strftime('%d/%m') if scheduled.scheduled_date else None
+                }
+                monthly_schedule_summary[month]['teachers'].append(teacher_info)
+    
     return render_template('index.html',
                          total_teachers=total_teachers,
                          total_evaluations=total_evaluations,
@@ -118,7 +157,48 @@ def index():
                          pending_alerts=pending_alerts,
                          overdue_alerts=overdue_alerts,
                          avg_planning=round(avg_planning, 1),
-                         avg_class=round(avg_class, 1))
+                         avg_class=round(avg_class, 1),
+                         monthly_schedule_summary=monthly_schedule_summary)
+
+@app.route('/api/monthly-schedule/<int:month>')
+@login_required
+def get_monthly_schedule(month):
+    """Get detailed schedule for a specific month"""
+    current_semester = get_or_create_current_semester()
+    
+    # Get scheduled evaluations for the specified month
+    scheduled_evaluations = ScheduledEvaluation.query.filter_by(
+        semester_id=current_semester.id,
+        scheduled_month=month
+    ).all()
+    
+    teachers_data = []
+    for scheduled in scheduled_evaluations:
+        teacher_data = {
+            'id': scheduled.id,
+            'teacher_name': scheduled.teacher.name,
+            'curricular_unit': scheduled.curricular_unit.name,
+            'course': scheduled.curricular_unit.course.name,
+            'is_completed': scheduled.is_completed,
+            'scheduled_date': scheduled.scheduled_date.strftime('%d/%m/%Y') if scheduled.scheduled_date else 'Não definida',
+            'notes': scheduled.notes or '',
+            'completed_at': scheduled.completed_at.strftime('%d/%m/%Y') if scheduled.completed_at else None
+        }
+        teachers_data.append(teacher_data)
+    
+    month_names = [
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ]
+    
+    return jsonify({
+        'month': month,
+        'month_name': month_names[month-1] if 1 <= month <= 12 else 'Mês inválido',
+        'semester': current_semester.name,
+        'teachers': teachers_data,
+        'total_scheduled': len(teachers_data),
+        'total_completed': len([t for t in teachers_data if t['is_completed']])
+    })
 
 @app.route('/users')
 @login_required
@@ -1171,11 +1251,8 @@ def scheduling():
         flash('Acesso negado. Apenas administradores podem gerenciar agendamentos.', 'error')
         return redirect(url_for('index'))
     
-    # Get current semester
-    current_semester = Semester.query.filter_by(is_active=True).first()
-    if not current_semester:
-        flash('Nenhum semestre ativo encontrado. Configure um semestre primeiro.', 'warning')
-        return redirect(url_for('index'))
+    # Get or create current semester based on current date
+    current_semester = get_or_create_current_semester()
     
     # Get scheduled evaluations for current semester
     scheduled_evaluations = ScheduledEvaluation.query.filter_by(
@@ -1207,9 +1284,7 @@ def add_scheduled_evaluation():
     if not current_user.is_admin():
         return jsonify({'error': 'Acesso negado'}), 403
     
-    current_semester = Semester.query.filter_by(is_active=True).first()
-    if not current_semester:
-        return jsonify({'error': 'Nenhum semestre ativo'}), 400
+    current_semester = get_or_create_current_semester()
     
     data = request.json or {}
     teacher_id = data.get('teacher_id')

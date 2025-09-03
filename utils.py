@@ -12,6 +12,42 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib import colors
 from datetime import datetime
 import pandas as pd
+
+def get_or_create_current_semester():
+    """Get or create current semester based on current date"""
+    from models import Semester
+    from app import db
+    
+    current_date = datetime.now()
+    current_year = current_date.year
+    current_month = current_date.month
+    
+    # Determine semester (1st = Jan-Jul, 2nd = Aug-Dec)
+    semester_number = 1 if current_month <= 7 else 2
+    semester_name = f"{current_year}.{semester_number}"
+    
+    current_semester = Semester.query.filter_by(
+        year=current_year, 
+        number=semester_number
+    ).first()
+    
+    if not current_semester:
+        # Create semester automatically based on current date
+        start_date = datetime(current_year, 1, 1) if semester_number == 1 else datetime(current_year, 8, 1)
+        end_date = datetime(current_year, 7, 31) if semester_number == 1 else datetime(current_year, 12, 31)
+        
+        current_semester = Semester(
+            name=semester_name,
+            year=current_year,
+            number=semester_number,
+            start_date=start_date,
+            end_date=end_date,
+            is_active=True
+        )
+        db.session.add(current_semester)
+        db.session.commit()
+    
+    return current_semester
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
@@ -288,13 +324,8 @@ def generate_teachers_excel_template():
     # Create sample data with headers
     data = {
         'Nome': ['João Silva', 'Maria Santos'],
-        'Área': ['Eletrônica', 'Informática'],
-        'Disciplinas': ['Eletrônica Digital, Circuitos Elétricos', 'Programação, Banco de Dados'],
-        'Carga Horária': [40, 30],
-        'Email': ['joao.silva@senai.br', 'maria.santos@senai.br'],
-        'Telefone': ['11987654321', '11876543210'],
-        'Observações': ['Excelente didática, pontual', 'Muito dedicada, inovadora'],
-        'Cursos': ['Técnico em Eletrônica, Técnico em Automação', 'Técnico em Informática']
+        'Curso': ['Técnico em Eletrônica', 'Técnico em Informática'],
+        'Área do Curso': ['Eletrônica', 'Informática']
     }
     
     df = pd.DataFrame(data)
@@ -336,19 +367,16 @@ def generate_teachers_excel_template():
         ["INSTRUÇÕES PARA IMPORTAÇÃO DE DOCENTES"],
         [""],
         ["1. Preencha os dados dos docentes na aba 'Docentes'"],
-        ["2. Campos obrigatórios: Nome, Área"],
-        ["3. Disciplinas: separe por vírgula (ex: Matemática, Física)"],
-        ["4. Cursos: separe por vírgula os nomes dos cursos que o docente ministra"],
-        ["5. Carga Horária: número de horas por semana"],
-        ["6. Email: formato válido (ex: nome@senai.br)"],
-        ["7. Telefone: apenas números (ex: 11987654321)"],
-        ["8. Observações: informações adicionais sobre o docente"],
+        ["2. Campos obrigatórios: Nome, Curso, Área do Curso"],
+        ["3. Nome: nome completo do docente"],
+        ["4. Curso: nome do curso que o docente ministra"],
+        ["5. Área do Curso: área de atuação do curso (ex: Eletrônica, Informática)"],
         [""],
         ["IMPORTANTE:"],
         ["- Não altere os nomes das colunas"],
         ["- Mantenha o formato Excel (.xlsx)"],
         ["- Remova as linhas de exemplo antes de importar seus dados"],
-        ["- Os cursos mencionados devem estar previamente cadastrados no sistema"],
+        ["- O formato simplificado permite avaliação rápida por curso e área"],
     ]
     
     for row in instructions:
@@ -406,30 +434,20 @@ def process_teachers_excel_import(file_path):
                 
                 # Extract data with defaults
                 name = str(row['Nome']).strip()
-                area = str(row.get('Área', '')).strip() if not pd.isna(row.get('Área')) else ''
-                subjects = str(row.get('Disciplinas', '')).strip() if not pd.isna(row.get('Disciplinas')) else ''
-                
-                # Handle workload conversion safely
-                workload_raw = row.get('Carga Horária', '')
-                workload = None
-                if not pd.isna(workload_raw) and str(workload_raw).strip():
-                    try:
-                        workload = int(float(str(workload_raw)))
-                    except (ValueError, TypeError):
-                        pass
-                
-                email = str(row.get('Email', '')).strip() if not pd.isna(row.get('Email')) else ''
-                phone = str(row.get('Telefone', '')).strip() if not pd.isna(row.get('Telefone')) else ''
-                observations = str(row.get('Observações', '')).strip() if not pd.isna(row.get('Observações')) else ''
-                courses_str = str(row.get('Cursos', '')).strip() if not pd.isna(row.get('Cursos')) else ''
+                course = str(row.get('Curso', '')).strip() if not pd.isna(row.get('Curso')) else ''
+                area = str(row.get('Área do Curso', '')).strip() if not pd.isna(row.get('Área do Curso')) else ''
                 
                 # Validate required fields
                 if not name:
                     results['errors'].append(f'Linha {index + 2}: Nome é obrigatório')
                     continue
                 
+                if not course:
+                    results['errors'].append(f'Linha {index + 2}: Curso é obrigatório')
+                    continue
+                    
                 if not area:
-                    results['errors'].append(f'Linha {index + 2}: Área é obrigatória')
+                    results['errors'].append(f'Linha {index + 2}: Área do Curso é obrigatória')
                     continue
                 
                 # Check if teacher already exists
@@ -442,23 +460,20 @@ def process_teachers_excel_import(file_path):
                 teacher = Teacher(
                     name=name,
                     area=area,
-                    subjects=subjects,
-                    workload=workload if workload and workload > 0 else None,
-                    email=email if email and '@' in email else None,
-                    phone=phone if phone else None,
-                    observations=observations if observations else None
+                    subjects=course,  # Store course in subjects field for now
+                    workload=None,
+                    email=None,
+                    phone=None,
+                    observations=f'Curso: {course}' if course else None
                 )
                 
                 db.session.add(teacher)
                 db.session.flush()  # Get teacher ID before commit
                 
-                # Process courses if provided
-                if courses_str:
-                    course_names = [c.strip() for c in courses_str.split(',') if c.strip()]
-                    for course_name in course_names:
-                        course = Course.query.filter_by(name=course_name).first()
-                        if not course:
-                            results['warnings'].append(f'Linha {index + 2}: Curso "{course_name}" não encontrado para o docente "{name}"')
+                # Verify if course exists in the system
+                existing_course = Course.query.filter_by(name=course).first()
+                if not existing_course:
+                    results['warnings'].append(f'Linha {index + 2}: Curso "{course}" não encontrado no sistema para o docente "{name}"')
                 
                 results['success'] += 1
                 
@@ -483,12 +498,19 @@ def generate_courses_excel_template():
     """Generate Excel template for course import"""
     buffer = BytesIO()
     
-    # Create sample data with headers
+    # Create sample data with headers - now supporting up to 10 curricular units
     data = {
-        'Nome': ['Técnico em Eletrônica', 'Técnico em Informática'],
-        'Período': ['1° Sem/25', '2° Sem/25'],
-        'Componente Curricular': ['Eletrônica Digital', 'Programação Web'],
-        'Código da Turma': ['ELT001', 'INF002']
+        'Nome do Curso': ['Técnico em Eletrônica', 'Técnico em Informática'],
+        'Unidade Curricular 1': ['Eletrônica Digital', 'Programação Web'],
+        'Unidade Curricular 2': ['Circuitos Elétricos', 'Banco de Dados'],
+        'Unidade Curricular 3': ['Microcontroladores', 'Redes de Computadores'],
+        'Unidade Curricular 4': ['Automação Industrial', 'Desenvolvimento Mobile'],
+        'Unidade Curricular 5': ['', 'Segurança da Informação'],
+        'Unidade Curricular 6': ['', ''],
+        'Unidade Curricular 7': ['', ''],
+        'Unidade Curricular 8': ['', ''],
+        'Unidade Curricular 9': ['', ''],
+        'Unidade Curricular 10': ['', '']
     }
     
     df = pd.DataFrame(data)
@@ -530,17 +552,18 @@ def generate_courses_excel_template():
         ["INSTRUÇÕES PARA IMPORTAÇÃO DE CURSOS"],
         [""],
         ["1. Preencha os dados dos cursos na aba 'Cursos'"],
-        ["2. Campos obrigatórios: Nome, Período, Componente Curricular"],
-        ["3. Nome: nome completo do curso (ex: Técnico em Eletrônica)"],
-        ["4. Período: período letivo (ex: 1° Sem/25, 2° Sem/25)"],
-        ["5. Componente Curricular: disciplina específica"],
-        ["6. Código da Turma: código identificador da turma (opcional)"],
+        ["2. Campos obrigatórios: Nome do Curso, pelo menos 1 Unidade Curricular"],
+        ["3. Nome do Curso: nome completo do curso (ex: Técnico em Eletrônica)"],
+        ["4. Unidades Curriculares 1-10: disciplinas do curso"],
+        ["5. Preencha apenas as unidades curriculares que existem"],
+        ["6. Deixe em branco as unidades curriculares não utilizadas"],
         [""],
         ["IMPORTANTE:"],
         ["- Não altere os nomes das colunas"],
         ["- Mantenha o formato Excel (.xlsx)"],
         ["- Remova as linhas de exemplo antes de importar seus dados"],
-        ["- Evite duplicação de cursos com mesmo nome e período"],
+        ["- Cada curso pode ter até 10 unidades curriculares"],
+        ["- Isso facilita a avaliação de docentes por unidade curricular específica"],
     ]
     
     for row in instructions:
@@ -573,8 +596,8 @@ def generate_courses_excel_template():
     return buffer
 
 def process_courses_excel_import(file_path):
-    """Process Excel file and import courses"""
-    from models import Course
+    """Process Excel file and import courses with curricular units"""
+    from models import Course, CurricularUnit
     from app import db
     
     try:
@@ -593,50 +616,81 @@ def process_courses_excel_import(file_path):
         for index, row in df.iterrows():
             try:
                 # Skip empty rows
-                if pd.isna(row.get('Nome', '')) or str(row.get('Nome', '')).strip() == '':
+                if pd.isna(row.get('Nome do Curso', '')) or str(row.get('Nome do Curso', '')).strip() == '':
                     continue
                 
-                # Extract data with defaults
-                name = str(row['Nome']).strip()
-                period = str(row.get('Período', '')).strip() if not pd.isna(row.get('Período')) else ''
-                curriculum_component = str(row.get('Componente Curricular', '')).strip() if not pd.isna(row.get('Componente Curricular')) else ''
-                class_code = str(row.get('Código da Turma', '')).strip() if not pd.isna(row.get('Código da Turma')) else ''
+                # Extract course name
+                course_name = str(row['Nome do Curso']).strip()
                 
                 # Validate required fields
-                if not name:
-                    results['errors'].append(f'Linha {index + 2}: Nome é obrigatório')
+                if not course_name:
+                    results['errors'].append(f'Linha {index + 2}: Nome do Curso é obrigatório')
                     continue
                 
-                if not period:
-                    results['errors'].append(f'Linha {index + 2}: Período é obrigatório')
+                # Extract curricular units (up to 10)
+                curricular_units = []
+                for i in range(1, 11):
+                    unit_column = f'Unidade Curricular {i}'
+                    if unit_column in row and not pd.isna(row.get(unit_column)):
+                        unit_name = str(row[unit_column]).strip()
+                        if unit_name:
+                            curricular_units.append(unit_name)
+                
+                # Validate at least one curricular unit
+                if not curricular_units:
+                    results['errors'].append(f'Linha {index + 2}: Pelo menos uma Unidade Curricular é obrigatória')
                     continue
                 
-                if not curriculum_component:
-                    results['errors'].append(f'Linha {index + 2}: Componente Curricular é obrigatório')
-                    continue
-                
-                # Check if course already exists (same name and period)
-                existing_course = Course.query.filter_by(name=name, period=period).first()
+                # Check if course already exists
+                existing_course = Course.query.filter_by(name=course_name).first()
                 if existing_course:
-                    results['warnings'].append(f'Linha {index + 2}: Curso "{name}" no período "{period}" já existe, pulando...')
-                    continue
+                    results['warnings'].append(f'Linha {index + 2}: Curso "{course_name}" já existe, atualizando unidades curriculares...')
+                    course = existing_course
+                else:
+                    # Create new course
+                    from datetime import datetime
+                    current_year = datetime.now().year
+                    course = Course(
+                        name=course_name,
+                        period=f"1° Sem/{current_year}",  # Default period based on current year
+                        curriculum_component="Múltiplas Unidades Curriculares",
+                        class_code=None
+                    )
+                    db.session.add(course)
+                    db.session.flush()  # Get course ID
                 
-                # Create new course
-                course = Course(
-                    name=name,
-                    period=period,
-                    curriculum_component=curriculum_component,
-                    class_code=class_code if class_code else None
-                )
+                # Add curricular units
+                units_added = 0
+                for unit_name in curricular_units:
+                    # Check if unit already exists for this course
+                    existing_unit = CurricularUnit.query.filter_by(
+                        name=unit_name, 
+                        course_id=course.id
+                    ).first()
+                    
+                    if not existing_unit:
+                        unit = CurricularUnit(
+                            name=unit_name,
+                            course_id=course.id,
+                            code=None,
+                            workload=None,
+                            description=f"Unidade curricular do curso {course_name}",
+                            is_active=True
+                        )
+                        db.session.add(unit)
+                        units_added += 1
                 
-                db.session.add(course)
-                results['success'] += 1
+                if not existing_course:
+                    results['success'] += 1
+                
+                if units_added > 0:
+                    results['warnings'].append(f'Linha {index + 2}: {units_added} unidades curriculares adicionadas ao curso "{course_name}"')
                 
             except Exception as e:
                 results['errors'].append(f'Linha {index + 2}: Erro ao processar - {str(e)}')
         
         # Commit all changes
-        if results['success'] > 0:
+        if results['success'] > 0 or any('unidades curriculares adicionadas' in w for w in results['warnings']):
             db.session.commit()
         
         return results
