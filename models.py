@@ -138,7 +138,7 @@ class Evaluation(db.Model):
     # evaluator_signed = db.Column(Boolean, default=False)
     
     created_at = db.Column(DateTime, default=datetime.utcnow)
-    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # TEMPORARILY DISABLED
     
     # Relationships
     teacher = relationship('Teacher', back_populates='evaluations')
