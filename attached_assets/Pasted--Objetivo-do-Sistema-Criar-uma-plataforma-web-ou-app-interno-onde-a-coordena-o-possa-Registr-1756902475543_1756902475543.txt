@@ -1,0 +1,68 @@
+🎯 Objetivo do Sistema
+
+Criar uma plataforma web (ou app interno) onde a coordenação possa:
+
+Registrar acompanhamentos de ação docente;
+
+Gerar relatórios automáticos por docente, curso, turma ou período;
+
+Acompanhar evolução e pontos de melhoria dos professores;
+
+Reduzir uso de papel e aumentar a eficiência do processo.
+
+🛠️ Funcionalidades Principais
+1. Cadastro e Gestão
+
+Docentes (nome, área, disciplinas, carga horária).
+
+Cursos/Turmas (nome, período, componente curricular).
+
+Avaliadores (coordenadores e responsáveis pelo acompanhamento).
+
+2. Registro da Ação Docente
+
+Formulário digital baseado no modelo físico (com os mesmos campos de observação).
+
+Preenchimento via tablet, celular ou computador.
+
+Assinatura digital do docente e do avaliador.
+
+Upload de anexos (ex.: fotos, prints de atividades, observações adicionais).
+
+3. Relatórios Automáticos
+
+Relatório individual de cada acompanhamento.
+
+Relatório consolidado por professor (com evolução ao longo do semestre).
+
+Relatório geral da escola (quantidade de acompanhamentos, índices de atendimento etc.).
+
+Exportação em PDF, Excel ou gráfico interativo.
+
+4. Automação
+
+Alertas automáticos: notificação para coordenação quando um professor ainda não teve acompanhamento no mês.
+
+Dashboard em tempo real: percentual de professores avaliados, pontos fortes e fracos mais recorrentes.
+
+Integração com e-mail/WhatsApp: envio automático do relatório para o docente após o acompanhamento.
+
+5. Indicadores de Qualidade
+
+Percentual de critérios atendidos por professor/turma.
+
+Ranking dos pontos mais críticos (ex.: “Uso de estratégias de ensino” ou “Cumprimento de normas de segurança”).
+
+Evolução de cada docente (gráficos comparativos).
+
+📊 Exemplo de Relatório Automático (Professor X – 1º Sem/25)
+
+Planejamento: 80% atendido.
+
+Condução da aula: 90% atendido.
+
+Segurança: 100% atendido.
+
+Feedback principal: Boa condução de aula, precisa melhorar a definição de instrumentos de avaliação.
+
+Recomendações: Curso de avaliação por competências.
