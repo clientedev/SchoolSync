@@ -47,12 +47,12 @@
                                     <td>
                                         <strong>{{ unit.name }}</strong>
                                         {% if unit.description %}
-                                        <br><small class="text-muted">{{ unit.description[:100] }}{% if unit.description|length > 100 %}...{% endif %}</small>
+                                        <br><small class="text-muted">{{ unit.description[:100]|e }}{% if unit.description|length > 100 %}...{% endif %}</small>
                                         {% endif %}
                                     </td>
                                     <td>{{ unit.code or '-' }}</td>
                                     <td>{{ unit.course.name }}</td>
-                                    <td>{{ unit.workload }}h{% if unit.workload else '-' %}</td>
+                                    <td>{% if unit.workload %}{{ unit.workload }}h{% else %}-{% endif %}</td>
                                     <td>
                                         {% if unit.is_active %}
                                             <span class="badge bg-success">Ativa</span>
@@ -62,10 +62,18 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary" onclick="editUnit({{ unit.id }}, '{{ unit.name }}', '{{ unit.code or '' }}', {{ unit.course_id }}, {{ unit.workload or 0 }}, '{{ (unit.description or '')|replace("'", "\\'") }}')">
+                                            <button class="btn btn-outline-primary" 
+                                                    data-unit-id="{{ unit.id }}"
+                                                    data-unit-name="{{ unit.name|e }}"
+                                                    data-unit-code="{{ unit.code or '' }}"
+                                                    data-unit-course="{{ unit.course_id }}"
+                                                    data-unit-workload="{{ unit.workload or 0 }}"
+                                                    data-unit-description="{{ (unit.description or '')|e }}"
+                                                    onclick="editUnit(this)">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <button class="btn btn-outline-{{ 'secondary' if unit.is_active else 'success' }}" onclick="toggleActive({{ unit.id }})">
+                                            <button class="btn btn-outline-{{ 'secondary' if unit.is_active else 'success' }}" 
+                                                    onclick="toggleActive({{ unit.id }})">
                                                 <i class="fas fa-{{ 'pause' if unit.is_active else 'play' }}"></i>
                                             </button>
                                             <button class="btn btn-outline-danger" onclick="deleteUnit({{ unit.id }})">
@@ -254,7 +262,14 @@ function saveUnit() {
     });
 }
 
-function editUnit(id, name, code, course_id, workload, description) {
+function editUnit(button) {
+    const id = button.getAttribute('data-unit-id');
+    const name = button.getAttribute('data-unit-name');
+    const code = button.getAttribute('data-unit-code');
+    const course_id = button.getAttribute('data-unit-course');
+    const workload = button.getAttribute('data-unit-workload');
+    const description = button.getAttribute('data-unit-description');
+    
     document.getElementById('edit_unit_id').value = id;
     document.getElementById('edit_name').value = name;
     document.getElementById('edit_code').value = code;
