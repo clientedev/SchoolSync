@@ -46,7 +46,7 @@ app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'norep
 db.init_app(app)
 mail.init_app(app)
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'login'  # type: ignore
 login_manager.login_message = 'Faça login para acessar esta página.'
 
 # create upload directory
@@ -69,12 +69,11 @@ with app.app_context():
     from models import User
     admin_user = User.query.filter_by(username='edson.lemes').first()
     if not admin_user:
-        admin_user = User(
-            username='edson.lemes',
-            name='Edson Lemes',
-            role='admin',
-            email='edson.lemes@senai.br'
-        )
+        admin_user = User()  # type: ignore
+        admin_user.username = 'edson.lemes'
+        admin_user.name = 'Edson Lemes'
+        admin_user.role = 'admin'
+        admin_user.email = 'edson.lemes@senai.br'
         admin_user.set_password('senai103103')
         db.session.add(admin_user)
         db.session.commit()

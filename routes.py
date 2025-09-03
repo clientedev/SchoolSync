@@ -97,13 +97,12 @@ def add_user():
             flash('Nome de usuário já existe. Escolha outro.', 'error')
             return render_template('users.html', form=form, users=User.query.all())
         
-        user = User(
-            username=form.username.data,
-            name=form.name.data,
-            role=form.role.data,
-            email=form.email.data,
-            created_by=current_user.id
-        )
+        user = User()  # type: ignore
+        user.username = form.username.data
+        user.name = form.name.data
+        user.role = form.role.data
+        user.email = form.email.data
+        user.created_by = current_user.id
         user.set_password(form.password.data)
         
         db.session.add(user)
@@ -184,15 +183,14 @@ def add_teacher():
     form = TeacherForm()
     
     if form.validate_on_submit():
-        teacher = Teacher(
-            name=form.name.data,
-            area=form.area.data,
-            subjects=form.subjects.data,
-            workload=form.workload.data,
-            email=form.email.data,
-            phone=form.phone.data,
-            observations=form.observations.data
-        )
+        teacher = Teacher()  # type: ignore
+        teacher.name = form.name.data
+        teacher.area = form.area.data
+        teacher.subjects = form.subjects.data
+        teacher.workload = form.workload.data
+        teacher.email = form.email.data
+        teacher.phone = form.phone.data
+        teacher.observations = form.observations.data
         
         db.session.add(teacher)
         db.session.commit()
@@ -263,7 +261,7 @@ def import_teachers_excel():
         flash('Nenhum arquivo selecionado.', 'error')
         return redirect(url_for('teachers'))
     
-    if not file.filename.lower().endswith(('.xlsx', '.xls')):
+    if not file.filename or not file.filename.lower().endswith(('.xlsx', '.xls')):
         flash('Por favor, selecione um arquivo Excel (.xlsx ou .xls).', 'error')
         return redirect(url_for('teachers'))
     
@@ -323,12 +321,11 @@ def add_course():
     form = CourseForm()
     
     if form.validate_on_submit():
-        course = Course(
-            name=form.name.data,
-            period=form.period.data,
-            curriculum_component=form.curriculum_component.data,
-            class_code=form.class_code.data
-        )
+        course = Course()  # type: ignore
+        course.name = form.name.data
+        course.period = form.period.data
+        course.curriculum_component = form.curriculum_component.data
+        course.class_code = form.class_code.data
         
         db.session.add(course)
         db.session.commit()
@@ -399,7 +396,7 @@ def import_courses_excel():
         flash('Nenhum arquivo selecionado.', 'error')
         return redirect(url_for('courses'))
     
-    if not file.filename.lower().endswith(('.xlsx', '.xls')):
+    if not file.filename or not file.filename.lower().endswith(('.xlsx', '.xls')):
         flash('Por favor, selecione um arquivo Excel (.xlsx ou .xls).', 'error')
         return redirect(url_for('courses'))
     
@@ -458,11 +455,10 @@ def add_evaluator():
     form = EvaluatorForm()
     
     if form.validate_on_submit():
-        evaluator = Evaluator(
-            name=form.name.data,
-            role=form.role.data,
-            email=form.email.data
-        )
+        evaluator = Evaluator()  # type: ignore
+        evaluator.name = form.name.data
+        evaluator.role = form.role.data
+        evaluator.email = form.email.data
         
         db.session.add(evaluator)
         db.session.commit()
@@ -524,49 +520,48 @@ def new_evaluation():
     form.course_id.choices = [(c.id, f"{c.name} - {c.period}") for c in Course.query.all()]
     
     if form.validate_on_submit():
-        evaluation = Evaluation(
-            teacher_id=form.teacher_id.data,
-            course_id=form.course_id.data,
-            evaluator_id=None,
-            period=form.period.data,
-            class_time=form.class_time.data,
-            
-            # Planning fields
-            planning_schedule=form.planning_schedule.data,
-            planning_lesson_plan=form.planning_lesson_plan.data,
-            planning_evaluation=form.planning_evaluation.data,
-            planning_documents=form.planning_documents.data,
-            planning_diversified=form.planning_diversified.data,
-            planning_local_work=form.planning_local_work.data,
-            planning_tools=form.planning_tools.data,
-            planning_educational_portal=form.planning_educational_portal.data,
-            
-            # Class fields
-            class_presentation=form.class_presentation.data,
-            class_knowledge=form.class_knowledge.data,
-            class_student_performance=form.class_student_performance.data,
-            class_attendance=form.class_attendance.data,
-            class_difficulties=form.class_difficulties.data,
-            class_theoretical_practical=form.class_theoretical_practical.data,
-            class_previous_lesson=form.class_previous_lesson.data,
-            class_objectives=form.class_objectives.data,
-            class_questions=form.class_questions.data,
-            class_content_assimilation=form.class_content_assimilation.data,
-            class_student_participation=form.class_student_participation.data,
-            class_recovery_process=form.class_recovery_process.data,
-            class_school_pedagogy=form.class_school_pedagogy.data,
-            class_learning_exercises=form.class_learning_exercises.data,
-            class_discipline=form.class_discipline.data,
-            class_educational_orientation=form.class_educational_orientation.data,
-            class_teaching_strategies=form.class_teaching_strategies.data,
-            class_machines_equipment=form.class_machines_equipment.data,
-            class_safety_procedures=form.class_safety_procedures.data,
-            
-            # Observations
-            planning_observations=form.planning_observations.data,
-            class_observations=form.class_observations.data,
-            general_observations=form.general_observations.data
-        )
+        evaluation = Evaluation()  # type: ignore
+        evaluation.teacher_id = form.teacher_id.data
+        evaluation.course_id = form.course_id.data
+        evaluation.evaluator_id = None
+        evaluation.period = form.period.data
+        evaluation.class_time = form.class_time.data
+        
+        # Planning fields
+        evaluation.planning_schedule = form.planning_schedule.data
+        evaluation.planning_lesson_plan = form.planning_lesson_plan.data
+        evaluation.planning_evaluation = form.planning_evaluation.data
+        evaluation.planning_documents = form.planning_documents.data
+        evaluation.planning_diversified = form.planning_diversified.data
+        evaluation.planning_local_work = form.planning_local_work.data
+        evaluation.planning_tools = form.planning_tools.data
+        evaluation.planning_educational_portal = form.planning_educational_portal.data
+        
+        # Class fields
+        evaluation.class_presentation = form.class_presentation.data
+        evaluation.class_knowledge = form.class_knowledge.data
+        evaluation.class_student_performance = form.class_student_performance.data
+        evaluation.class_attendance = form.class_attendance.data
+        evaluation.class_difficulties = form.class_difficulties.data
+        evaluation.class_theoretical_practical = form.class_theoretical_practical.data
+        evaluation.class_previous_lesson = form.class_previous_lesson.data
+        evaluation.class_objectives = form.class_objectives.data
+        evaluation.class_questions = form.class_questions.data
+        evaluation.class_content_assimilation = form.class_content_assimilation.data
+        evaluation.class_student_participation = form.class_student_participation.data
+        evaluation.class_recovery_process = form.class_recovery_process.data
+        evaluation.class_school_pedagogy = form.class_school_pedagogy.data
+        evaluation.class_learning_exercises = form.class_learning_exercises.data
+        evaluation.class_discipline = form.class_discipline.data
+        evaluation.class_educational_orientation = form.class_educational_orientation.data
+        evaluation.class_teaching_strategies = form.class_teaching_strategies.data
+        evaluation.class_machines_equipment = form.class_machines_equipment.data
+        evaluation.class_safety_procedures = form.class_safety_procedures.data
+        
+        # Observations
+        evaluation.planning_observations = form.planning_observations.data
+        evaluation.class_observations = form.class_observations.data
+        evaluation.general_observations = form.general_observations.data
         
         db.session.add(evaluation)
         db.session.flush()  # Get the ID before commit
@@ -575,14 +570,13 @@ def new_evaluation():
         if form.attachments.data:
             file_info = save_uploaded_file(form.attachments.data)
             if file_info:
-                attachment = EvaluationAttachment(
-                    evaluation_id=evaluation.id,
-                    filename=file_info['filename'],
-                    original_filename=file_info['original_filename'],
-                    file_path=file_info['file_path'],
-                    file_size=file_info['file_size'],
-                    mime_type=file_info['mime_type']
-                )
+                attachment = EvaluationAttachment()  # type: ignore
+                attachment.evaluation_id = evaluation.id
+                attachment.filename = file_info['filename']
+                attachment.original_filename = file_info['original_filename']
+                attachment.file_path = file_info['file_path']
+                attachment.file_size = file_info['file_size']
+                attachment.mime_type = file_info['mime_type']
                 db.session.add(attachment)
         
         db.session.commit()
@@ -616,14 +610,13 @@ def edit_evaluation(id):
         if form.attachments.data:
             file_info = save_uploaded_file(form.attachments.data)
             if file_info:
-                attachment = EvaluationAttachment(
-                    evaluation_id=evaluation.id,
-                    filename=file_info['filename'],
-                    original_filename=file_info['original_filename'],
-                    file_path=file_info['file_path'],
-                    file_size=file_info['file_size'],
-                    mime_type=file_info['mime_type']
-                )
+                attachment = EvaluationAttachment()  # type: ignore
+                attachment.evaluation_id = evaluation.id
+                attachment.filename = file_info['filename']
+                attachment.original_filename = file_info['original_filename']
+                attachment.file_path = file_info['file_path']
+                attachment.file_size = file_info['file_size']
+                attachment.mime_type = file_info['mime_type']
                 db.session.add(attachment)
         
         db.session.commit()

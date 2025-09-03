@@ -12,7 +12,7 @@ class User(db.Model, UserMixin):
     name = db.Column(String(100), nullable=False)
     role = db.Column(String(50), nullable=False, default='evaluator')  # 'admin' or 'evaluator'
     email = db.Column(String(120), nullable=True)
-    is_active = db.Column(Boolean, default=True)
+    is_active = db.Column(Boolean, default=True)  # type: ignore[override]
     created_at = db.Column(DateTime, default=datetime.utcnow)
     created_by = db.Column(Integer, ForeignKey('user.id'), nullable=True)
     
