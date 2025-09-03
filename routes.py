@@ -670,12 +670,14 @@ def complete_evaluation(id):
     return redirect(url_for('view_evaluation', id=evaluation.id))
 
 @app.route('/reports')
+@login_required
 def reports():
     """Reports page"""
     teachers = Teacher.query.all()
     return render_template('reports.html', teachers=teachers)
 
 @app.route('/reports/evaluation/<int:id>')
+@login_required
 def download_evaluation_report(id):
     """Download individual evaluation report"""
     evaluation = Evaluation.query.get_or_404(id)
@@ -691,6 +693,7 @@ def download_evaluation_report(id):
     )
 
 @app.route('/reports/consolidated/<int:teacher_id>')
+@login_required
 def download_consolidated_report(teacher_id):
     """Download consolidated teacher report"""
     teacher = Teacher.query.get_or_404(teacher_id)
@@ -720,6 +723,7 @@ def download_consolidated_report(teacher_id):
     )
 
 @app.route('/api/dashboard-data')
+@login_required
 def dashboard_data():
     """API endpoint for dashboard statistics"""
     # Monthly evaluation counts

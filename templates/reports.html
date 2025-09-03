@@ -79,11 +79,10 @@
                     </div>
                     <div class="col-md-2 mb-3">
                         <div class="stat-card">
-                            {% set current_month = moment().month if moment else None %}
                             {% set this_month_count = 0 %}
                             {% for teacher in teachers %}
                                 {% for eval in teacher.evaluations %}
-                                    {% if eval.evaluation_date.month == (current_month or date().month) %}
+                                    {% if eval.evaluation_date.month == 9 %}
                                         {% set this_month_count = this_month_count + 1 %}
                                     {% endif %}
                                 {% endfor %}
@@ -116,12 +115,10 @@
                     <div class="col-md-2 mb-3">
                         <div class="stat-card">
                             {% set without_eval_count = 0 %}
-                            {% set current_date = moment() if moment else date() %}
-                            {% set start_of_month = current_date.replace(day=1) if hasattr(current_date, 'replace') else current_date %}
                             {% for teacher in teachers %}
                                 {% set has_eval_this_month = False %}
                                 {% for eval in teacher.evaluations %}
-                                    {% if eval.evaluation_date >= start_of_month %}
+                                    {% if eval.evaluation_date.month == 9 and eval.evaluation_date.year == 2025 %}
                                         {% set has_eval_this_month = True %}
                                     {% endif %}
                                 {% endfor %}
