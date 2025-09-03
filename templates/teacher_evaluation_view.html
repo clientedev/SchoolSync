@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Avaliação - {{ evaluation.teacher.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+#signature-pad {
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    cursor: crosshair;
+}
+.signature-section {
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Avaliação Docente</h1>
+                <div class="btn-toolbar">
+                    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evaluation Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Informações da Avaliação</h5>
+                            <p><strong>Docente:</strong> {{ evaluation.teacher.name }}</p>
+                            <p><strong>Curso:</strong> {{ evaluation.course.name }}</p>
+                            <p><strong>Unidade Curricular:</strong> {{ evaluation.curricular_unit.name if evaluation.curricular_unit else evaluation.course.curriculum_component }}</p>
+                            <p><strong>Período:</strong> {{ evaluation.period }}</p>
+                            <p><strong>Data da Avaliação:</strong> {{ evaluation.evaluation_date.strftime('%d/%m/%Y %H:%M') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Status da Avaliação</h5>
+                            {% if evaluation.is_completed %}
+                                <span class="badge bg-success fs-6">Concluída</span>
+                            {% elif evaluation.teacher_signed %}
+                                <span class="badge bg-info fs-6">Aguardando Avaliador</span>
+                            {% elif evaluation.evaluator_signed %}
+                                <span class="badge bg-warning fs-6">Aguardando sua Assinatura</span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6">Em Andamento</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evaluation Content -->
+    <div class="row">
+        <!-- Planning Section -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clipboard-check"></i>
+                        Planejamento ({{ evaluation.calculate_planning_percentage() }}%)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="evaluation-items">
+                        {% set planning_items = [
+                            ('planning_schedule', 'Elabora cronograma de aula'),
+                            ('planning_lesson_plan', 'Planeja a aula'),
+                            ('planning_evaluation', 'Planeja instrumentos de avaliação'),
+                            ('planning_documents', 'Conhece documentos estruturantes'),
+                            ('planning_diversified', 'Utiliza instrumentos diversificados'),
+                            ('planning_local_work', 'Prepara previamente o local'),
+                            ('planning_tools', 'Disponibiliza ferramentas'),
+                            ('planning_educational_portal', 'Portal Educacional')
+                        ] %}
+                        
+                        {% for field, label in planning_items %}
+                            <div class="evaluation-item mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="item-label">{{ label }}</span>
+                                    {% set value = evaluation[field] %}
+                                    {% if value == 'Sim' %}
+                                        <span class="badge bg-success">{{ value }}</span>
+                                    {% elif value == 'Não' %}
+                                        <span class="badge bg-danger">{{ value }}</span>
+                                    {% elif value == 'Não se aplica' %}
+                                        <span class="badge bg-secondary">{{ value }}</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ value or 'N/A' }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if evaluation.planning_observations %}
+                    <div class="mt-3">
+                        <h6>Observações de Planejamento:</h6>
+                        <p class="text-muted">{{ evaluation.planning_observations }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Class Section -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        Período da Aula ({{ evaluation.calculate_class_percentage() }}%)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="evaluation-items">
+                        {% set class_items = [
+                            ('class_presentation', 'Apresentação pessoal'),
+                            ('class_knowledge', 'Conhecimento dos assuntos'),
+                            ('class_student_performance', 'Acompanha desempenho'),
+                            ('class_attendance', 'Registra ocorrências'),
+                            ('class_difficulties', 'Levantamento de dificuldades'),
+                            ('class_theoretical_practical', 'Aprendizado teórico e prático'),
+                            ('class_previous_lesson', 'Retoma aula anterior'),
+                            ('class_objectives', 'Explicita objetivos'),
+                            ('class_questions', 'Propõe questões'),
+                            ('class_content_assimilation', 'Verifica assimilação'),
+                            ('class_student_participation', 'Estimula participação'),
+                            ('class_recovery_process', 'Processo de recuperação'),
+                            ('class_school_pedagogy', 'Pedagogia da escola'),
+                            ('class_learning_exercises', 'Exercícios para estimular'),
+                            ('class_discipline', 'Mantém disciplina'),
+                            ('class_educational_orientation', 'Orientação Educacional'),
+                            ('class_teaching_strategies', 'Estratégias de ensino'),
+                            ('class_machines_equipment', 'Orienta utilização'),
+                            ('class_safety_procedures', 'Procedimentos de segurança')
+                        ] %}
+                        
+                        {% for field, label in class_items %}
+                            <div class="evaluation-item mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="item-label">{{ label }}</span>
+                                    {% set value = evaluation[field] %}
+                                    {% if value == 'Sim' %}
+                                        <span class="badge bg-success">{{ value }}</span>
+                                    {% elif value == 'Não' %}
+                                        <span class="badge bg-danger">{{ value }}</span>
+                                    {% elif value == 'Não se aplica' %}
+                                        <span class="badge bg-secondary">{{ value }}</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ value or 'N/A' }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if evaluation.class_observations %}
+                    <div class="mt-3">
+                        <h6>Observações da Aula:</h6>
+                        <p class="text-muted">{{ evaluation.class_observations }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- General Observations -->
+    {% if evaluation.general_observations %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Observações Gerais</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ evaluation.general_observations }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Digital Signature Section -->
+    {% if evaluation.evaluator_signed and not evaluation.teacher_signed %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="signature-section">
+                <h5 class="text-center mb-4">
+                    <i class="fas fa-signature"></i>
+                    Assinatura Digital do Docente
+                </h5>
+                <p class="text-center text-muted mb-4">
+                    Para concordar com esta avaliação, faça sua assinatura digital no campo abaixo e clique em "Assinar Avaliação".
+                </p>
+                
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="text-center mb-3">
+                            <canvas id="signature-pad" width="600" height="200" class="border"></canvas>
+                        </div>
+                        <div class="text-center">
+                            <button type="button" class="btn btn-outline-secondary me-2" onclick="clearSignature()">
+                                <i class="fas fa-eraser"></i> Limpar
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="saveSignature()">
+                                <i class="fas fa-signature"></i> Assinar Avaliação
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Signatures Display -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Assinatura do Avaliador</h6>
+                </div>
+                <div class="card-body text-center">
+                    {% if evaluation.evaluator_signed %}
+                        <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                        <p class="text-success">Assinado em {{ evaluation.evaluator_signature_date.strftime('%d/%m/%Y %H:%M') if evaluation.evaluator_signature_date else 'N/A' }}</p>
+                    {% else %}
+                        <i class="fas fa-clock text-warning fa-2x mb-2"></i>
+                        <p class="text-warning">Aguardando assinatura do avaliador</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Assinatura do Docente</h6>
+                </div>
+                <div class="card-body text-center">
+                    {% if evaluation.teacher_signed %}
+                        <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                        <p class="text-success">Assinado em {{ evaluation.teacher_signature_date.strftime('%d/%m/%Y %H:%M') if evaluation.teacher_signature_date else 'N/A' }}</p>
+                    {% else %}
+                        <i class="fas fa-clock text-warning fa-2x mb-2"></i>
+                        <p class="text-warning">Aguardando sua assinatura</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+let signaturePad;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('signature-pad');
+    if (canvas) {
+        signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgba(255, 255, 255, 0)',
+            penColor: 'rgb(0, 0, 0)',
+            velocityFilterWeight: 0.7,
+            minWidth: 0.5,
+            maxWidth: 2.5,
+            throttle: 16,
+            minPointDistance: 3
+        });
+        
+        // Resize canvas for better quality
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signaturePad.clear(); // Clear after resize
+        }
+        
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+    }
+});
+
+function clearSignature() {
+    if (signaturePad) {
+        signaturePad.clear();
+    }
+}
+
+function saveSignature() {
+    if (!signaturePad) {
+        alert('Sistema de assinatura não disponível.');
+        return;
+    }
+    
+    if (signaturePad.isEmpty()) {
+        alert('Por favor, faça sua assinatura antes de continuar.');
+        return;
+    }
+    
+    const signatureData = signaturePad.toDataURL();
+    
+    // Show loading state
+    const saveButton = document.querySelector('button[onclick="saveSignature()"]');
+    const originalText = saveButton.innerHTML;
+    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    saveButton.disabled = true;
+    
+    // Send to server
+    fetch(`/teacher_sign_evaluation/{{ evaluation.id }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            signature: signatureData
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // Refresh to show updated status
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+            saveButton.innerHTML = originalText;
+            saveButton.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao salvar assinatura. Tente novamente.');
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
+    });
+}
+</script>
+{% endblock %}

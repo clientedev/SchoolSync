@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}Unidades Curriculares{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Unidades Curriculares</h1>
+                <div class="btn-toolbar">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUnitModal">
+                        <i class="fas fa-plus"></i> Nova Unidade Curricular
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Units List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-book"></i>
+                        Unidades Curriculares Cadastradas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if units %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Unidade Curricular</th>
+                                    <th>Código</th>
+                                    <th>Curso</th>
+                                    <th>Carga Horária</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for unit in units %}
+                                <tr {% if not unit.is_active %}class="table-secondary text-muted"{% endif %}>
+                                    <td>
+                                        <strong>{{ unit.name }}</strong>
+                                        {% if unit.description %}
+                                        <br><small class="text-muted">{{ unit.description[:100] }}{% if unit.description|length > 100 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ unit.code or '-' }}</td>
+                                    <td>{{ unit.course.name }}</td>
+                                    <td>{{ unit.workload }}h{% if unit.workload else '-' %}</td>
+                                    <td>
+                                        {% if unit.is_active %}
+                                            <span class="badge bg-success">Ativa</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inativa</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" onclick="editUnit({{ unit.id }}, '{{ unit.name }}', '{{ unit.code or '' }}', {{ unit.course_id }}, {{ unit.workload or 0 }}, '{{ (unit.description or '')|replace("'", "\\'") }}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-{{ 'secondary' if unit.is_active else 'success' }}" onclick="toggleActive({{ unit.id }})">
+                                                <i class="fas fa-{{ 'pause' if unit.is_active else 'play' }}"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" onclick="deleteUnit({{ unit.id }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Nenhuma unidade curricular cadastrada</h4>
+                        <p class="text-muted">Crie a primeira unidade curricular para começar a organizar o conteúdo dos cursos.</p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUnitModal">
+                            <i class="fas fa-plus"></i> Criar Primeira Unidade
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Unit Modal -->
+<div class="modal fade" id="addUnitModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Unidade Curricular</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="unitForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Nome da Unidade Curricular *</label>
+                                <input type="text" class="form-control" id="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="code" class="form-label">Código</label>
+                                <input type="text" class="form-control" id="code">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="course_id" class="form-label">Curso *</label>
+                                <select class="form-select" id="course_id" required>
+                                    <option value="">Selecione um curso...</option>
+                                    {% for course in courses %}
+                                    <option value="{{ course.id }}">{{ course.name }} - {{ course.period }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="workload" class="form-label">Carga Horária (horas)</label>
+                                <input type="number" class="form-control" id="workload" min="1" max="200">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="description" rows="3" placeholder="Descrição opcional da unidade curricular..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveUnit()">
+                    <i class="fas fa-save"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Unit Modal -->
+<div class="modal fade" id="editUnitModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Unidade Curricular</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editUnitForm">
+                    <input type="hidden" id="edit_unit_id">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="edit_name" class="form-label">Nome da Unidade Curricular *</label>
+                                <input type="text" class="form-control" id="edit_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="edit_code" class="form-label">Código</label>
+                                <input type="text" class="form-control" id="edit_code">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="edit_course_id" class="form-label">Curso *</label>
+                                <select class="form-select" id="edit_course_id" required>
+                                    <option value="">Selecione um curso...</option>
+                                    {% for course in courses %}
+                                    <option value="{{ course.id }}">{{ course.name }} - {{ course.period }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="edit_workload" class="form-label">Carga Horária (horas)</label>
+                                <input type="number" class="form-control" id="edit_workload" min="1" max="200">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="edit_description" rows="3" placeholder="Descrição opcional da unidade curricular..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="updateUnit()">
+                    <i class="fas fa-save"></i> Atualizar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function saveUnit() {
+    const data = {
+        name: document.getElementById('name').value,
+        code: document.getElementById('code').value,
+        course_id: document.getElementById('course_id').value,
+        workload: document.getElementById('workload').value,
+        description: document.getElementById('description').value
+    };
+    
+    if (!data.name || !data.course_id) {
+        alert('Por favor, preencha os campos obrigatórios.');
+        return;
+    }
+    
+    fetch('/curricular_units/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao salvar unidade curricular. Tente novamente.');
+    });
+}
+
+function editUnit(id, name, code, course_id, workload, description) {
+    document.getElementById('edit_unit_id').value = id;
+    document.getElementById('edit_name').value = name;
+    document.getElementById('edit_code').value = code;
+    document.getElementById('edit_course_id').value = course_id;
+    document.getElementById('edit_workload').value = workload || '';
+    document.getElementById('edit_description').value = description;
+    
+    const editModal = new bootstrap.Modal(document.getElementById('editUnitModal'));
+    editModal.show();
+}
+
+function updateUnit() {
+    const id = document.getElementById('edit_unit_id').value;
+    const data = {
+        name: document.getElementById('edit_name').value,
+        code: document.getElementById('edit_code').value,
+        course_id: document.getElementById('edit_course_id').value,
+        workload: document.getElementById('edit_workload').value,
+        description: document.getElementById('edit_description').value
+    };
+    
+    if (!data.name || !data.course_id) {
+        alert('Por favor, preencha os campos obrigatórios.');
+        return;
+    }
+    
+    fetch(`/curricular_units/edit/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao atualizar unidade curricular. Tente novamente.');
+    });
+}
+
+function deleteUnit(id) {
+    if (!confirm('Tem certeza que deseja excluir esta unidade curricular? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+    
+    fetch(`/curricular_units/delete/${id}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao excluir unidade curricular. Tente novamente.');
+    });
+}
+
+function toggleActive(id) {
+    fetch(`/curricular_units/toggle_active/${id}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao alterar status. Tente novamente.');
+    });
+}
+</script>
+{% endblock %}

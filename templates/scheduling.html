@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Agendamento de Avaliações{% endblock %}
+
+{% block extra_head %}
+<style>
+.schedule-month {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.month-header {
+    background-color: #f8f9fa;
+    padding: 15px;
+    font-weight: bold;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.schedule-item {
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+}
+
+.schedule-item:last-child {
+    border-bottom: none;
+}
+
+.completed-item {
+    background-color: #f8fff8;
+    border-left: 4px solid #28a745;
+}
+
+.pending-item {
+    background-color: #fff8f0;
+    border-left: 4px solid #ffc107;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Agendamento de Avaliações</h1>
+                <div class="btn-toolbar">
+                    <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+                        <i class="fas fa-plus"></i> Agendar Avaliação
+                    </button>
+                    <a href="{{ url_for('semesters') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-cog"></i> Gerenciar Semestres
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if current_semester %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Semestre Ativo:</strong> {{ current_semester.name }} 
+                ({{ current_semester.start_date.strftime('%d/%m/%Y') }} - {{ current_semester.end_date.strftime('%d/%m/%Y') }})
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Calendar -->
+    <div class="calendar-grid">
+        {% for month, items in monthly_schedule.items() %}
+        <div class="schedule-month">
+            <div class="month-header">
+                <i class="fas fa-calendar"></i>
+                {{ ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][month] }}
+                <span class="badge bg-secondary ms-2">{{ items|length }} agendamento(s)</span>
+            </div>
+            <div class="schedule-content">
+                {% if items %}
+                    {% for item in items %}
+                    <div class="schedule-item {{ 'completed-item' if item.is_completed else 'pending-item' }}">
+                        <div class="flex-grow-1">
+                            <strong>{{ item.teacher.name }}</strong><br>
+                            <small class="text-muted">
+                                {{ item.curricular_unit.name }}
+                                {% if item.scheduled_date %}
+                                - {{ item.scheduled_date.strftime('%d/%m/%Y') }}
+                                {% endif %}
+                            </small>
+                            {% if item.is_completed %}
+                                <span class="badge bg-success ms-2">Concluída</span>
+                            {% else %}
+                                <span class="badge bg-warning ms-2">Pendente</span>
+                            {% endif %}
+                        </div>
+                        <div class="action-buttons">
+                            {% if not item.is_completed %}
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteSchedule({{ item.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="schedule-item text-center text-muted">
+                        <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                        <p>Nenhuma avaliação agendada</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-warning text-center">
+                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                <h4>Nenhum Semestre Ativo</h4>
+                <p>Configure um semestre ativo para começar a agendar avaliações.</p>
+                <a href="{{ url_for('semesters') }}" class="btn btn-primary">
+                    <i class="fas fa-cog"></i> Configurar Semestres
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Schedule Modal -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agendar Avaliação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <div class="mb-3">
+                        <label for="teacher_id" class="form-label">Docente</label>
+                        <select class="form-select" id="teacher_id" required>
+                            <option value="">Selecione um docente...</option>
+                            {% for teacher in teachers %}
+                            <option value="{{ teacher.id }}">{{ teacher.name }} - {{ teacher.area }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="curricular_unit_id" class="form-label">Unidade Curricular</label>
+                        <select class="form-select" id="curricular_unit_id" required>
+                            <option value="">Selecione uma unidade curricular...</option>
+                            {% for unit in curricular_units %}
+                            <option value="{{ unit.id }}">{{ unit.name }} ({{ unit.course.name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="scheduled_month" class="form-label">Mês</label>
+                        <select class="form-select" id="scheduled_month" required>
+                            <option value="">Selecione um mês...</option>
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6">Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="scheduled_date" class="form-label">Data Específica (Opcional)</label>
+                        <input type="date" class="form-control" id="scheduled_date">
+                        <div class="form-text">Deixe em branco para agendar apenas por mês</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="addSchedule()">
+                    <i class="fas fa-calendar-plus"></i> Agendar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addSchedule() {
+    const form = document.getElementById('scheduleForm');
+    const formData = new FormData(form);
+    
+    const data = {
+        teacher_id: document.getElementById('teacher_id').value,
+        curricular_unit_id: document.getElementById('curricular_unit_id').value,
+        scheduled_month: document.getElementById('scheduled_month').value,
+        scheduled_date: document.getElementById('scheduled_date').value
+    };
+    
+    if (!data.teacher_id || !data.curricular_unit_id || !data.scheduled_month) {
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
+    
+    fetch('/scheduling/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao agendar avaliação. Tente novamente.');
+    });
+}
+
+function deleteSchedule(id) {
+    if (!confirm('Tem certeza que deseja excluir este agendamento?')) {
+        return;
+    }
+    
+    fetch(`/scheduling/delete/${id}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao excluir agendamento. Tente novamente.');
+    });
+}
+</script>
+{% endblock %}

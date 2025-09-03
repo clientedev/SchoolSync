@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Área do Docente - {{ teacher.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Área do Docente</h1>
+                <div class="btn-toolbar">
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h4 class="card-title">Bem-vindo, {{ teacher.name }}!</h4>
+                    <p class="card-text">Área: {{ teacher.area }}</p>
+                    {% if current_semester %}
+                    <p class="card-text">Semestre Atual: {{ current_semester.name }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ evaluations|length }}</h5>
+                    <p class="card-text">Total de Avaliações</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">{{ pending_evaluations|length }}</h5>
+                    <p class="card-text">Aguardando Assinatura</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-info">{{ scheduled_evaluations|length }}</h5>
+                    <p class="card-text">Avaliações Agendadas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-success">{{ evaluations|selectattr('is_completed')|list|length }}</h5>
+                    <p class="card-text">Concluídas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Evaluations -->
+    {% if pending_evaluations %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Avaliações Aguardando sua Assinatura ({{ pending_evaluations|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Data da Avaliação</th>
+                                    <th>Curso</th>
+                                    <th>Período</th>
+                                    <th>Avaliador</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluation in pending_evaluations %}
+                                <tr>
+                                    <td>{{ evaluation.evaluation_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ evaluation.course.name }}</td>
+                                    <td>{{ evaluation.period }}</td>
+                                    <td>{{ evaluation.evaluator.name if evaluation.evaluator else 'Sistema' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('teacher_view_evaluation', id=evaluation.id) }}" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="fas fa-eye"></i> Visualizar e Assinar
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- All Evaluations -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clipboard-list"></i>
+                        Histórico de Avaliações
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if evaluations %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Data da Avaliação</th>
+                                    <th>Curso</th>
+                                    <th>Unidade Curricular</th>
+                                    <th>Período</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluation in evaluations %}
+                                <tr>
+                                    <td>{{ evaluation.evaluation_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ evaluation.course.name }}</td>
+                                    <td>{{ evaluation.curricular_unit.name if evaluation.curricular_unit else evaluation.course.curriculum_component }}</td>
+                                    <td>{{ evaluation.period }}</td>
+                                    <td>
+                                        {% if evaluation.is_completed %}
+                                            <span class="badge bg-success">Concluída</span>
+                                        {% elif evaluation.teacher_signed %}
+                                            <span class="badge bg-info">Aguardando Avaliador</span>
+                                        {% elif evaluation.evaluator_signed %}
+                                            <span class="badge bg-warning">Aguardando sua Assinatura</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Em Andamento</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('teacher_view_evaluation', id=evaluation.id) }}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i> Visualizar
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhuma avaliação encontrada.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

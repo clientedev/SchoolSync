@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Semestres{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Gerenciar Semestres</h1>
+                <div class="btn-toolbar">
+                    <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addSemesterModal">
+                        <i class="fas fa-plus"></i> Novo Semestre
+                    </button>
+                    <a href="{{ url_for('scheduling') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-calendar"></i> Voltar ao Agendamento
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Semesters List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-graduation-cap"></i>
+                        Semestres Cadastrados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if semesters %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Semestre</th>
+                                    <th>Período</th>
+                                    <th>Data Início</th>
+                                    <th>Data Fim</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for semester in semesters %}
+                                <tr {% if semester.is_active %}class="table-success"{% endif %}>
+                                    <td>
+                                        <strong>{{ semester.name }}</strong>
+                                        {% if semester.is_active %}
+                                        <span class="badge bg-success ms-2">ATIVO</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ semester.number }}º Semestre de {{ semester.year }}</td>
+                                    <td>{{ semester.start_date.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ semester.end_date.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        {% if semester.is_active %}
+                                            <span class="badge bg-success">Ativo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inativo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if not semester.is_active %}
+                                        <button class="btn btn-sm btn-success" onclick="activateSemester({{ semester.id }})">
+                                            <i class="fas fa-play"></i> Ativar
+                                        </button>
+                                        {% else %}
+                                        <span class="text-success">
+                                            <i class="fas fa-check"></i> Semestre Ativo
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-graduation-cap fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Nenhum semestre cadastrado</h4>
+                        <p class="text-muted">Crie o primeiro semestre para começar a usar o sistema de agendamento.</p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSemesterModal">
+                            <i class="fas fa-plus"></i> Criar Primeiro Semestre
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Semester Modal -->
+<div class="modal fade" id="addSemesterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Semestre</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="semesterForm">
+                    <div class="mb-3">
+                        <label for="year" class="form-label">Ano</label>
+                        <input type="number" class="form-control" id="year" min="2020" max="2030" 
+                               value="{{ moment().year }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="number" class="form-label">Semestre</label>
+                        <select class="form-select" id="number" required>
+                            <option value="">Selecione...</option>
+                            <option value="1">1º Semestre</option>
+                            <option value="2">2º Semestre</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Data de Início</label>
+                        <input type="date" class="form-control" id="start_date" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">Data de Fim</label>
+                        <input type="date" class="form-control" id="end_date" required>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Dica:</strong> O semestre criado ficará inativo inicialmente. 
+                        Você pode ativá-lo depois de criar.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="addSemester()">
+                    <i class="fas fa-plus"></i> Criar Semestre
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set default dates based on semester selection
+document.getElementById('number').addEventListener('change', function() {
+    const year = document.getElementById('year').value;
+    const number = this.value;
+    
+    if (year && number) {
+        const startDate = document.getElementById('start_date');
+        const endDate = document.getElementById('end_date');
+        
+        if (number === '1') {
+            startDate.value = `${year}-02-01`;
+            endDate.value = `${year}-06-30`;
+        } else if (number === '2') {
+            startDate.value = `${year}-08-01`;
+            endDate.value = `${year}-12-15`;
+        }
+    }
+});
+
+// Set default dates when year changes
+document.getElementById('year').addEventListener('change', function() {
+    const number = document.getElementById('number').value;
+    if (number) {
+        document.getElementById('number').dispatchEvent(new Event('change'));
+    }
+});
+
+function addSemester() {
+    const data = {
+        year: document.getElementById('year').value,
+        number: document.getElementById('number').value,
+        start_date: document.getElementById('start_date').value,
+        end_date: document.getElementById('end_date').value
+    };
+    
+    if (!data.year || !data.number || !data.start_date || !data.end_date) {
+        alert('Por favor, preencha todos os campos.');
+        return;
+    }
+    
+    fetch('/semesters/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao criar semestre. Tente novamente.');
+    });
+}
+
+function activateSemester(id) {
+    if (!confirm('Tem certeza que deseja ativar este semestre? O semestre ativo atual será desativado.')) {
+        return;
+    }
+    
+    fetch(`/semesters/activate/${id}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao ativar semestre. Tente novamente.');
+    });
+}
+</script>
+{% endblock %}
