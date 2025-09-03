@@ -50,7 +50,7 @@
                             <li><a class="dropdown-item" href="{{ url_for('evaluators') }}">
                                 <i class="fas fa-user-check me-1"></i>Avaliadores
                             </a></li>
-                            {% if current_user.is_authenticated and hasattr(current_user, 'is_admin') and current_user.is_admin() %}
+                            {% if current_user.is_authenticated and current_user.role == 'admin' %}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('users') }}">
                                 <i class="fas fa-users-cog me-1"></i>Usuários
