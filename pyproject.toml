@@ -15,4 +15,6 @@ dependencies = [
     "wtforms>=3.2.1",
     "reportlab>=4.4.3",
     "flask-wtf>=1.2.2",
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.2",
 ]

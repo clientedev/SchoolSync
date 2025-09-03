@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from app import app, db
 from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment
 from forms import TeacherForm, CourseForm, EvaluatorForm, EvaluationForm
-from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report
+from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import
 
 @app.route('/')
 def index():
@@ -97,6 +97,78 @@ def delete_teacher(id):
     except Exception as e:
         flash('Erro ao excluir professor. Verifique se não existem avaliações vinculadas.', 'error')
         db.session.rollback()
+    
+    return redirect(url_for('teachers'))
+
+@app.route('/teachers/template')
+def download_teachers_template():
+    """Download Excel template for teacher import"""
+    try:
+        template_buffer = generate_teachers_excel_template()
+        return send_file(
+            template_buffer,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='modelo_importacao_docentes.xlsx'
+        )
+    except Exception as e:
+        flash(f'Erro ao gerar modelo: {str(e)}', 'error')
+        return redirect(url_for('teachers'))
+
+@app.route('/teachers/import', methods=['POST'])
+def import_teachers_excel():
+    """Import teachers from Excel file"""
+    if 'excel_file' not in request.files:
+        flash('Nenhum arquivo selecionado.', 'error')
+        return redirect(url_for('teachers'))
+    
+    file = request.files['excel_file']
+    if file.filename == '':
+        flash('Nenhum arquivo selecionado.', 'error')
+        return redirect(url_for('teachers'))
+    
+    if not file.filename.lower().endswith(('.xlsx', '.xls')):
+        flash('Por favor, selecione um arquivo Excel (.xlsx ou .xls).', 'error')
+        return redirect(url_for('teachers'))
+    
+    try:
+        # Save uploaded file temporarily
+        file_info = save_uploaded_file(file)
+        if not file_info:
+            flash('Erro ao salvar arquivo temporário.', 'error')
+            return redirect(url_for('teachers'))
+        
+        # Process the Excel file
+        results = process_teachers_excel_import(file_info['file_path'])
+        
+        # Clean up temporary file
+        try:
+            os.remove(file_info['file_path'])
+        except:
+            pass
+        
+        # Show results
+        if results['success'] > 0:
+            flash(f'Importação concluída! {results["success"]} docente(s) importado(s) com sucesso.', 'success')
+        
+        if results['warnings']:
+            for warning in results['warnings'][:5]:  # Show first 5 warnings
+                flash(warning, 'warning')
+            if len(results['warnings']) > 5:
+                flash(f'... e mais {len(results["warnings"]) - 5} avisos.', 'warning')
+        
+        if results['errors']:
+            for error in results['errors'][:5]:  # Show first 5 errors
+                flash(error, 'error')
+            if len(results['errors']) > 5:
+                flash(f'... e mais {len(results["errors"]) - 5} erros.', 'error')
+        
+        if results['success'] == 0 and results['errors']:
+            flash('Nenhum docente foi importado devido aos erros encontrados.', 'error')
+        
+    except Exception as e:
+        flash(f'Erro ao processar arquivo Excel: {str(e)}', 'error')
+        current_app.logger.error(f"Excel import error: {str(e)}")
     
     return redirect(url_for('teachers'))
 

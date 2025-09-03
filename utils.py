@@ -11,6 +11,10 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 from datetime import datetime
+import pandas as pd
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 def save_uploaded_file(file):
     """Save uploaded file and return file info"""
@@ -278,3 +282,197 @@ def generate_consolidated_report(teacher_id, start_date=None, end_date=None):
     doc.build(story)
     buffer.seek(0)
     return buffer
+
+def generate_teachers_excel_template():
+    """Generate Excel template for teacher import"""
+    buffer = BytesIO()
+    
+    # Create sample data with headers
+    data = {
+        'Nome': ['João Silva', 'Maria Santos'],
+        'Área': ['Eletrônica', 'Informática'],
+        'Disciplinas': ['Eletrônica Digital, Circuitos Elétricos', 'Programação, Banco de Dados'],
+        'Carga Horária': [40, 30],
+        'Email': ['joao.silva@senai.br', 'maria.santos@senai.br'],
+        'Telefone': ['11987654321', '11876543210'],
+        'Cursos': ['Técnico em Eletrônica, Técnico em Automação', 'Técnico em Informática']
+    }
+    
+    df = pd.DataFrame(data)
+    
+    # Create workbook and worksheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Docentes"
+    
+    # Add header row
+    for r in dataframe_to_rows(df, index=False, header=True):
+        ws.append(r)
+    
+    # Style the header row
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Add instructions sheet
+    instructions_ws = wb.create_sheet("Instruções")
+    instructions = [
+        ["INSTRUÇÕES PARA IMPORTAÇÃO DE DOCENTES"],
+        [""],
+        ["1. Preencha os dados dos docentes na aba 'Docentes'"],
+        ["2. Campos obrigatórios: Nome, Área"],
+        ["3. Disciplinas: separe por vírgula (ex: Matemática, Física)"],
+        ["4. Cursos: separe por vírgula os nomes dos cursos que o docente ministra"],
+        ["5. Carga Horária: número de horas por semana"],
+        ["6. Email: formato válido (ex: nome@senai.br)"],
+        ["7. Telefone: apenas números (ex: 11987654321)"],
+        [""],
+        ["IMPORTANTE:"],
+        ["- Não altere os nomes das colunas"],
+        ["- Mantenha o formato Excel (.xlsx)"],
+        ["- Remova as linhas de exemplo antes de importar seus dados"],
+        ["- Os cursos mencionados devem estar previamente cadastrados no sistema"],
+    ]
+    
+    for row in instructions:
+        instructions_ws.append(row)
+    
+    # Style instructions
+    instructions_ws['A1'].font = Font(bold=True, size=14)
+    instructions_ws['A1'].fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    instructions_ws['A1'].font = Font(color="FFFFFF", bold=True, size=14)
+    
+    for i in range(11, 16):  # Important section
+        instructions_ws[f'A{i}'].font = Font(bold=True)
+    
+    # Auto-adjust column width for instructions
+    for column in instructions_ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 80)
+        instructions_ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Save to buffer
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+def process_teachers_excel_import(file_path):
+    """Process Excel file and import teachers"""
+    from models import Teacher, Course
+    from app import db
+    
+    try:
+        # Read Excel file
+        df = pd.read_excel(file_path, sheet_name='Docentes')
+        
+        # Clean column names
+        df.columns = df.columns.str.strip()
+        
+        results = {
+            'success': 0,
+            'errors': [],
+            'warnings': []
+        }
+        
+        for index, row in df.iterrows():
+            try:
+                # Skip empty rows
+                if pd.isna(row.get('Nome', '')) or str(row.get('Nome', '')).strip() == '':
+                    continue
+                
+                # Extract data with defaults
+                name = str(row['Nome']).strip()
+                area = str(row.get('Área', '')).strip() if not pd.isna(row.get('Área')) else ''
+                subjects = str(row.get('Disciplinas', '')).strip() if not pd.isna(row.get('Disciplinas')) else ''
+                
+                # Handle workload conversion safely
+                workload_raw = row.get('Carga Horária', '')
+                workload = None
+                if not pd.isna(workload_raw) and str(workload_raw).strip():
+                    try:
+                        workload = int(float(str(workload_raw)))
+                    except (ValueError, TypeError):
+                        pass
+                
+                email = str(row.get('Email', '')).strip() if not pd.isna(row.get('Email')) else ''
+                phone = str(row.get('Telefone', '')).strip() if not pd.isna(row.get('Telefone')) else ''
+                courses_str = str(row.get('Cursos', '')).strip() if not pd.isna(row.get('Cursos')) else ''
+                
+                # Validate required fields
+                if not name:
+                    results['errors'].append(f'Linha {index + 2}: Nome é obrigatório')
+                    continue
+                
+                if not area:
+                    results['errors'].append(f'Linha {index + 2}: Área é obrigatória')
+                    continue
+                
+                # Check if teacher already exists
+                existing_teacher = Teacher.query.filter_by(name=name).first()
+                if existing_teacher:
+                    results['warnings'].append(f'Linha {index + 2}: Docente "{name}" já existe, pulando...')
+                    continue
+                
+                # Create new teacher
+                teacher = Teacher(
+                    name=name,
+                    area=area,
+                    subjects=subjects,
+                    workload=workload if workload and workload > 0 else None,
+                    email=email if email and '@' in email else None,
+                    phone=phone if phone else None
+                )
+                
+                db.session.add(teacher)
+                db.session.flush()  # Get teacher ID before commit
+                
+                # Process courses if provided
+                if courses_str:
+                    course_names = [c.strip() for c in courses_str.split(',') if c.strip()]
+                    for course_name in course_names:
+                        course = Course.query.filter_by(name=course_name).first()
+                        if not course:
+                            results['warnings'].append(f'Linha {index + 2}: Curso "{course_name}" não encontrado para o docente "{name}"')
+                
+                results['success'] += 1
+                
+            except Exception as e:
+                results['errors'].append(f'Linha {index + 2}: Erro ao processar - {str(e)}')
+        
+        # Commit all changes
+        if results['success'] > 0:
+            db.session.commit()
+        
+        return results
+        
+    except Exception as e:
+        db.session.rollback()
+        return {
+            'success': 0,
+            'errors': [f'Erro ao processar arquivo Excel: {str(e)}'],
+            'warnings': []
+        }

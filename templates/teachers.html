@@ -9,9 +9,27 @@
             <h1>
                 <i class="fas fa-user-tie me-2"></i>Docentes
             </h1>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#teacherModal">
-                <i class="fas fa-plus me-1"></i>Novo Docente
-            </button>
+            <div class="btn-group">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#teacherModal">
+                    <i class="fas fa-plus me-1"></i>Novo Docente
+                </button>
+                <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Opções de importação</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('download_teachers_template') }}">
+                            <i class="fas fa-download me-2"></i>Baixar Modelo Excel
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importModal">
+                            <i class="fas fa-file-excel me-2"></i>Importar Excel
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>
@@ -203,6 +221,58 @@
         </div>
     </div>
 </div>
+
+<!-- Import Excel Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="importForm" method="POST" action="{{ url_for('import_teachers_excel') }}" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">
+                        <i class="fas fa-file-excel me-2"></i>Importar Docentes via Excel
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Antes de importar:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Baixe o modelo Excel clicando em "Baixar Modelo Excel"</li>
+                            <li>Preencha o modelo com os dados dos docentes</li>
+                            <li>Certifique-se de que os cursos estão previamente cadastrados no sistema</li>
+                            <li>Remova as linhas de exemplo antes de importar</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="excel_file" class="form-label">Arquivo Excel:</label>
+                        <input type="file" id="excel_file" name="excel_file" class="form-control" 
+                               accept=".xlsx,.xls" required>
+                        <small class="form-text text-muted">
+                            Formatos aceitos: .xlsx, .xls (máximo 16MB)
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Importante:</strong> Docentes com o mesmo nome serão ignorados. 
+                        Apenas novos docentes serão importados.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <a href="{{ url_for('download_teachers_template') }}" class="btn btn-info">
+                        <i class="fas fa-download me-1"></i>Baixar Modelo
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-upload me-1"></i>Importar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -234,6 +304,73 @@ document.getElementById('teacherModal').addEventListener('hidden.bs.modal', func
     document.getElementById('modalTitle').textContent = 'Novo Docente';
     document.getElementById('teacherForm').action = '/teachers/add';
     document.getElementById('teacherForm').reset();
+});
+
+// Excel file validation
+document.getElementById('excel_file').addEventListener('change', function() {
+    const file = this.files[0];
+    const importBtn = document.querySelector('#importForm button[type="submit"]');
+    
+    if (file) {
+        // Check file size (16MB limit)
+        if (file.size > 16 * 1024 * 1024) {
+            alert('Erro: O arquivo deve ter no máximo 16MB.');
+            this.value = '';
+            importBtn.disabled = true;
+            return;
+        }
+        
+        // Check file extension
+        const allowedExtensions = ['.xlsx', '.xls'];
+        const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        
+        if (!allowedExtensions.includes(fileExtension)) {
+            alert('Erro: Por favor, selecione um arquivo Excel (.xlsx ou .xls).');
+            this.value = '';
+            importBtn.disabled = true;
+            return;
+        }
+        
+        importBtn.disabled = false;
+        
+        // Show file info
+        const fileInfo = `Arquivo selecionado: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        let infoElement = document.getElementById('fileInfo');
+        
+        if (!infoElement) {
+            infoElement = document.createElement('small');
+            infoElement.id = 'fileInfo';
+            infoElement.className = 'text-success d-block mt-1';
+            this.parentNode.appendChild(infoElement);
+        }
+        
+        infoElement.innerHTML = `<i class="fas fa-check-circle me-1"></i>${fileInfo}`;
+    } else {
+        importBtn.disabled = true;
+        const infoElement = document.getElementById('fileInfo');
+        if (infoElement) {
+            infoElement.remove();
+        }
+    }
+});
+
+// Reset import form when modal is closed
+document.getElementById('importModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('importForm').reset();
+    const importBtn = document.querySelector('#importForm button[type="submit"]');
+    importBtn.disabled = true;
+    const infoElement = document.getElementById('fileInfo');
+    if (infoElement) {
+        infoElement.remove();
+    }
+});
+
+// Initialize import button as disabled
+document.addEventListener('DOMContentLoaded', function() {
+    const importBtn = document.querySelector('#importForm button[type="submit"]');
+    if (importBtn) {
+        importBtn.disabled = true;
+    }
 });
 </script>
 {% endblock %}
