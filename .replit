@@ -1,4 +1,4 @@
-modules = ["python-3.11", "python3"]
+modules = ["web", "python-3.11", "nodejs-20"]
 
 [nix]
 channel = "stable-25_05"
@@ -34,4 +34,3 @@ localPort = 5000
 externalPort = 80
 
 [agent]
-integrations = ["styling_replit==1.0.0"]
