@@ -57,9 +57,27 @@
                                     <tr>
                                         <td>
                                             <strong>{{ course.name }}</strong>
+                                            {% if course.curricular_units %}
+                                            <br><small class="text-muted">
+                                                <i class="fas fa-book me-1"></i>
+                                                {{ course.curricular_units|length }} unidade(s) curricular(es)
+                                            </small>
+                                            {% endif %}
                                         </td>
                                         <td>{{ course.period }}</td>
-                                        <td>{{ course.curriculum_component }}</td>
+                                        <td>
+                                            {{ course.curriculum_component }}
+                                            {% if course.curricular_units %}
+                                            <div class="mt-2">
+                                                {% for unit in course.curricular_units[:3] %}
+                                                <span class="badge bg-light text-dark me-1">{{ unit.name }}</span>
+                                                {% endfor %}
+                                                {% if course.curricular_units|length > 3 %}
+                                                <span class="badge bg-secondary">+{{ course.curricular_units|length - 3 }} mais</span>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             {% if course.class_code %}
                                                 <span class="badge bg-secondary">{{ course.class_code }}</span>
@@ -75,6 +93,10 @@
                                                 <button class="btn btn-outline-primary" 
                                                         onclick="editCourse({{ course.id }}, '{{ course.name }}', '{{ course.period }}', '{{ course.curriculum_component }}', '{{ course.class_code or '' }}')">
                                                     <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" 
+                                                        onclick="manageCurricularUnits({{ course.id }}, '{{ course.name }}')">
+                                                    <i class="fas fa-book"></i>
                                                 </button>
                                                 <button class="btn btn-outline-danger" 
                                                         onclick="confirmDelete('{{ course.name }}', '{{ url_for('delete_course', id=course.id) }}')">
@@ -335,5 +357,10 @@ document.addEventListener('DOMContentLoaded', function() {
         importBtn.disabled = true;
     }
 });
+
+function manageCurricularUnits(courseId, courseName) {
+    // Redirect to curricular units page with course filter
+    window.location.href = `/curricular_units?course_id=${courseId}`;
+}
 </script>
 {% endblock %}

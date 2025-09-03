@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Contas de Docentes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Gerenciar Contas de Docentes</h1>
+                <div class="btn-toolbar">
+                    <a href="{{ url_for('teachers') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Voltar aos Docentes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accounts with User Access -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users"></i>
+                        Contas de Docentes ({{ teacher_users|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if teacher_users %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Criado em</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in teacher_users %}
+                                <tr {% if not user.is_active %}class="table-secondary text-muted"{% endif %}>
+                                    <td>
+                                        <strong>{{ user.name }}</strong>
+                                        {% if user.teacher_profile %}
+                                        <br><small class="text-muted">{{ user.teacher_profile.area }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td><code>{{ user.username }}</code></td>
+                                    <td>{{ user.email or '-' }}</td>
+                                    <td>
+                                        {% if user.is_active %}
+                                            <span class="badge bg-success">Ativa</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inativa</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '-' }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-warning" 
+                                                    onclick="resetPassword({{ user.id }}, '{{ user.name|e }}')">
+                                                <i class="fas fa-key"></i> Redefinir Senha
+                                            </button>
+                                            <button class="btn btn-outline-{{ 'secondary' if user.is_active else 'success' }}" 
+                                                    onclick="toggleAccount({{ user.id }}, '{{ user.name|e }}', {{ user.is_active|lower }})">
+                                                <i class="fas fa-{{ 'pause' if user.is_active else 'play' }}"></i>
+                                                {{ 'Desativar' if user.is_active else 'Ativar' }}
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-user-times fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Nenhuma conta de docente encontrada</h4>
+                        <p class="text-muted">As contas são criadas automaticamente quando um docente é cadastrado.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teachers without accounts -->
+    {% if teachers_without_accounts %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                        Docentes sem Conta de Acesso ({{ teachers_without_accounts|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Atenção:</strong> Os docentes abaixo não possuem conta de acesso ao sistema. 
+                        Clique em "Criar Conta" para gerar credenciais de acesso.
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Área</th>
+                                    <th>Email</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for teacher in teachers_without_accounts %}
+                                <tr>
+                                    <td><strong>{{ teacher.name }}</strong></td>
+                                    <td>{{ teacher.area or '-' }}</td>
+                                    <td>{{ teacher.email or '-' }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" 
+                                                onclick="createAccount({{ teacher.id }}, '{{ teacher.name|e }}')">
+                                            <i class="fas fa-plus"></i> Criar Conta
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Password Reset Modal -->
+<div class="modal fade" id="passwordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Senha Gerada</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <strong>Senha redefinida com sucesso!</strong>
+                </div>
+                <p>Nova senha para <strong id="passwordTeacherName"></strong>:</p>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="newPassword" readonly>
+                    <button class="btn btn-outline-secondary" onclick="copyPassword()">
+                        <i class="fas fa-copy"></i> Copiar
+                    </button>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        Anote esta senha em local seguro. O docente precisará dela para fazer login no sistema.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account Creation Modal -->
+<div class="modal fade" id="accountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Conta Criada com Sucesso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <strong>Conta criada com sucesso!</strong>
+                </div>
+                <p>Credenciais de acesso para <strong id="accountTeacherName"></strong>:</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Username:</label>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="newUsername" readonly>
+                            <button class="btn btn-outline-secondary" onclick="copyUsername()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Senha:</label>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="newAccountPassword" readonly>
+                            <button class="btn btn-outline-secondary" onclick="copyAccountPassword()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        Anote essas credenciais em local seguro. O docente precisará delas para fazer login no sistema.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="location.reload()">Entendi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function resetPassword(userId, teacherName) {
+    if (!confirm(`Tem certeza que deseja redefinir a senha de ${teacherName}?`)) {
+        return;
+    }
+    
+    fetch(`/reset_teacher_password/${userId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('passwordTeacherName').textContent = teacherName;
+            document.getElementById('newPassword').value = data.new_password;
+            const modal = new bootstrap.Modal(document.getElementById('passwordModal'));
+            modal.show();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao redefinir senha. Tente novamente.');
+    });
+}
+
+function toggleAccount(userId, teacherName, isActive) {
+    const action = isActive ? 'desativar' : 'ativar';
+    if (!confirm(`Tem certeza que deseja ${action} a conta de ${teacherName}?`)) {
+        return;
+    }
+    
+    fetch(`/toggle_teacher_account/${userId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao alterar status da conta. Tente novamente.');
+    });
+}
+
+function createAccount(teacherId, teacherName) {
+    if (!confirm(`Criar conta de acesso para ${teacherName}?`)) {
+        return;
+    }
+    
+    fetch(`/create_account_for_teacher/${teacherId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('accountTeacherName').textContent = teacherName;
+            document.getElementById('newUsername').value = data.username;
+            document.getElementById('newAccountPassword').value = data.password;
+            const modal = new bootstrap.Modal(document.getElementById('accountModal'));
+            modal.show();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao criar conta. Tente novamente.');
+    });
+}
+
+function copyPassword() {
+    const password = document.getElementById('newPassword');
+    password.select();
+    document.execCommand('copy');
+    
+    // Visual feedback
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+    btn.classList.remove('btn-outline-secondary');
+    btn.classList.add('btn-success');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+
+function copyUsername() {
+    const username = document.getElementById('newUsername');
+    username.select();
+    document.execCommand('copy');
+    
+    // Visual feedback
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i>';
+    btn.classList.remove('btn-outline-secondary');
+    btn.classList.add('btn-success');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+
+function copyAccountPassword() {
+    const password = document.getElementById('newAccountPassword');
+    password.select();
+    document.execCommand('copy');
+    
+    // Visual feedback
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i>';
+    btn.classList.remove('btn-outline-secondary');
+    btn.classList.add('btn-success');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+</script>
+{% endblock %}

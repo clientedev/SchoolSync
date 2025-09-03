@@ -311,6 +311,129 @@ def show_teacher_credentials():
     
     return render_template('teacher_credentials.html', credentials=credentials)
 
+@app.route('/manage_accounts')
+@login_required
+def manage_accounts():
+    """Manage teacher accounts - Admin only"""
+    if not current_user.is_admin():
+        flash('Acesso negado. Apenas administradores podem gerenciar contas.', 'error')
+        return redirect(url_for('index'))
+    
+    # Get all teacher accounts
+    teacher_users = User.query.filter_by(role='teacher').order_by(User.name).all()
+    
+    # Get teachers without accounts
+    teachers_without_accounts = Teacher.query.filter(Teacher.user_id.is_(None)).all()
+    
+    return render_template('manage_accounts.html', 
+                         teacher_users=teacher_users,
+                         teachers_without_accounts=teachers_without_accounts)
+
+@app.route('/reset_teacher_password/<int:user_id>', methods=['POST'])
+@login_required
+def reset_teacher_password(user_id):
+    """Reset teacher password - Admin only"""
+    if not current_user.is_admin():
+        return jsonify({'success': False, 'error': 'Acesso negado'})
+    
+    user = User.query.get_or_404(user_id)
+    if user.role != 'teacher':
+        return jsonify({'success': False, 'error': 'Usuário não é professor'})
+    
+    # Generate new password
+    import secrets
+    import string
+    password_chars = string.ascii_letters + string.digits
+    new_password = ''.join(secrets.choice(password_chars) for _ in range(10))
+    
+    user.set_password(new_password)
+    db.session.commit()
+    
+    return jsonify({
+        'success': True, 
+        'message': 'Senha redefinida com sucesso',
+        'new_password': new_password
+    })
+
+@app.route('/toggle_teacher_account/<int:user_id>', methods=['POST'])
+@login_required
+def toggle_teacher_account(user_id):
+    """Activate/deactivate teacher account - Admin only"""
+    if not current_user.is_admin():
+        return jsonify({'success': False, 'error': 'Acesso negado'})
+    
+    user = User.query.get_or_404(user_id)
+    if user.role != 'teacher':
+        return jsonify({'success': False, 'error': 'Usuário não é professor'})
+    
+    user.is_active = not user.is_active
+    db.session.commit()
+    
+    status = 'ativada' if user.is_active else 'desativada'
+    return jsonify({
+        'success': True, 
+        'message': f'Conta {status} com sucesso',
+        'is_active': user.is_active
+    })
+
+@app.route('/create_account_for_teacher/<int:teacher_id>', methods=['POST'])
+@login_required
+def create_account_for_teacher(teacher_id):
+    """Create account for existing teacher without account - Admin only"""
+    if not current_user.is_admin():
+        return jsonify({'success': False, 'error': 'Acesso negado'})
+    
+    teacher = Teacher.query.get_or_404(teacher_id)
+    if teacher.user_id:
+        return jsonify({'success': False, 'error': 'Professor já possui conta'})
+    
+    # Create user account
+    teacher_user = User()
+    
+    # Generate username from email or name
+    if teacher.email:
+        username = teacher.email.split('@')[0].lower().replace('.', '_').replace('-', '_')
+    else:
+        # Create username from name
+        name_parts = (teacher.name or '').lower().split()
+        if len(name_parts) >= 2:
+            username = f"{name_parts[0]}.{name_parts[-1]}"
+        else:
+            username = name_parts[0] if name_parts else 'docente'
+    
+    # Ensure username is unique
+    base_username = username
+    counter = 1
+    while User.query.filter_by(username=username).first():
+        username = f"{base_username}_{counter}"
+        counter += 1
+    
+    teacher_user.username = username
+    teacher_user.name = teacher.name
+    teacher_user.role = 'teacher'
+    teacher_user.email = teacher.email
+    teacher_user.created_by = current_user.id
+    
+    # Generate secure password
+    import secrets
+    import string
+    password_chars = string.ascii_letters + string.digits
+    password = ''.join(secrets.choice(password_chars) for _ in range(10))
+    teacher_user.set_password(password)
+    
+    db.session.add(teacher_user)
+    db.session.flush()  # Get user ID
+    
+    teacher.user_id = teacher_user.id
+    db.session.commit()
+    
+    return jsonify({
+        'success': True, 
+        'message': 'Conta criada com sucesso',
+        'username': username,
+        'password': password
+    })
+
 @app.route('/teachers/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_teacher(id):
@@ -629,11 +752,13 @@ def new_evaluation():
     # Populate choices
     form.teacher_id.choices = [(t.id, t.name) for t in Teacher.query.all()]
     form.course_id.choices = [(c.id, f"{c.name} - {c.period}") for c in Course.query.all()]
+    form.curricular_unit_id.choices = [('', 'Nenhuma unidade curricular específica')] + [(u.id, f"{u.name} ({u.course.name})") for u in CurricularUnit.query.join(Course).all()]
     
     if form.validate_on_submit():
         evaluation = Evaluation()  # type: ignore
         evaluation.teacher_id = form.teacher_id.data
         evaluation.course_id = form.course_id.data
+        evaluation.curricular_unit_id = form.curricular_unit_id.data if form.curricular_unit_id.data else None
         # Buscar ou criar avaliador padrão (já que o formulário não especifica avaliador)
         default_evaluator = Evaluator.query.filter_by(role='Sistema').first()
         if not default_evaluator:
@@ -721,6 +846,7 @@ def edit_evaluation(id):
     # Populate choices
     form.teacher_id.choices = [(t.id, t.name) for t in Teacher.query.all()]
     form.course_id.choices = [(c.id, f"{c.name} - {c.period}") for c in Course.query.all()]
+    form.curricular_unit_id.choices = [('', 'Nenhuma unidade curricular específica')] + [(u.id, f"{u.name} ({u.course.name})") for u in CurricularUnit.query.join(Course).all()]
     
     if form.validate_on_submit():
         form.populate_obj(evaluation)
@@ -1249,10 +1375,22 @@ def curricular_units():
         flash('Acesso negado. Apenas administradores podem gerenciar unidades curriculares.', 'error')
         return redirect(url_for('index'))
     
-    units = CurricularUnit.query.join(Course).order_by(Course.name, CurricularUnit.name).all()
+    # Check if filtering by course
+    course_id = request.args.get('course_id', type=int)
+    selected_course = None
+    
+    if course_id:
+        selected_course = Course.query.get_or_404(course_id)
+        units = CurricularUnit.query.filter_by(course_id=course_id).order_by(CurricularUnit.name).all()
+    else:
+        units = CurricularUnit.query.join(Course).order_by(Course.name, CurricularUnit.name).all()
+    
     courses = Course.query.all()
     
-    return render_template('curricular_units.html', units=units, courses=courses)
+    return render_template('curricular_units.html', 
+                         units=units, 
+                         courses=courses,
+                         selected_course=selected_course)
 
 @app.route('/curricular_units/add', methods=['POST'])
 @login_required
