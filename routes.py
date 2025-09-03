@@ -523,7 +523,16 @@ def new_evaluation():
         evaluation = Evaluation()  # type: ignore
         evaluation.teacher_id = form.teacher_id.data
         evaluation.course_id = form.course_id.data
-        evaluation.evaluator_id = None
+        # Buscar ou criar avaliador padrão (já que o formulário não especifica avaliador)
+        default_evaluator = Evaluator.query.filter_by(role='Sistema').first()
+        if not default_evaluator:
+            default_evaluator = Evaluator()  # type: ignore
+            default_evaluator.name = 'Sistema'
+            default_evaluator.role = 'Sistema'
+            default_evaluator.email = 'sistema@escola.edu'
+            db.session.add(default_evaluator)
+            db.session.flush()
+        evaluation.evaluator_id = default_evaluator.id
         evaluation.period = form.period.data
         evaluation.class_time = form.class_time.data
         
