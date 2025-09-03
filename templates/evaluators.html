@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Avaliadores - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-user-check me-2"></i>Avaliadores
+            </h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#evaluatorModal">
+                <i class="fas fa-plus me-1"></i>Novo Avaliador
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluators List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if evaluators %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Função</th>
+                                    <th>Email</th>
+                                    <th>Avaliações Realizadas</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluator in evaluators %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ evaluator.name }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ evaluator.role }}</span>
+                                        </td>
+                                        <td>
+                                            {% if evaluator.email %}
+                                                <a href="mailto:{{ evaluator.email }}">{{ evaluator.email }}</a>
+                                            {% else %}
+                                                <span class="text-muted">Não informado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">{{ evaluator.evaluations|length }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" 
+                                                        onclick="editEvaluator({{ evaluator.id }}, '{{ evaluator.name }}', '{{ evaluator.role }}', '{{ evaluator.email or '' }}')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" 
+                                                        onclick="confirmDelete('{{ evaluator.name }}', '{{ url_for('delete_evaluator', id=evaluator.id) }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-user-check fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum avaliador cadastrado</h5>
+                        <p class="text-muted">Clique em "Novo Avaliador" para começar.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluator Modal -->
+<div class="modal fade" id="evaluatorModal" tabindex="-1" aria-labelledby="evaluatorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="evaluatorForm" method="POST">
+                {{ form.hidden_tag() if form }}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="evaluatorModalLabel">
+                        <span id="modalTitle">Novo Avaliador</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% if form %}
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control") }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.role.label(class="form-label") }}
+                            {{ form.role(class="form-control") }}
+                            <small class="form-text text-muted">Ex: Coordenador, Supervisor, Diretor</small>
+                            {% if form.role.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.role.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control") }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.email.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o avaliador <strong id="deleteItemName"></strong>?</p>
+                <p class="text-danger small">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
+                    <i class="fas fa-trash me-1"></i>Excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function editEvaluator(id, name, role, email) {
+    document.getElementById('modalTitle').textContent = 'Editar Avaliador';
+    document.getElementById('evaluatorForm').action = `/evaluators/edit/${id}`;
+    
+    // Populate form fields
+    document.querySelector('input[name="name"]').value = name;
+    document.querySelector('input[name="role"]').value = role;
+    document.querySelector('input[name="email"]').value = email;
+    
+    // Show modal
+    new bootstrap.Modal(document.getElementById('evaluatorModal')).show();
+}
+
+function confirmDelete(itemName, deleteUrl) {
+    document.getElementById('deleteItemName').textContent = itemName;
+    document.getElementById('confirmDeleteBtn').href = deleteUrl;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Reset form when modal is closed
+document.getElementById('evaluatorModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('modalTitle').textContent = 'Novo Avaliador';
+    document.getElementById('evaluatorForm').action = '/evaluators/add';
+    document.getElementById('evaluatorForm').reset();
+});
+</script>
+{% endblock %}

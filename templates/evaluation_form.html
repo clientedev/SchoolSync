@@ -1,0 +1,648 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if view_only %}
+        Visualizar Avaliação - {{ super() }}
+    {% elif edit_mode %}
+        Editar Avaliação - {{ super() }}
+    {% elif evaluation %}
+        Avaliação - {{ super() }}
+    {% else %}
+        Nova Avaliação - {{ super() }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        {% if evaluations %}
+            <!-- Evaluations List View -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="fas fa-clipboard-check me-2"></i>Avaliações
+                </h1>
+                <a href="{{ url_for('new_evaluation') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Nova Avaliação
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    {% if evaluations.items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Docente</th>
+                                        <th>Curso</th>
+                                        <th>Período</th>
+                                        <th>Avaliador</th>
+                                        <th>Planejamento</th>
+                                        <th>Condução</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for eval in evaluations.items %}
+                                        <tr>
+                                            <td>{{ eval.evaluation_date.strftime('%d/%m/%Y') }}</td>
+                                            <td>{{ eval.teacher.name }}</td>
+                                            <td>
+                                                <small>{{ eval.course.name }}</small>
+                                            </td>
+                                            <td>{{ eval.period }}</td>
+                                            <td>{{ eval.evaluator.name }}</td>
+                                            <td>
+                                                <span class="badge bg-info">{{ eval.calculate_planning_percentage() }}%</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success">{{ eval.calculate_class_percentage() }}%</span>
+                                            </td>
+                                            <td>
+                                                {% if eval.is_completed %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check"></i> Finalizada
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-clock"></i> Em andamento
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{{ url_for('view_evaluation', id=eval.id) }}" 
+                                                       class="btn btn-outline-primary">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    {% if not eval.is_completed %}
+                                                        <a href="{{ url_for('edit_evaluation', id=eval.id) }}" 
+                                                           class="btn btn-outline-secondary">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                    <a href="{{ url_for('download_evaluation_report', id=eval.id) }}" 
+                                                       class="btn btn-outline-info">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if evaluations.pages > 1 %}
+                            <nav aria-label="Paginação">
+                                <ul class="pagination justify-content-center">
+                                    {% if evaluations.has_prev %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('evaluations', page=evaluations.prev_num) }}">Anterior</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in evaluations.iter_pages() %}
+                                        {% if page_num %}
+                                            {% if page_num != evaluations.page %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ url_for('evaluations', page=page_num) }}">{{ page_num }}</a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ page_num }}</span>
+                                                </li>
+                                            {% endif %}
+                                        {% else %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">…</span>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if evaluations.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('evaluations', page=evaluations.next_num) }}">Próximo</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Nenhuma avaliação encontrada</h5>
+                            <p class="text-muted">Clique em "Nova Avaliação" para começar.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        {% else %}
+            <!-- Single Evaluation Form/View -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="fas fa-clipboard-check me-2"></i>
+                    {% if view_only %}
+                        Acompanhamento da Ação Docente
+                    {% elif edit_mode %}
+                        Editar Avaliação
+                    {% else %}
+                        Nova Avaliação
+                    {% endif %}
+                </h1>
+                <div class="btn-group">
+                    <a href="{{ url_for('evaluations') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Voltar
+                    </a>
+                    {% if view_only and evaluation and not evaluation.is_completed %}
+                        <a href="{{ url_for('edit_evaluation', id=evaluation.id) }}" class="btn btn-primary">
+                            <i class="fas fa-edit me-1"></i>Editar
+                        </a>
+                        <a href="{{ url_for('complete_evaluation', id=evaluation.id) }}" 
+                           class="btn btn-success"
+                           onclick="return confirm('Tem certeza que deseja finalizar esta avaliação? Esta ação não pode ser desfeita.')">
+                            <i class="fas fa-check me-1"></i>Finalizar
+                        </a>
+                    {% endif %}
+                    {% if evaluation %}
+                        <a href="{{ url_for('download_evaluation_report', id=evaluation.id) }}" class="btn btn-info">
+                            <i class="fas fa-file-pdf me-1"></i>Relatório
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- SENAI Header -->
+            <div class="card mb-4">
+                <div class="card-header text-center bg-primary">
+                    <h4 class="mb-0 text-white">
+                        <i class="fas fa-school me-2"></i>SENAI - ACOMPANHAMENTO DA AÇÃO DOCENTE
+                    </h4>
+                </div>
+            </div>
+
+            {% if not view_only %}
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+            {% endif %}
+
+            <!-- Basic Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Informações Básicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if view_only %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Docente:</label>
+                                <div class="form-control-plaintext">{{ evaluation.teacher.name }}</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Curso/Turma:</label>
+                                <div class="form-control-plaintext">{{ evaluation.course.name }} - {{ evaluation.course.period }}</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Componente/Unidade Curricular:</label>
+                                <div class="form-control-plaintext">{{ evaluation.course.curriculum_component }}</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Período:</label>
+                                <div class="form-control-plaintext">{{ evaluation.period }}</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Realizada por:</label>
+                                <div class="form-control-plaintext">{{ evaluation.evaluator.name }}</div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.teacher_id.label(class="form-label") }}
+                                {{ form.teacher_id(class="form-select") }}
+                                {% if form.teacher_id.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.teacher_id.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.course_id.label(class="form-label") }}
+                                {{ form.course_id(class="form-select") }}
+                                {% if form.course_id.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.course_id.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.period.label(class="form-label") }}
+                                {{ form.period(class="form-select") }}
+                                {% if form.period.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.period.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.class_time.label(class="form-label") }}
+                                {{ form.class_time(class="form-control") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.evaluator_id.label(class="form-label") }}
+                                {{ form.evaluator_id(class="form-select") }}
+                                {% if form.evaluator_id.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.evaluator_id.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Planning Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tasks me-2"></i>Aspectos Observados no Período de Planejamento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th width="60%">Aspecto</th>
+                                    <th width="13%" class="text-center">Sim</th>
+                                    <th width="13%" class="text-center">Não</th>
+                                    <th width="14%" class="text-center">Não se aplica</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set planning_fields = [
+                                    (form.planning_schedule if form else None, evaluation.planning_schedule if evaluation else None, "Elabora cronograma de aula, replaneja quando necessário"),
+                                    (form.planning_lesson_plan if form else None, evaluation.planning_lesson_plan if evaluation else None, "Planeja a aula considerando estratégias de avaliação pertinentes aos objetivos da aula em conformidade com os documentos estruturantes (MSEP e Plano de Curso)"),
+                                    (form.planning_evaluation if form else None, evaluation.planning_evaluation if evaluation else None, "Planeja instrumentos de avaliação diversificados ao longo do período letivo"),
+                                    (form.planning_documents if form else None, evaluation.planning_documents if evaluation else None, "Conhece os documentos estruturantes (MSEP e Plano de Curso)"),
+                                    (form.planning_diversified if form else None, evaluation.planning_diversified if evaluation else None, "Utiliza instrumentos diversificados ao longo do período letivo"),
+                                    (form.planning_local_work if form else None, evaluation.planning_local_work if evaluation else None, "Prepara previamente o local de trabalho, máquinas, equipamentos e ferramentas"),
+                                    (form.planning_tools if form else None, evaluation.planning_tools if evaluation else None, "Disponibiliza e acompanha a realização de atividades pertinentes no Portal Educacional"),
+                                    (form.planning_educational_portal if form else None, evaluation.planning_educational_portal if evaluation else None, "Portal Educacional")
+                                ] %}
+                                
+                                {% for field_form, field_value, description in planning_fields %}
+                                    <tr>
+                                        <td>{{ description }}</td>
+                                        {% if view_only %}
+                                            <td class="text-center">
+                                                {% if field_value == 'Sim' %}
+                                                    <i class="fas fa-check text-success"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if field_value == 'Não' %}
+                                                    <i class="fas fa-times text-danger"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if field_value == 'Não se aplica' %}
+                                                    <i class="fas fa-minus text-muted"></i>
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td class="text-center">
+                                                <input type="radio" name="{{ field_form.name }}" value="Sim" class="form-check-input"
+                                                       {% if field_form.data == 'Sim' %}checked{% endif %}>
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="radio" name="{{ field_form.name }}" value="Não" class="form-check-input"
+                                                       {% if field_form.data == 'Não' %}checked{% endif %}>
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="radio" name="{{ field_form.name }}" value="Não se aplica" class="form-check-input"
+                                                       {% if field_form.data == 'Não se aplica' %}checked{% endif %}>
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Planning Observations -->
+                    <div class="mt-3">
+                        {% if view_only %}
+                            {% if evaluation.planning_observations %}
+                                <label class="form-label"><strong>Observações:</strong></label>
+                                <div class="form-control-plaintext">{{ evaluation.planning_observations }}</div>
+                            {% endif %}
+                        {% else %}
+                            {{ form.planning_observations.label(class="form-label") }}
+                            {{ form.planning_observations(class="form-control", rows="3") }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Classroom Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Aspectos Observados no Período da Aula
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th width="60%">Aspecto</th>
+                                    <th width="13%" class="text-center">Sim</th>
+                                    <th width="13%" class="text-center">Não</th>
+                                    <th width="14%" class="text-center">Não se aplica</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set class_fields = [
+                                    (form.class_presentation if form else None, evaluation.class_presentation if evaluation else None, "Demonstra apresentação pessoal e postura adequadas"),
+                                    (form.class_knowledge if form else None, evaluation.class_knowledge if evaluation else None, "Demonstra conhecimento dos assuntos que ministra"),
+                                    (form.class_student_performance if form else None, evaluation.class_student_performance if evaluation else None, "Acompanha o desempenho dos alunos e realiza os registros de ocorrências, quando necessário"),
+                                    (form.class_attendance if form else None, evaluation.class_attendance if evaluation else None, "Efetua registros de ocorrências, quando necessário"),
+                                    (form.class_difficulties if form else None, evaluation.class_difficulties if evaluation else None, "Realiza levantamento de dificuldades dos alunos quanto ao aprendizado teórico e prático, alinhado com SAEP"),
+                                    (form.class_theoretical_practical if form else None, evaluation.class_theoretical_practical if evaluation else None, "Relaciona o aprendizado teórico e prático, alinhado com SAEP"),
+                                    (form.class_previous_lesson if form else None, evaluation.class_previous_lesson if evaluation else None, "Inicia a aula retomando a anterior, explicitando objetivos e associando-os ao projeto do curso"),
+                                    (form.class_objectives if form else None, evaluation.class_objectives if evaluation else None, "Explicita objetivos e associa-os ao projeto do curso"),
+                                    (form.class_questions if form else None, evaluation.class_questions if evaluation else None, "Propõe questões, previamente planejadas, que permite verificar se o conteúdo ministrado está sendo assimilado"),
+                                    (form.class_content_assimilation if form else None, evaluation.class_content_assimilation if evaluation else None, "Verifica se o conteúdo ministrado está sendo assimilado"),
+                                    (form.class_student_participation if form else None, evaluation.class_student_participation if evaluation else None, "Estimula a participação dos alunos durante a aula"),
+                                    (form.class_recovery_process if form else None, evaluation.class_recovery_process if evaluation else None, "Promove o processo de recuperação, atendendo à Proposta Pedagógica da escola"),
+                                    (form.class_school_pedagogy if form else None, evaluation.class_school_pedagogy if evaluation else None, "Pedagogia da escola"),
+                                    (form.class_learning_exercises if form else None, evaluation.class_learning_exercises if evaluation else None, "Aplica exercícios de forma a estimular o aprendizado"),
+                                    (form.class_discipline if form else None, evaluation.class_discipline if evaluation else None, "Mantém a disciplina na sala de aula, encaminhando ocorrências à Orientação Educacional"),
+                                    (form.class_educational_orientation if form else None, evaluation.class_educational_orientation if evaluation else None, "Orientação Educacional"),
+                                    (form.class_teaching_strategies if form else None, evaluation.class_teaching_strategies if evaluation else None, "Aplica estratégias de ensino pertinentes aos objetivos da aula"),
+                                    (form.class_machines_equipment if form else None, evaluation.class_machines_equipment if evaluation else None, "Orienta a utilização de máquinas, equipamentos e ferramentas durante a aula"),
+                                    (form.class_safety_procedures if form else None, evaluation.class_safety_procedures if evaluation else None, "Cumpre e faz cumprir normas e procedimentos de segurança e uso dos EPI's/EPC's")
+                                ] %}
+                                
+                                {% for field_form, field_value, description in class_fields %}
+                                    <tr>
+                                        <td>{{ description }}</td>
+                                        {% if view_only %}
+                                            <td class="text-center">
+                                                {% if field_value == 'Sim' %}
+                                                    <i class="fas fa-check text-success"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if field_value == 'Não' %}
+                                                    <i class="fas fa-times text-danger"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if field_value == 'Não se aplica' %}
+                                                    <i class="fas fa-minus text-muted"></i>
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td class="text-center">
+                                                <input type="radio" name="{{ field_form.name }}" value="Sim" class="form-check-input"
+                                                       {% if field_form.data == 'Sim' %}checked{% endif %}>
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="radio" name="{{ field_form.name }}" value="Não" class="form-check-input"
+                                                       {% if field_form.data == 'Não' %}checked{% endif %}>
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="radio" name="{{ field_form.name }}" value="Não se aplica" class="form-check-input"
+                                                       {% if field_form.data == 'Não se aplica' %}checked{% endif %}>
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Class Observations -->
+                    <div class="mt-3">
+                        {% if view_only %}
+                            {% if evaluation.class_observations %}
+                                <label class="form-label"><strong>Observações:</strong></label>
+                                <div class="form-control-plaintext">{{ evaluation.class_observations }}</div>
+                            {% endif %}
+                        {% else %}
+                            {{ form.class_observations.label(class="form-label") }}
+                            {{ form.class_observations(class="form-control", rows="3") }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- General Observations and Attachments -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-comments me-2"></i>Observações Gerais e Anexos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if view_only %}
+                        {% if evaluation.general_observations %}
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Observações Gerais:</strong></label>
+                                <div class="form-control-plaintext">{{ evaluation.general_observations }}</div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if evaluation.attachments %}
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Anexos:</strong></label>
+                                <ul class="list-group">
+                                    {% for attachment in evaluation.attachments %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="fas fa-file me-2"></i>
+                                                {{ attachment.original_filename }}
+                                            </span>
+                                            <small class="text-muted">
+                                                {{ (attachment.file_size / 1024) | round(1) }} KB
+                                            </small>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="mb-3">
+                            {{ form.general_observations.label(class="form-label") }}
+                            {{ form.general_observations(class="form-control", rows="4") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.attachments.label(class="form-label") }}
+                            {{ form.attachments(class="form-control") }}
+                            <small class="form-text text-muted">
+                                Arquivos permitidos: JPG, PNG, PDF, DOC, DOCX (máx. 16MB)
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Performance Summary (View Only) -->
+            {% if view_only and evaluation %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-pie me-2"></i>Resumo de Desempenho
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Planejamento:</span>
+                                        <strong>{{ evaluation.calculate_planning_percentage() }}% atendido</strong>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-info" style="width: {{ evaluation.calculate_planning_percentage() }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Condução da aula:</span>
+                                        <strong>{{ evaluation.calculate_class_percentage() }}% atendido</strong>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" style="width: {{ evaluation.calculate_class_percentage() }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Signatures Section (View Only) -->
+            {% if view_only and evaluation %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-signature me-2"></i>Assinaturas
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <div class="signature-box p-4 mb-2">
+                                        {% if evaluation.teacher_signature_date %}
+                                            <i class="fas fa-check-circle text-success fa-2x"></i>
+                                            <p class="mb-0">Assinado em {{ evaluation.teacher_signature_date.strftime('%d/%m/%Y') }}</p>
+                                        {% else %}
+                                            <i class="fas fa-pen text-muted fa-2x"></i>
+                                            <p class="mb-0 text-muted">Aguardando assinatura</p>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-0"><strong>Rubrica do docente:</strong></p>
+                                    <p class="text-muted">{{ evaluation.teacher.name }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <div class="signature-box p-4 mb-2">
+                                        {% if evaluation.evaluator_signature_date %}
+                                            <i class="fas fa-check-circle text-success fa-2x"></i>
+                                            <p class="mb-0">Assinado em {{ evaluation.evaluator_signature_date.strftime('%d/%m/%Y') }}</p>
+                                        {% else %}
+                                            <i class="fas fa-pen text-muted fa-2x"></i>
+                                            <p class="mb-0 text-muted">Aguardando assinatura</p>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-0"><strong>Responsável pelo acompanhamento:</strong></p>
+                                    <p class="text-muted">{{ evaluation.evaluator.name }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if not view_only %}
+                <!-- Form Actions -->
+                <div class="card">
+                    <div class="card-body text-center">
+                        <button type="button" onclick="history.back()" class="btn btn-secondary me-2">
+                            <i class="fas fa-times me-1"></i>Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Salvar Avaliação
+                        </button>
+                    </div>
+                </div>
+                </form>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Form enhancement for evaluation criteria
+document.addEventListener('DOMContentLoaded', function() {
+    // Add visual feedback for radio button selection
+    const radioButtons = document.querySelectorAll('input[type="radio"]');
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Reset row styling
+            const row = this.closest('tr');
+            if (row) {
+                row.classList.remove('table-success', 'table-danger', 'table-warning');
+                
+                // Add appropriate styling based on selection
+                if (this.value === 'Sim') {
+                    row.classList.add('table-success');
+                } else if (this.value === 'Não') {
+                    row.classList.add('table-danger');
+                } else if (this.value === 'Não se aplica') {
+                    row.classList.add('table-warning');
+                }
+            }
+        });
+    });
+
+    // Initialize existing selections
+    radioButtons.forEach(radio => {
+        if (radio.checked) {
+            radio.dispatchEvent(new Event('change'));
+        }
+    });
+});
+
+// Auto-save functionality (optional enhancement)
+function autoSave() {
+    const form = document.querySelector('form');
+    if (form && !document.querySelector('[data-view-only]')) {
+        const formData = new FormData(form);
+        // Implementation for auto-save could be added here
+        console.log('Auto-save functionality can be implemented here');
+    }
+}
+
+// Set up auto-save interval (every 2 minutes)
+// setInterval(autoSave, 120000);
+</script>
+{% endblock %}

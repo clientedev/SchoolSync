@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Cursos - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-graduation-cap me-2"></i>Cursos
+            </h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#courseModal">
+                <i class="fas fa-plus me-1"></i>Novo Curso
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Courses List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if courses %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nome do Curso</th>
+                                    <th>Período</th>
+                                    <th>Componente Curricular</th>
+                                    <th>Código da Turma</th>
+                                    <th>Avaliações</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in courses %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ course.name }}</strong>
+                                        </td>
+                                        <td>{{ course.period }}</td>
+                                        <td>{{ course.curriculum_component }}</td>
+                                        <td>
+                                            {% if course.class_code %}
+                                                <span class="badge bg-secondary">{{ course.class_code }}</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ course.evaluations|length }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" 
+                                                        onclick="editCourse({{ course.id }}, '{{ course.name }}', '{{ course.period }}', '{{ course.curriculum_component }}', '{{ course.class_code or '' }}')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" 
+                                                        onclick="confirmDelete('{{ course.name }}', '{{ url_for('delete_course', id=course.id) }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-graduation-cap fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum curso cadastrado</h5>
+                        <p class="text-muted">Clique em "Novo Curso" para começar.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Course Modal -->
+<div class="modal fade" id="courseModal" tabindex="-1" aria-labelledby="courseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="courseForm" method="POST">
+                {{ form.hidden_tag() if form }}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="courseModalLabel">
+                        <span id="modalTitle">Novo Curso</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% if form %}
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control") }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.period.label(class="form-label") }}
+                                {{ form.period(class="form-control") }}
+                                <small class="form-text text-muted">Ex: 1° Sem/25, 2° Sem/25</small>
+                                {% if form.period.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.period.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.class_code.label(class="form-label") }}
+                                {{ form.class_code(class="form-control") }}
+                                {% if form.class_code.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.class_code.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            {{ form.curriculum_component.label(class="form-label") }}
+                            {{ form.curriculum_component(class="form-control") }}
+                            {% if form.curriculum_component.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.curriculum_component.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o curso <strong id="deleteItemName"></strong>?</p>
+                <p class="text-danger small">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
+                    <i class="fas fa-trash me-1"></i>Excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function editCourse(id, name, period, curriculum_component, class_code) {
+    document.getElementById('modalTitle').textContent = 'Editar Curso';
+    document.getElementById('courseForm').action = `/courses/edit/${id}`;
+    
+    // Populate form fields
+    document.querySelector('input[name="name"]').value = name;
+    document.querySelector('input[name="period"]').value = period;
+    document.querySelector('input[name="curriculum_component"]').value = curriculum_component;
+    document.querySelector('input[name="class_code"]').value = class_code;
+    
+    // Show modal
+    new bootstrap.Modal(document.getElementById('courseModal')).show();
+}
+
+function confirmDelete(itemName, deleteUrl) {
+    document.getElementById('deleteItemName').textContent = itemName;
+    document.getElementById('confirmDeleteBtn').href = deleteUrl;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Reset form when modal is closed
+document.getElementById('courseModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('modalTitle').textContent = 'Novo Curso';
+    document.getElementById('courseForm').action = '/courses/add';
+    document.getElementById('courseForm').reset();
+});
+</script>
+{% endblock %}

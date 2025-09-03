@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block title %}Relatórios - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-bar me-2"></i>Relatórios
+        </h1>
+    </div>
+</div>
+
+<!-- Report Types Cards -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-user fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Relatórios Individuais</h5>
+                <p class="card-text">Gere relatórios detalhados por professor com histórico de avaliações e evolução.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#individualReportModal">
+                    <i class="fas fa-file-pdf me-1"></i>Gerar Relatório
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-school fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Relatório Geral</h5>
+                <p class="card-text">Visão geral da escola com estatísticas consolidadas e indicadores de desempenho.</p>
+                <a href="{{ url_for('download_consolidated_report', teacher_id=0) }}" class="btn btn-success">
+                    <i class="fas fa-chart-line me-1"></i>Relatório Geral
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tachometer-alt me-2"></i>Estatísticas Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2 mb-3">
+                        <div class="stat-card">
+                            <h3 class="text-primary">{{ teachers|length }}</h3>
+                            <small class="text-muted">Docentes</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <div class="stat-card">
+                            {% set total_evaluations = teachers|sum(attribute='evaluations|length') %}
+                            <h3 class="text-success">{{ total_evaluations or 0 }}</h3>
+                            <small class="text-muted">Avaliações</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <div class="stat-card">
+                            {% set completed_evaluations = 0 %}
+                            {% for teacher in teachers %}
+                                {% for eval in teacher.evaluations %}
+                                    {% if eval.is_completed %}
+                                        {% set completed_evaluations = completed_evaluations + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                            <h3 class="text-info">{{ completed_evaluations }}</h3>
+                            <small class="text-muted">Finalizadas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <div class="stat-card">
+                            {% set current_month = moment().month if moment else None %}
+                            {% set this_month_count = 0 %}
+                            {% for teacher in teachers %}
+                                {% for eval in teacher.evaluations %}
+                                    {% if eval.evaluation_date.month == (current_month or date().month) %}
+                                        {% set this_month_count = this_month_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                            <h3 class="text-warning">{{ this_month_count }}</h3>
+                            <small class="text-muted">Este Mês</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <div class="stat-card">
+                            {% set avg_planning = 0 %}
+                            {% set avg_class = 0 %}
+                            {% set total_evals = 0 %}
+                            {% for teacher in teachers %}
+                                {% for eval in teacher.evaluations %}
+                                    {% set avg_planning = avg_planning + eval.calculate_planning_percentage() %}
+                                    {% set avg_class = avg_class + eval.calculate_class_percentage() %}
+                                    {% set total_evals = total_evals + 1 %}
+                                {% endfor %}
+                            {% endfor %}
+                            {% if total_evals > 0 %}
+                                {% set overall_avg = ((avg_planning + avg_class) / 2 / total_evals) %}
+                            {% else %}
+                                {% set overall_avg = 0 %}
+                            {% endif %}
+                            <h3 class="text-primary">{{ "%.1f"|format(overall_avg) }}%</h3>
+                            <small class="text-muted">Média Geral</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <div class="stat-card">
+                            {% set without_eval_count = 0 %}
+                            {% set current_date = moment() if moment else date() %}
+                            {% set start_of_month = current_date.replace(day=1) if hasattr(current_date, 'replace') else current_date %}
+                            {% for teacher in teachers %}
+                                {% set has_eval_this_month = False %}
+                                {% for eval in teacher.evaluations %}
+                                    {% if eval.evaluation_date >= start_of_month %}
+                                        {% set has_eval_this_month = True %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if not has_eval_this_month %}
+                                    {% set without_eval_count = without_eval_count + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            <h3 class="text-danger">{{ without_eval_count }}</h3>
+                            <small class="text-muted">Pendentes</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Teachers Performance Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>Desempenho por Docente
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if teachers %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Docente</th>
+                                    <th>Área</th>
+                                    <th class="text-center">Avaliações</th>
+                                    <th class="text-center">Planejamento Médio</th>
+                                    <th class="text-center">Condução Média</th>
+                                    <th class="text-center">Desempenho Geral</th>
+                                    <th class="text-center">Última Avaliação</th>
+                                    <th class="text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for teacher in teachers %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ teacher.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ teacher.subjects or 'Áreas não especificadas' }}</small>
+                                        </td>
+                                        <td>{{ teacher.area }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-info">{{ teacher.evaluations|length }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if teacher.evaluations %}
+                                                {% set planning_avg = (teacher.evaluations|map(attribute='calculate_planning_percentage')|sum) / (teacher.evaluations|length) %}
+                                                <span class="badge bg-info">{{ "%.1f"|format(planning_avg) }}%</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if teacher.evaluations %}
+                                                {% set class_avg = (teacher.evaluations|map(attribute='calculate_class_percentage')|sum) / (teacher.evaluations|length) %}
+                                                <span class="badge bg-success">{{ "%.1f"|format(class_avg) }}%</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if teacher.evaluations %}
+                                                {% set planning_avg = (teacher.evaluations|map(attribute='calculate_planning_percentage')|sum) / (teacher.evaluations|length) %}
+                                                {% set class_avg = (teacher.evaluations|map(attribute='calculate_class_percentage')|sum) / (teacher.evaluations|length) %}
+                                                {% set overall_avg = (planning_avg + class_avg) / 2 %}
+                                                {% if overall_avg >= 80 %}
+                                                    <span class="badge bg-success">{{ "%.1f"|format(overall_avg) }}%</span>
+                                                {% elif overall_avg >= 60 %}
+                                                    <span class="badge bg-warning">{{ "%.1f"|format(overall_avg) }}%</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">{{ "%.1f"|format(overall_avg) }}%</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if teacher.evaluations %}
+                                                {% set latest_eval = teacher.evaluations|sort(attribute='evaluation_date', reverse=True)|first %}
+                                                <small>{{ latest_eval.evaluation_date.strftime('%d/%m/%Y') }}</small>
+                                            {% else %}
+                                                <span class="text-muted">Nunca</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" 
+                                                        onclick="generateIndividualReport({{ teacher.id }}, '{{ teacher.name }}')">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </button>
+                                                <a href="{{ url_for('new_evaluation') }}?teacher_id={{ teacher.id }}" 
+                                                   class="btn btn-outline-success">
+                                                    <i class="fas fa-plus"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum docente cadastrado</h5>
+                        <p class="text-muted">Cadastre docentes para visualizar relatórios.</p>
+                        <a href="{{ url_for('add_teacher') }}" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-1"></i>Cadastrar Docente
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Individual Report Modal -->
+<div class="modal fade" id="individualReportModal" tabindex="-1" aria-labelledby="individualReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="individualReportModalLabel">
+                    <i class="fas fa-file-pdf me-2"></i>Relatório Individual
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="individualReportForm" action="/reports/consolidated/0" method="GET">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="teacher_select" class="form-label">Selecionar Docente:</label>
+                        <select id="teacher_select" name="teacher_id" class="form-select" required>
+                            <option value="">Escolha um docente...</option>
+                            {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}">{{ teacher.name }} - {{ teacher.area }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">Data Inicial:</label>
+                            <input type="date" id="start_date" name="start_date" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">Data Final:</label>
+                            <input type="date" id="end_date" name="end_date" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <small>Se as datas não forem especificadas, serão incluídas todas as avaliações do docente.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-download me-1"></i>Gerar Relatório
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Chart -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Evolução do Desempenho
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" width="400" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function generateIndividualReport(teacherId, teacherName) {
+    document.getElementById('teacher_select').value = teacherId;
+    document.getElementById('individualReportForm').action = `/reports/consolidated/${teacherId}`;
+    new bootstrap.Modal(document.getElementById('individualReportModal')).show();
+}
+
+// Performance Chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    
+    // Sample data - in a real application, this would come from the server
+    const teachersData = [
+        {% for teacher in teachers %}
+            {
+                name: '{{ teacher.name }}',
+                planning: {% if teacher.evaluations %}{{ (teacher.evaluations|map(attribute='calculate_planning_percentage')|sum) / (teacher.evaluations|length) }}{% else %}0{% endif %},
+                class: {% if teacher.evaluations %}{{ (teacher.evaluations|map(attribute='calculate_class_percentage')|sum) / (teacher.evaluations|length) }}{% else %}0{% endif %}
+            }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    const labels = teachersData.map(t => t.name.split(' ')[0]); // First name only
+    const planningData = teachersData.map(t => t.planning);
+    const classData = teachersData.map(t => t.class);
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Planejamento',
+                    data: planningData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Condução da Aula',
+                    data: classData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Desempenho Médio por Docente'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            },
+            elements: {
+                bar: {
+                    borderRadius: 4
+                }
+            }
+        }
+    });
+});
+
+// Form validation
+document.getElementById('individualReportForm').addEventListener('submit', function(e) {
+    const teacherSelect = document.getElementById('teacher_select');
+    if (!teacherSelect.value) {
+        e.preventDefault();
+        alert('Por favor, selecione um docente.');
+        teacherSelect.focus();
+    }
+});
+
+// Auto-populate current month dates
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    // Set default date range to current month
+    // document.getElementById('start_date').value = firstDay.toISOString().split('T')[0];
+    // document.getElementById('end_date').value = lastDay.toISOString().split('T')[0];
+});
+</script>
+{% endblock %}
