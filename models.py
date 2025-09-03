@@ -76,7 +76,7 @@ class Evaluation(db.Model):
     id = db.Column(Integer, primary_key=True)
     teacher_id = db.Column(Integer, ForeignKey('teacher.id'), nullable=False)
     course_id = db.Column(Integer, ForeignKey('course.id'), nullable=False)
-    evaluator_id = db.Column(Integer, ForeignKey('evaluator.id'), nullable=False)
+    evaluator_id = db.Column(Integer, ForeignKey('evaluator.id'), nullable=True)
     
     # Evaluation period info
     evaluation_date = db.Column(DateTime, default=datetime.utcnow)

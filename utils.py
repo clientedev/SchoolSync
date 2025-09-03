@@ -55,7 +55,6 @@ Seu acompanhamento docente foi finalizado com as seguintes informações:
 Curso: {evaluation.course.name}
 Data: {evaluation.evaluation_date.strftime("%d/%m/%Y")}
 Período: {evaluation.period}
-Avaliador: {evaluation.evaluator.name}
 
 Planejamento: {evaluation.calculate_planning_percentage()}% atendido
 Condução da aula: {evaluation.calculate_class_percentage()}% atendido
@@ -96,8 +95,7 @@ def generate_evaluation_report(evaluation):
         ['Docente:', evaluation.teacher.name],
         ['Curso:', evaluation.course.name],
         ['Período:', evaluation.period],
-        ['Data:', evaluation.evaluation_date.strftime("%d/%m/%Y")],
-        ['Avaliador:', evaluation.evaluator.name]
+        ['Data:', evaluation.evaluation_date.strftime("%d/%m/%Y")]
     ]
     
     basic_table = Table(basic_info, colWidths=[2*inch, 4*inch])
