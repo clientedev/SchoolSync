@@ -313,7 +313,8 @@ def import_teachers_excel():
 def courses():
     """List all courses"""
     courses_list = Course.query.all()
-    return render_template('courses.html', courses=courses_list)
+    form = CourseForm()
+    return render_template('courses.html', courses=courses_list, form=form)
 
 @app.route('/courses/add', methods=['GET', 'POST'])
 @login_required

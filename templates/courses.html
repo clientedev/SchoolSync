@@ -9,9 +9,27 @@
             <h1>
                 <i class="fas fa-graduation-cap me-2"></i>Cursos
             </h1>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#courseModal">
-                <i class="fas fa-plus me-1"></i>Novo Curso
-            </button>
+            <div class="btn-group">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#courseModal">
+                    <i class="fas fa-plus me-1"></i>Novo Curso
+                </button>
+                <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Opções de importação</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('download_courses_template') }}">
+                            <i class="fas fa-download me-2"></i>Baixar Modelo Excel
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importModal">
+                            <i class="fas fa-file-excel me-2"></i>Importar Excel
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>
@@ -168,6 +186,52 @@
         </div>
     </div>
 </div>
+
+<!-- Import Excel Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="importForm" method="POST" action="{{ url_for('import_courses_excel') }}" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">
+                        <i class="fas fa-file-excel me-2"></i>Importar Cursos via Excel
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Antes de importar:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Baixe o modelo Excel clicando em "Baixar Modelo Excel"</li>
+                            <li>Preencha os dados dos cursos no arquivo</li>
+                            <li>Salve o arquivo e selecione-o abaixo</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="excel_file" class="form-label">
+                            <i class="fas fa-file me-1"></i>Arquivo Excel
+                        </label>
+                        <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xlsx,.xls" required>
+                        <div class="form-text">Formatos aceitos: .xlsx, .xls (máximo 10MB)</div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção:</strong> Cursos com nomes duplicados serão ignorados.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success" disabled>
+                        <i class="fas fa-upload me-1"></i>Importar Cursos
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -197,6 +261,79 @@ document.getElementById('courseModal').addEventListener('hidden.bs.modal', funct
     document.getElementById('modalTitle').textContent = 'Novo Curso';
     document.getElementById('courseForm').action = '/courses/add';
     document.getElementById('courseForm').reset();
+});
+
+// Import file validation and button control
+document.getElementById('excel_file').addEventListener('change', function() {
+    const file = this.files[0];
+    const submitBtn = document.querySelector('#importForm button[type="submit"]');
+    const existingInfo = document.getElementById('fileInfo');
+    
+    // Remove existing file info
+    if (existingInfo) {
+        existingInfo.remove();
+    }
+    
+    if (file) {
+        // Validate file type
+        const validTypes = ['.xlsx', '.xls', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+        const isValidType = validTypes.some(type => 
+            file.name.toLowerCase().endsWith(type) || file.type === type
+        );
+        
+        // Validate file size (10MB max)
+        const maxSize = 10 * 1024 * 1024;
+        const isValidSize = file.size <= maxSize;
+        
+        if (isValidType && isValidSize) {
+            // Create file info element
+            const fileInfo = document.createElement('div');
+            fileInfo.id = 'fileInfo';
+            fileInfo.className = 'alert alert-success mt-2';
+            fileInfo.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Arquivo selecionado:</strong> ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+            `;
+            this.parentElement.appendChild(fileInfo);
+            
+            submitBtn.disabled = false;
+        } else {
+            // Show error
+            const fileInfo = document.createElement('div');
+            fileInfo.id = 'fileInfo';
+            fileInfo.className = 'alert alert-danger mt-2';
+            
+            if (!isValidType) {
+                fileInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><strong>Erro:</strong> Formato de arquivo não suportado.';
+            } else if (!isValidSize) {
+                fileInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><strong>Erro:</strong> Arquivo muito grande (máximo 10MB).';
+            }
+            
+            this.parentElement.appendChild(fileInfo);
+            submitBtn.disabled = true;
+        }
+    } else {
+        submitBtn.disabled = true;
+    }
+});
+
+// Reset import form when modal is closed
+document.getElementById('importModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('importForm').reset();
+    const importBtn = document.querySelector('#importForm button[type="submit"]');
+    importBtn.disabled = true;
+    const infoElement = document.getElementById('fileInfo');
+    if (infoElement) {
+        infoElement.remove();
+    }
+});
+
+// Initialize import button as disabled
+document.addEventListener('DOMContentLoaded', function() {
+    const importBtn = document.querySelector('#importForm button[type="submit"]');
+    if (importBtn) {
+        importBtn.disabled = true;
+    }
 });
 </script>
 {% endblock %}
