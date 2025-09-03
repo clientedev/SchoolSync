@@ -527,6 +527,7 @@ def new_evaluation():
         evaluation = Evaluation(
             teacher_id=form.teacher_id.data,
             course_id=form.course_id.data,
+            evaluator_id=None,
             period=form.period.data,
             class_time=form.class_time.data,
             

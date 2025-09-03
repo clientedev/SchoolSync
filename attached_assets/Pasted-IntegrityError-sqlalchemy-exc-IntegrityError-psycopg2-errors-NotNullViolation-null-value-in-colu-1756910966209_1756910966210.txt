@@ -1,0 +1,100 @@
+IntegrityError
+sqlalchemy.exc.IntegrityError: (psycopg2.errors.NotNullViolation) null value in column "evaluator_id" of relation "evaluation" violates not-null constraint
+DETAIL:  Failing row contains (2, 4, 1, null, 2025-09-03 14:49:09.731105, Manhã, 18:30, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Ótimo Planejamento, Teste, Teste, null, null, f, 2025-09-03 14:49:09.731113, 2025-09-03 14:49:09.731115).
+
+[SQL: INSERT INTO evaluation (teacher_id, course_id, evaluator_id, evaluation_date, period, class_time, planning_schedule, planning_lesson_plan, planning_evaluation, planning_documents, planning_diversified, planning_local_work, planning_tools, planning_educational_portal, class_presentation, class_knowledge, class_student_performance, class_attendance, class_difficulties, class_theoretical_practical, class_previous_lesson, class_objectives, class_questions, class_content_assimilation, class_student_participation, class_recovery_process, class_school_pedagogy, class_learning_exercises, class_discipline, class_educational_orientation, class_teaching_strategies, class_machines_equipment, class_safety_procedures, planning_observations, class_observations, general_observations, teacher_signature_date, evaluator_signature_date, is_completed, created_at, updated_at) VALUES (%(teacher_id)s, %(course_id)s, %(evaluator_id)s, %(evaluation_date)s, %(period)s, %(class_time)s, %(planning_schedule)s, %(planning_lesson_plan)s, %(planning_evaluation)s, %(planning_documents)s, %(planning_diversified)s, %(planning_local_work)s, %(planning_tools)s, %(planning_educational_portal)s, %(class_presentation)s, %(class_knowledge)s, %(class_student_performance)s, %(class_attendance)s, %(class_difficulties)s, %(class_theoretical_practical)s, %(class_previous_lesson)s, %(class_objectives)s, %(class_questions)s, %(class_content_assimilation)s, %(class_student_participation)s, %(class_recovery_process)s, %(class_school_pedagogy)s, %(class_learning_exercises)s, %(class_discipline)s, %(class_educational_orientation)s, %(class_teaching_strategies)s, %(class_machines_equipment)s, %(class_safety_procedures)s, %(planning_observations)s, %(class_observations)s, %(general_observations)s, %(teacher_signature_date)s, %(evaluator_signature_date)s, %(is_completed)s, %(created_at)s, %(updated_at)s) RETURNING evaluation.id]
+[parameters: {'teacher_id': 4, 'course_id': 1, 'evaluator_id': None, 'evaluation_date': datetime.datetime(2025, 9, 3, 14, 49, 9, 731105), 'period': 'Manhã', 'class_time': '18:30', 'planning_schedule': 'Sim', 'planning_lesson_plan': 'Sim', 'planning_evaluation': 'Sim', 'planning_documents': 'Sim', 'planning_diversified': 'Sim', 'planning_local_work': 'Sim', 'planning_tools': 'Sim', 'planning_educational_portal': 'Sim', 'class_presentation': 'Sim', 'class_knowledge': 'Sim', 'class_student_performance': 'Sim', 'class_attendance': 'Sim', 'class_difficulties': 'Sim', 'class_theoretical_practical': 'Sim', 'class_previous_lesson': 'Sim', 'class_objectives': 'Sim', 'class_questions': 'Sim', 'class_content_assimilation': 'Sim', 'class_student_participation': 'Sim', 'class_recovery_process': 'Sim', 'class_school_pedagogy': 'Sim', 'class_learning_exercises': 'Sim', 'class_discipline': 'Sim', 'class_educational_orientation': 'Sim', 'class_teaching_strategies': 'Sim', 'class_machines_equipment': 'Sim', 'class_safety_procedures': 'Sim', 'planning_observations': 'Ótimo Planejamento', 'class_observations': 'Teste', 'general_observations': 'Teste', 'teacher_signature_date': None, 'evaluator_signature_date': None, 'is_completed': False, 'created_at': datetime.datetime(2025, 9, 3, 14, 49, 9, 731113), 'updated_at': datetime.datetime(2025, 9, 3, 14, 49, 9, 731115)}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+Traceback (most recent call last)
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+self.dialect.do_execute(
+^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+cursor.execute(statement, parameters)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The above exception was the direct cause of the following exception:
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 1536, in __call__
+return self.wsgi_app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/werkzeug/middleware/proxy_fix.py", line 183, in __call__
+return self.app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 1514, in wsgi_app
+response = self.handle_exception(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
+response = self.full_dispatch_request()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
+rv = self.handle_user_exception(e)
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
+rv = self.dispatch_request()
+     ^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
+return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/app/routes.py", line 571, in new_evaluation
+db.session.flush()  # Get the ID before commit
+^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/scoping.py", line 938, in flush
+return self._proxied.flush(objects=objects)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4345, in flush
+self._flush(objects)
+^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4480, in _flush
+with util.safe_reraise():
+     ^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+raise exc_value.with_traceback(exc_tb)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4441, in _flush
+flush_context.execute()
+^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+rec.execute(self)
+^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
+util.preloaded.orm_persistence.save_obj(
+^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py", line 93, in save_obj
+_emit_insert_statements(
+^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py", line 1233, in _emit_insert_statements
+result = connection.execute(
+         
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+return meth(
+       
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+return connection._execute_clauseelement(
+       
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+ret = self._execute_context(
+      
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+return self._exec_single_context(
+       
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+self._handle_dbapi_exception(
+^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+self.dialect.do_execute(
+^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+cursor.execute(statement, parameters)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.IntegrityError: (psycopg2.errors.NotNullViolation) null value in column "evaluator_id" of relation "evaluation" violates not-null constraint
+DETAIL: Failing row contains (2, 4, 1, null, 2025-09-03 14:49:09.731105, Manhã, 18:30, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Sim, Ótimo Planejamento, Teste, Teste, null, null, f, 2025-09-03 14:49:09.731113, 2025-09-03 14:49:09.731115).
+
+[SQL: INSERT INTO evaluation (teacher_id, course_id, evaluator_id, evaluation_date, period, class_time, planning_schedule, planning_lesson_plan, planning_evaluation, planning_documents, planning_diversified, planning_local_work, planning_tools, planning_educational_portal, class_presentation, class_knowledge, class_student_performance, class_attendance, class_difficulties, class_theoretical_practical, class_previous_lesson, class_objectives, class_questions, class_content_assimilation, class_student_participation, class_recovery_process, class_school_pedagogy, class_learning_exercises, class_discipline, class_educational_orientation, class_teaching_strategies, class_machines_equipment, class_safety_procedures, planning_observations, class_observations, general_observations, teacher_signature_date, evaluator_signature_date, is_completed, created_at, updated_at) VALUES (%(teacher_id)s, %(course_id)s, %(evaluator_id)s, %(evaluation_date)s, %(period)s, %(class_time)s, %(planning_schedule)s, %(planning_lesson_plan)s, %(planning_evaluation)s, %(planning_documents)s, %(planning_diversified)s, %(planning_local_work)s, %(planning_tools)s, %(planning_educational_portal)s, %(class_presentation)s, %(class_knowledge)s, %(class_student_performance)s, %(class_attendance)s, %(class_difficulties)s, %(class_theoretical_practical)s, %(class_previous_lesson)s, %(class_objectives)s, %(class_questions)s, %(class_content_assimilation)s, %(class_student_participation)s, %(class_recovery_process)s, %(class_school_pedagogy)s, %(class_learning_exercises)s, %(class_discipline)s, %(class_educational_orientation)s, %(class_teaching_strategies)s, %(class_machines_equipment)s, %(class_safety_procedures)s, %(planning_observations)s, %(class_observations)s, %(general_observations)s, %(teacher_signature_date)s, %(evaluator_signature_date)s, %(is_completed)s, %(created_at)s, %(updated_at)s) RETURNING evaluation.id]
+[parameters: {'teacher_id': 4, 'course_id': 1, 'evaluator_id': None, 'evaluation_date': datetime.datetime(2025, 9, 3, 14, 49, 9, 731105), 'period': 'Manhã', 'class_time': '18:30', 'planning_schedule': 'Sim', 'planning_lesson_plan': 'Sim', 'planning_evaluation': 'Sim', 'planning_documents': 'Sim', 'planning_diversified': 'Sim', 'planning_local_work': 'Sim', 'planning_tools': 'Sim', 'planning_educational_portal': 'Sim', 'class_presentation': 'Sim', 'class_knowledge': 'Sim', 'class_student_performance': 'Sim', 'class_attendance': 'Sim', 'class_difficulties': 'Sim', 'class_theoretical_practical': 'Sim', 'class_previous_lesson': 'Sim', 'class_objectives': 'Sim', 'class_questions': 'Sim', 'class_content_assimilation': 'Sim', 'class_student_participation': 'Sim', 'class_recovery_process': 'Sim', 'class_school_pedagogy': 'Sim', 'class_learning_exercises': 'Sim', 'class_discipline': 'Sim', 'class_educational_orientation': 'Sim', 'class_teaching_strategies': 'Sim', 'class_machines_equipment': 'Sim', 'class_safety_procedures': 'Sim', 'planning_observations': 'Ótimo Planejamento', 'class_observations': 'Teste', 'general_observations': 'Teste', 'teacher_signature_date': None, 'evaluator_signature_date': None, 'is_completed': False, 'created_at': datetime.datetime(2025, 9, 3, 14, 49, 9, 731113), 'updated_at': datetime.datetime(2025, 9, 3, 14, 49, 9, 731115)}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+The debugger caught an exception in your WSGI application. You can now look at the traceback which led to the error.
+To switch between the interactive traceback and the plaintext one, you can click on the "Traceback" headline. From the text traceback you can also create a paste of it.
+
