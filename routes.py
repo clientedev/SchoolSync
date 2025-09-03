@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from app import app, db
 from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment, User, Semester, CurricularUnit, ScheduledEvaluation, DigitalSignature
 from forms import TeacherForm, CourseForm, EvaluatorForm, EvaluationForm, LoginForm, UserForm, UserEditForm, ChangePasswordForm
-from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import, generate_courses_excel_template, process_courses_excel_import
+from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import, generate_courses_excel_template, process_courses_excel_import, generate_curricular_units_excel_template, process_curricular_units_excel_import
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -37,35 +37,86 @@ def logout():
 @login_required
 def index():
     """Dashboard - Main page"""
+    # Get current semester
+    current_semester = Semester.query.filter_by(is_active=True).first()
+    
     # Get statistics
     total_teachers = Teacher.query.count()
     total_evaluations = Evaluation.query.count()
     total_courses = Course.query.count()
     
-    # Recent evaluations
-    recent_evaluations = Evaluation.query.order_by(Evaluation.evaluation_date.desc()).limit(5).all()
+    # Semester-based statistics
+    semester_scheduled = 0
+    semester_completed = 0
+    semester_pending = 0
+    pending_alerts = []
+    overdue_alerts = []
     
-    # Teachers with no evaluations this month
-    start_of_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    teachers_without_evaluation = Teacher.query.filter(
-        ~Teacher.evaluations.any(Evaluation.evaluation_date >= start_of_month)
-    ).all()
+    if current_semester:
+        # Scheduled evaluations for the semester
+        scheduled_evaluations = ScheduledEvaluation.query.filter_by(
+            semester_id=current_semester.id
+        ).all()
+        
+        semester_scheduled = len(scheduled_evaluations)
+        semester_completed = len([se for se in scheduled_evaluations if se.is_completed])
+        semester_pending = semester_scheduled - semester_completed
+        
+        # Alerts: scheduled evaluations for current and past months that are not completed
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+        
+        for scheduled in scheduled_evaluations:
+            if not scheduled.is_completed:
+                # Check if it's for current/past months
+                if (scheduled.scheduled_year < current_year or 
+                    (scheduled.scheduled_year == current_year and scheduled.scheduled_month <= current_month)):
+                    
+                    if scheduled.scheduled_month == current_month:
+                        pending_alerts.append(scheduled)
+                    else:
+                        overdue_alerts.append(scheduled)
     
-    # Average scores
-    evaluations = Evaluation.query.all()
+    # Recent evaluations (completed)
+    recent_evaluations = Evaluation.query.filter_by(is_completed=True).order_by(
+        Evaluation.evaluation_date.desc()
+    ).limit(5).all()
+    
+    # Teachers without evaluations (not scheduled or no completed evaluations this semester)
+    teachers_without_evaluation = []
+    if current_semester:
+        all_teachers = Teacher.query.all()
+        for teacher in all_teachers:
+            # Check if teacher has any scheduled evaluation for this semester
+            has_scheduled = ScheduledEvaluation.query.filter_by(
+                teacher_id=teacher.id,
+                semester_id=current_semester.id
+            ).first()
+            
+            if not has_scheduled:
+                teachers_without_evaluation.append(teacher)
+    
+    # Average scores (only completed evaluations)
+    completed_evaluations = Evaluation.query.filter_by(is_completed=True).all()
     avg_planning = 0
     avg_class = 0
     
-    if evaluations:
-        avg_planning = sum(eval.calculate_planning_percentage() for eval in evaluations) / len(evaluations)
-        avg_class = sum(eval.calculate_class_percentage() for eval in evaluations) / len(evaluations)
+    if completed_evaluations:
+        avg_planning = sum(eval.calculate_planning_percentage() for eval in completed_evaluations) / len(completed_evaluations)
+        avg_class = sum(eval.calculate_class_percentage() for eval in completed_evaluations) / len(completed_evaluations)
     
-    return render_template('dashboard.html',
+    return render_template('index.html',
                          total_teachers=total_teachers,
                          total_evaluations=total_evaluations,
                          total_courses=total_courses,
+                         current_semester=current_semester,
+                         semester_scheduled=semester_scheduled,
+                         semester_completed=semester_completed,
+                         semester_pending=semester_pending,
                          recent_evaluations=recent_evaluations,
                          teachers_without_evaluation=teachers_without_evaluation,
+                         pending_alerts=pending_alerts,
+                         overdue_alerts=overdue_alerts,
                          avg_planning=round(avg_planning, 1),
                          avg_class=round(avg_class, 1))
 
@@ -194,15 +245,36 @@ def add_teacher():
         
         # Create user account automatically for teacher
         teacher_user = User()  # type: ignore
-        teacher_user.username = form.email.data if form.email.data else f"{(form.name.data or '').lower().replace(' ', '.')}"
+        
+        # Generate username from email or name
+        if form.email.data:
+            username = form.email.data.split('@')[0].lower().replace('.', '_').replace('-', '_')
+        else:
+            # Create username from name
+            name_parts = (form.name.data or '').lower().split()
+            if len(name_parts) >= 2:
+                username = f"{name_parts[0]}.{name_parts[-1]}"
+            else:
+                username = name_parts[0] if name_parts else 'docente'
+        
+        # Ensure username is unique
+        base_username = username
+        counter = 1
+        while User.query.filter_by(username=username).first():
+            username = f"{base_username}_{counter}"
+            counter += 1
+        
+        teacher_user.username = username
         teacher_user.name = form.name.data
         teacher_user.role = 'teacher'
         teacher_user.email = form.email.data
+        teacher_user.created_by = current_user.id
         
-        # Generate default password (teacher can change later)
+        # Generate secure password (teacher can change later)
         import secrets
         import string
-        password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
+        password_chars = string.ascii_letters + string.digits
+        password = ''.join(secrets.choice(password_chars) for _ in range(10))
         teacher_user.set_password(password)
         
         db.session.add(teacher_user)
@@ -212,10 +284,32 @@ def add_teacher():
         db.session.add(teacher)
         db.session.commit()
         
-        flash(f'Professor {teacher.name} cadastrado com sucesso! Conta criada - Login: {teacher_user.username}, Senha: {password}', 'success')
-        return redirect(url_for('teachers'))
+        # Store password for display (in a real system, you might want to email this)
+        session['new_teacher_credentials'] = {
+            'name': teacher.name,
+            'username': username,
+            'password': password
+        }
+        
+        flash(f'Professor {teacher.name} cadastrado com sucesso! Conta criada.', 'success')
+        return redirect(url_for('show_teacher_credentials'))
     
     return render_template('teachers.html', form=form, teachers=Teacher.query.all())
+
+@app.route('/teacher_credentials')
+@login_required
+def show_teacher_credentials():
+    """Show new teacher credentials"""
+    if not current_user.is_admin():
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('index'))
+    
+    credentials = session.pop('new_teacher_credentials', None)
+    if not credentials:
+        flash('Nenhuma credencial de docente disponível.', 'warning')
+        return redirect(url_for('teachers'))
+    
+    return render_template('teacher_credentials.html', credentials=credentials)
 
 @app.route('/teachers/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -898,6 +992,50 @@ def teacher_sign_evaluation(id):
     
     return jsonify({'success': True, 'message': 'Avaliação assinada com sucesso!'})
 
+@app.route('/evaluator_sign_evaluation/<int:id>', methods=['POST'])
+@login_required
+def evaluator_sign_evaluation(id):
+    """Evaluator signs evaluation digitally"""
+    if not (current_user.is_admin() or current_user.role == 'evaluator'):
+        return jsonify({'error': 'Acesso negado'}), 403
+    
+    evaluation = Evaluation.query.get_or_404(id)
+    
+    if evaluation.evaluator_signed:
+        return jsonify({'error': 'Avaliação já foi assinada pelo avaliador'}), 400
+    
+    signature_data = (request.json or {}).get('signature')
+    if not signature_data:
+        return jsonify({'error': 'Assinatura não fornecida'}), 400
+    
+    # Save digital signature
+    signature = DigitalSignature()  # type: ignore
+    signature.evaluation_id = evaluation.id
+    signature.user_id = current_user.id
+    signature.signature_data = signature_data
+    signature.signature_type = 'evaluator'
+    signature.ip_address = request.environ.get('REMOTE_ADDR')
+    
+    # Mark evaluation as signed by evaluator
+    evaluation.evaluator_signed = True
+    evaluation.evaluator_signature_date = datetime.utcnow()
+    
+    # Check if both teacher and evaluator have signed
+    if evaluation.teacher_signed and evaluation.evaluator_signed:
+        evaluation.is_completed = True
+        
+        # Mark scheduled evaluation as completed if exists
+        if evaluation.scheduled_evaluation_id:
+            scheduled = ScheduledEvaluation.query.get(evaluation.scheduled_evaluation_id)
+            if scheduled:
+                scheduled.is_completed = True
+                scheduled.completed_at = datetime.utcnow()
+    
+    db.session.add(signature)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Avaliação assinada pelo avaliador com sucesso!'})
+
 # Scheduling Routes
 @app.route('/scheduling')
 @login_required
@@ -1229,6 +1367,88 @@ def delete_curricular_unit(id):
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'Unidade curricular excluída com sucesso!'})
+
+@app.route('/curricular_units/template')
+@login_required
+def download_curricular_units_template():
+    """Download Excel template for curricular units import"""
+    if not current_user.is_admin():
+        flash('Acesso negado. Apenas administradores podem gerenciar unidades curriculares.', 'error')
+        return redirect(url_for('index'))
+    
+    try:
+        template_buffer = generate_curricular_units_excel_template()
+        return send_file(
+            template_buffer,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='modelo_importacao_unidades_curriculares.xlsx'
+        )
+    except Exception as e:
+        flash(f'Erro ao gerar modelo: {str(e)}', 'error')
+        return redirect(url_for('curricular_units'))
+
+@app.route('/curricular_units/import', methods=['POST'])
+@login_required
+def import_curricular_units_excel():
+    """Import curricular units from Excel file"""
+    if not current_user.is_admin():
+        flash('Acesso negado. Apenas administradores podem gerenciar unidades curriculares.', 'error')
+        return redirect(url_for('index'))
+    
+    if 'excel_file' not in request.files:
+        flash('Nenhum arquivo selecionado.', 'error')
+        return redirect(url_for('curricular_units'))
+    
+    file = request.files['excel_file']
+    if file.filename == '':
+        flash('Nenhum arquivo selecionado.', 'error')
+        return redirect(url_for('curricular_units'))
+    
+    if not file.filename or not file.filename.lower().endswith(('.xlsx', '.xls')):
+        flash('Por favor, selecione um arquivo Excel (.xlsx ou .xls).', 'error')
+        return redirect(url_for('curricular_units'))
+    
+    try:
+        # Save uploaded file temporarily
+        file_info = save_uploaded_file(file)
+        if not file_info:
+            flash('Erro ao salvar arquivo temporário.', 'error')
+            return redirect(url_for('curricular_units'))
+        
+        # Process the Excel file
+        results = process_curricular_units_excel_import(file_info['file_path'])
+        
+        # Clean up temporary file
+        try:
+            os.remove(file_info['file_path'])
+        except:
+            pass
+        
+        # Show results
+        if results['success'] > 0:
+            flash(f'Importação concluída! {results["success"]} unidade(s) curricular(es) importada(s) com sucesso.', 'success')
+        
+        if results['warnings']:
+            for warning in results['warnings'][:5]:  # Show first 5 warnings
+                flash(warning, 'warning')
+            if len(results['warnings']) > 5:
+                flash(f'... e mais {len(results["warnings"]) - 5} avisos.', 'warning')
+        
+        if results['errors']:
+            for error in results['errors'][:5]:  # Show first 5 errors
+                flash(error, 'error')
+            if len(results['errors']) > 5:
+                flash(f'... e mais {len(results["errors"]) - 5} erros.', 'error')
+        
+        if results['success'] == 0 and results['errors']:
+            flash('Nenhuma unidade curricular foi importada devido aos erros encontrados.', 'error')
+        
+    except Exception as e:
+        flash(f'Erro ao processar arquivo Excel: {str(e)}', 'error')
+        current_app.logger.error(f"Excel import error: {str(e)}")
+    
+    return redirect(url_for('curricular_units'))
 
 @app.route('/curricular_units/toggle_active/<int:id>', methods=['POST'])
 @login_required

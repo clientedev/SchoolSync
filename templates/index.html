@@ -11,10 +11,23 @@
     </div>
 </div>
 
+<!-- Semester Overview -->
+{% if current_semester %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="fas fa-calendar-alt me-2"></i>
+            <strong>Semestre Ativo:</strong> {{ current_semester.name }} 
+            ({{ current_semester.start_date.strftime('%d/%m/%Y') }} - {{ current_semester.end_date.strftime('%d/%m/%Y') }})
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
-        <div class="card bg-primary">
+        <div class="card bg-primary text-white">
             <div class="card-body text-center">
                 <i class="fas fa-user-tie fa-2x mb-2"></i>
                 <h3>{{ total_teachers }}</h3>
@@ -23,45 +36,76 @@
         </div>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="card bg-success">
+        <div class="card bg-success text-white">
             <div class="card-body text-center">
                 <i class="fas fa-clipboard-check fa-2x mb-2"></i>
-                <h3>{{ total_evaluations }}</h3>
-                <p class="card-text">Avaliações</p>
+                <h3>{{ semester_completed }}</h3>
+                <p class="card-text">Avaliações Concluídas</p>
             </div>
         </div>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="card bg-info">
+        <div class="card bg-warning text-white">
             <div class="card-body text-center">
-                <i class="fas fa-graduation-cap fa-2x mb-2"></i>
-                <h3>{{ total_courses }}</h3>
-                <p class="card-text">Cursos</p>
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h3>{{ semester_pending }}</h3>
+                <p class="card-text">Avaliações Pendentes</p>
             </div>
         </div>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="card bg-warning">
+        <div class="card bg-info text-white">
             <div class="card-body text-center">
-                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                <h3>{{ teachers_without_evaluation|length }}</h3>
-                <p class="card-text">Sem Avaliação (Mês)</p>
+                <i class="fas fa-calendar-plus fa-2x mb-2"></i>
+                <h3>{{ semester_scheduled }}</h3>
+                <p class="card-text">Total Agendadas</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Performance Overview -->
+<!-- Progress Overview -->
 <div class="row mb-4">
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-chart-line me-2"></i>Avaliações por Mês
+                    <i class="fas fa-chart-pie me-2"></i>Progresso das Avaliações - {{ current_semester.name if current_semester else 'Nenhum Semestre Ativo' }}
                 </h5>
             </div>
             <div class="card-body">
-                <canvas id="monthlyChart" width="400" height="200"></canvas>
+                {% if current_semester and semester_scheduled > 0 %}
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <h2 class="text-success">{{ semester_completed }}</h2>
+                        <p class="text-muted">Concluídas</p>
+                    </div>
+                    <div class="col-6">
+                        <h2 class="text-warning">{{ semester_pending }}</h2>
+                        <p class="text-muted">Pendentes</p>
+                    </div>
+                </div>
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{ (semester_completed / semester_scheduled * 100) if semester_scheduled > 0 else 0 }}%"
+                         aria-valuenow="{{ semester_completed }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="{{ semester_scheduled }}">
+                        {{ '%.1f'|format(semester_completed / semester_scheduled * 100) if semester_scheduled > 0 else '0' }}% Concluído
+                    </div>
+                </div>
+                <p class="mt-2 text-center text-muted">
+                    <small>{{ semester_completed }} de {{ semester_scheduled }} avaliações concluídas</small>
+                </p>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Nenhuma avaliação agendada para este semestre.</p>
+                    <a href="{{ url_for('scheduling') }}" class="btn btn-primary">
+                        <i class="fas fa-calendar-plus"></i> Agendar Avaliações
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -151,32 +195,84 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-bell me-2"></i>Alertas
+                    <i class="fas fa-bell me-2"></i>Alertas e Pendências
                 </h5>
             </div>
             <div class="card-body">
-                <h6 class="text-warning">
-                    <i class="fas fa-exclamation-triangle me-1"></i>
-                    Sem Avaliação este Mês
-                </h6>
-                {% if teachers_without_evaluation %}
+                <!-- Overdue Alerts -->
+                {% if overdue_alerts %}
+                <div class="mb-3">
+                    <h6 class="text-danger">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        Avaliações em Atraso ({{ overdue_alerts|length }})
+                    </h6>
                     <ul class="list-unstyled mb-0">
-                        {% for teacher in teachers_without_evaluation[:5] %}
-                            <li class="mb-1">
-                                <small class="text-muted">{{ teacher.name }}</small>
-                            </li>
+                        {% for alert in overdue_alerts[:3] %}
+                        <li class="mb-1">
+                            <small class="text-danger">
+                                {{ alert.teacher.name }} - 
+                                {{ ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][alert.scheduled_month] }}/{{ alert.scheduled_year }}
+                            </small>
+                        </li>
                         {% endfor %}
-                        {% if teachers_without_evaluation|length > 5 %}
-                            <li class="text-muted">
-                                <small>... e mais {{ teachers_without_evaluation|length - 5 }} docentes</small>
-                            </li>
+                        {% if overdue_alerts|length > 3 %}
+                        <li class="text-danger">
+                            <small>... e mais {{ overdue_alerts|length - 3 }} em atraso</small>
+                        </li>
                         {% endif %}
                     </ul>
-                {% else %}
-                    <p class="text-success mb-0">
-                        <i class="fas fa-check-circle me-1"></i>
-                        Todos os docentes avaliados!
-                    </p>
+                </div>
+                {% endif %}
+
+                <!-- Current Month Pending -->
+                {% if pending_alerts %}
+                <div class="mb-3">
+                    <h6 class="text-warning">
+                        <i class="fas fa-clock me-1"></i>
+                        Pendentes Este Mês ({{ pending_alerts|length }})
+                    </h6>
+                    <ul class="list-unstyled mb-0">
+                        {% for alert in pending_alerts[:3] %}
+                        <li class="mb-1">
+                            <small class="text-warning">{{ alert.teacher.name }}</small>
+                        </li>
+                        {% endfor %}
+                        {% if pending_alerts|length > 3 %}
+                        <li class="text-warning">
+                            <small>... e mais {{ pending_alerts|length - 3 }} pendentes</small>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- Teachers without scheduled evaluations -->
+                {% if teachers_without_evaluation %}
+                <div class="mb-3">
+                    <h6 class="text-info">
+                        <i class="fas fa-user-plus me-1"></i>
+                        Sem Agendamento ({{ teachers_without_evaluation|length }})
+                    </h6>
+                    <ul class="list-unstyled mb-0">
+                        {% for teacher in teachers_without_evaluation[:3] %}
+                        <li class="mb-1">
+                            <small class="text-info">{{ teacher.name }}</small>
+                        </li>
+                        {% endfor %}
+                        {% if teachers_without_evaluation|length > 3 %}
+                        <li class="text-info">
+                            <small>... e mais {{ teachers_without_evaluation|length - 3 }} docentes</small>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if not overdue_alerts and not pending_alerts and not teachers_without_evaluation %}
+                <p class="text-success mb-0 text-center">
+                    <i class="fas fa-check-circle me-1"></i>
+                    Tudo em dia!
+                </p>
                 {% endif %}
             </div>
         </div>

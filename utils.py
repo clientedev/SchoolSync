@@ -648,3 +648,126 @@ def process_courses_excel_import(file_path):
             'errors': [f'Erro ao processar arquivo Excel: {str(e)}'],
             'warnings': []
         }
+
+def generate_curricular_units_excel_template():
+    """Generate Excel template for curricular units import"""
+    from io import BytesIO
+    import pandas as pd
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils.dataframe import dataframe_to_rows
+    
+    buffer = BytesIO()
+    
+    # Create sample data with headers
+    data = {
+        "Nome": ["Eletrônica Digital I", "Programação Web I", "Circuitos Elétricos"],
+        "Código": ["ELD001", "PWB001", "CEL001"],
+        "Curso": ["Técnico em Eletrônica", "Técnico em Informática", "Técnico em Eletrônica"],
+        "Carga Horária": [80, 60, 120],
+        "Descrição": ["Fundamentos de eletrônica digital", "Desenvolvimento de páginas web", "Conceitos básicos de circuitos elétricos"]
+    }
+    
+    df = pd.DataFrame(data)
+    
+    # Create workbook and worksheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Unidades Curriculares"
+    
+    # Add header row
+    for r in dataframe_to_rows(df, index=False, header=True):
+        ws.append(r)
+    
+    # Style the header row
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Save to buffer
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+def process_curricular_units_excel_import(file_path):
+    """Process Excel file and import curricular units"""
+    import pandas as pd
+    from models import CurricularUnit, Course
+    from app import db
+    
+    try:
+        # Read Excel file
+        df = pd.read_excel(file_path, sheet_name="Unidades Curriculares")
+        
+        results = {
+            "success": 0,
+            "errors": [],
+            "warnings": []
+        }
+        
+        for index, row in df.iterrows():
+            try:
+                # Skip empty rows
+                if pd.isna(row.get("Nome", "")) or str(row.get("Nome", "")).strip() == "":
+                    continue
+                
+                # Extract data
+                name = str(row["Nome"]).strip()
+                code = str(row.get("Código", "")).strip() if not pd.isna(row.get("Código")) else ""
+                course_name = str(row.get("Curso", "")).strip() if not pd.isna(row.get("Curso")) else ""
+                description = str(row.get("Descrição", "")).strip() if not pd.isna(row.get("Descrição")) else ""
+                
+                # Validate required fields
+                if not name:
+                    results["errors"].append(f"Linha {index + 2}: Nome é obrigatório")
+                    continue
+                
+                if not course_name:
+                    results["errors"].append(f"Linha {index + 2}: Curso é obrigatório")
+                    continue
+                
+                # Find course
+                course = Course.query.filter_by(name=course_name).first()
+                if not course:
+                    results["errors"].append(f"Linha {index + 2}: Curso \"{course_name}\" não encontrado")
+                    continue
+                
+                # Check if curricular unit already exists
+                existing_unit = CurricularUnit.query.filter_by(name=name, course_id=course.id).first()
+                if existing_unit:
+                    results["warnings"].append(f"Linha {index + 2}: Unidade curricular \"{name}\" já existe para o curso \"{course_name}\", pulando...")
+                    continue
+                
+                # Create new curricular unit
+                unit = CurricularUnit(
+                    name=name,
+                    code=code if code else None,
+                    course_id=course.id,
+                    description=description if description else None,
+                    is_active=True
+                )
+                
+                db.session.add(unit)
+                results["success"] += 1
+                
+            except Exception as e:
+                results["errors"].append(f"Linha {index + 2}: Erro ao processar - {str(e)}")
+        
+        # Commit all changes
+        if results["success"] > 0:
+            db.session.commit()
+        
+        return results
+        
+    except Exception as e:
+        db.session.rollback()
+        return {
+            "success": 0,
+            "errors": [f"Erro ao processar arquivo Excel: {str(e)}"],
+            "warnings": []
+        }
+
