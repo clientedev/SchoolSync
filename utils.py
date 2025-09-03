@@ -295,6 +295,7 @@ def generate_teachers_excel_template():
         'Carga Horária': [40, 30],
         'Email': ['joao.silva@senai.br', 'maria.santos@senai.br'],
         'Telefone': ['11987654321', '11876543210'],
+        'Observações': ['Excelente didática, pontual', 'Muito dedicada, inovadora'],
         'Cursos': ['Técnico em Eletrônica, Técnico em Automação', 'Técnico em Informática']
     }
     
@@ -343,6 +344,7 @@ def generate_teachers_excel_template():
         ["5. Carga Horária: número de horas por semana"],
         ["6. Email: formato válido (ex: nome@senai.br)"],
         ["7. Telefone: apenas números (ex: 11987654321)"],
+        ["8. Observações: informações adicionais sobre o docente"],
         [""],
         ["IMPORTANTE:"],
         ["- Não altere os nomes das colunas"],
@@ -420,6 +422,7 @@ def process_teachers_excel_import(file_path):
                 
                 email = str(row.get('Email', '')).strip() if not pd.isna(row.get('Email')) else ''
                 phone = str(row.get('Telefone', '')).strip() if not pd.isna(row.get('Telefone')) else ''
+                observations = str(row.get('Observações', '')).strip() if not pd.isna(row.get('Observações')) else ''
                 courses_str = str(row.get('Cursos', '')).strip() if not pd.isna(row.get('Cursos')) else ''
                 
                 # Validate required fields
@@ -444,7 +447,8 @@ def process_teachers_excel_import(file_path):
                     subjects=subjects,
                     workload=workload if workload and workload > 0 else None,
                     email=email if email and '@' in email else None,
-                    phone=phone if phone else None
+                    phone=phone if phone else None,
+                    observations=observations if observations else None
                 )
                 
                 db.session.add(teacher)
@@ -458,6 +462,176 @@ def process_teachers_excel_import(file_path):
                         if not course:
                             results['warnings'].append(f'Linha {index + 2}: Curso "{course_name}" não encontrado para o docente "{name}"')
                 
+                results['success'] += 1
+                
+            except Exception as e:
+                results['errors'].append(f'Linha {index + 2}: Erro ao processar - {str(e)}')
+        
+        # Commit all changes
+        if results['success'] > 0:
+            db.session.commit()
+        
+        return results
+        
+    except Exception as e:
+        db.session.rollback()
+        return {
+            'success': 0,
+            'errors': [f'Erro ao processar arquivo Excel: {str(e)}'],
+            'warnings': []
+        }
+
+def generate_courses_excel_template():
+    """Generate Excel template for course import"""
+    buffer = BytesIO()
+    
+    # Create sample data with headers
+    data = {
+        'Nome': ['Técnico em Eletrônica', 'Técnico em Informática'],
+        'Período': ['1° Sem/25', '2° Sem/25'],
+        'Componente Curricular': ['Eletrônica Digital', 'Programação Web'],
+        'Código da Turma': ['ELT001', 'INF002']
+    }
+    
+    df = pd.DataFrame(data)
+    
+    # Create workbook and worksheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Cursos"
+    
+    # Add header row
+    for r in dataframe_to_rows(df, index=False, header=True):
+        ws.append(r)
+    
+    # Style the header row
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Add instructions sheet
+    instructions_ws = wb.create_sheet("Instruções")
+    instructions = [
+        ["INSTRUÇÕES PARA IMPORTAÇÃO DE CURSOS"],
+        [""],
+        ["1. Preencha os dados dos cursos na aba 'Cursos'"],
+        ["2. Campos obrigatórios: Nome, Período, Componente Curricular"],
+        ["3. Nome: nome completo do curso (ex: Técnico em Eletrônica)"],
+        ["4. Período: período letivo (ex: 1° Sem/25, 2° Sem/25)"],
+        ["5. Componente Curricular: disciplina específica"],
+        ["6. Código da Turma: código identificador da turma (opcional)"],
+        [""],
+        ["IMPORTANTE:"],
+        ["- Não altere os nomes das colunas"],
+        ["- Mantenha o formato Excel (.xlsx)"],
+        ["- Remova as linhas de exemplo antes de importar seus dados"],
+        ["- Evite duplicação de cursos com mesmo nome e período"],
+    ]
+    
+    for row in instructions:
+        instructions_ws.append(row)
+    
+    # Style instructions
+    instructions_ws['A1'].font = Font(bold=True, size=14)
+    instructions_ws['A1'].fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    instructions_ws['A1'].font = Font(color="FFFFFF", bold=True, size=14)
+    
+    for i in range(10, 14):  # Important section
+        instructions_ws[f'A{i}'].font = Font(bold=True)
+    
+    # Auto-adjust column width for instructions
+    for column in instructions_ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 80)
+        instructions_ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Save to buffer
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+def process_courses_excel_import(file_path):
+    """Process Excel file and import courses"""
+    from models import Course
+    from app import db
+    
+    try:
+        # Read Excel file
+        df = pd.read_excel(file_path, sheet_name='Cursos')
+        
+        # Clean column names
+        df.columns = df.columns.str.strip()
+        
+        results = {
+            'success': 0,
+            'errors': [],
+            'warnings': []
+        }
+        
+        for index, row in df.iterrows():
+            try:
+                # Skip empty rows
+                if pd.isna(row.get('Nome', '')) or str(row.get('Nome', '')).strip() == '':
+                    continue
+                
+                # Extract data with defaults
+                name = str(row['Nome']).strip()
+                period = str(row.get('Período', '')).strip() if not pd.isna(row.get('Período')) else ''
+                curriculum_component = str(row.get('Componente Curricular', '')).strip() if not pd.isna(row.get('Componente Curricular')) else ''
+                class_code = str(row.get('Código da Turma', '')).strip() if not pd.isna(row.get('Código da Turma')) else ''
+                
+                # Validate required fields
+                if not name:
+                    results['errors'].append(f'Linha {index + 2}: Nome é obrigatório')
+                    continue
+                
+                if not period:
+                    results['errors'].append(f'Linha {index + 2}: Período é obrigatório')
+                    continue
+                
+                if not curriculum_component:
+                    results['errors'].append(f'Linha {index + 2}: Componente Curricular é obrigatório')
+                    continue
+                
+                # Check if course already exists (same name and period)
+                existing_course = Course.query.filter_by(name=name, period=period).first()
+                if existing_course:
+                    results['warnings'].append(f'Linha {index + 2}: Curso "{name}" no período "{period}" já existe, pulando...')
+                    continue
+                
+                # Create new course
+                course = Course(
+                    name=name,
+                    period=period,
+                    curriculum_component=curriculum_component,
+                    class_code=class_code if class_code else None
+                )
+                
+                db.session.add(course)
                 results['success'] += 1
                 
             except Exception as e:

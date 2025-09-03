@@ -1,12 +1,40 @@
 import os
-from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, current_app
+from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, session
+from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime, timedelta
 from app import app, db
-from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment
-from forms import TeacherForm, CourseForm, EvaluatorForm, EvaluationForm
-from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import
+from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment, User
+from forms import TeacherForm, CourseForm, EvaluatorForm, EvaluationForm, LoginForm, UserForm, UserEditForm, ChangePasswordForm
+from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import, generate_courses_excel_template, process_courses_excel_import
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page"""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data) and user.is_active:
+            login_user(user)
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('index'))
+        else:
+            flash('Usuário ou senha inválidos.', 'error')
+    
+    return render_template('login.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    """Logout user"""
+    logout_user()
+    flash('Você foi desconectado com sucesso.', 'info')
+    return redirect(url_for('login'))
 
 @app.route('/')
+@login_required
 def index():
     """Dashboard - Main page"""
     # Get statistics
@@ -41,13 +69,116 @@ def index():
                          avg_planning=round(avg_planning, 1),
                          avg_class=round(avg_class, 1))
 
+@app.route('/users')
+@login_required
+def users():
+    """List all users (admin only)"""
+    if not current_user.is_admin():
+        flash('Acesso negado. Apenas administradores podem gerenciar usuários.', 'error')
+        return redirect(url_for('index'))
+    
+    users_list = User.query.all()
+    return render_template('users.html', users=users_list)
+
+@app.route('/users/add', methods=['GET', 'POST'])
+@login_required
+def add_user():
+    """Add new user (admin only)"""
+    if not current_user.is_admin():
+        flash('Acesso negado. Apenas administradores podem criar usuários.', 'error')
+        return redirect(url_for('index'))
+    
+    form = UserForm()
+    
+    if form.validate_on_submit():
+        # Check if username already exists
+        existing_user = User.query.filter_by(username=form.username.data).first()
+        if existing_user:
+            flash('Nome de usuário já existe. Escolha outro.', 'error')
+            return render_template('users.html', form=form, users=User.query.all())
+        
+        user = User(
+            username=form.username.data,
+            name=form.name.data,
+            role=form.role.data,
+            email=form.email.data,
+            created_by=current_user.id
+        )
+        user.set_password(form.password.data)
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        flash(f'Usuário {user.name} criado com sucesso!', 'success')
+        return redirect(url_for('users'))
+    
+    return render_template('users.html', form=form, users=User.query.all())
+
+@app.route('/users/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_user(id):
+    """Edit user (admin only)"""
+    if not current_user.is_admin():
+        flash('Acesso negado. Apenas administradores podem editar usuários.', 'error')
+        return redirect(url_for('index'))
+    
+    user = User.query.get_or_404(id)
+    form = UserEditForm(obj=user)
+    
+    if form.validate_on_submit():
+        # Check if username already exists (excluding current user)
+        existing_user = User.query.filter(User.username == form.username.data, User.id != user.id).first()
+        if existing_user:
+            flash('Nome de usuário já existe. Escolha outro.', 'error')
+            return render_template('users.html', form=form, user=user, users=User.query.all())
+        
+        user.username = form.username.data
+        user.name = form.name.data
+        user.role = form.role.data
+        user.email = form.email.data
+        user.is_active = form.is_active.data == 'True'
+        
+        db.session.commit()
+        
+        flash(f'Usuário {user.name} atualizado com sucesso!', 'success')
+        return redirect(url_for('users'))
+    
+    return render_template('users.html', form=form, user=user, users=User.query.all())
+
+@app.route('/users/change-password/<int:id>', methods=['GET', 'POST'])
+@login_required
+def change_user_password(id):
+    """Change user password (admin only or own password)"""
+    user = User.query.get_or_404(id)
+    
+    # Admin can change any password, user can only change their own
+    if not (current_user.is_admin() or current_user.id == user.id):
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('index'))
+    
+    form = ChangePasswordForm()
+    
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        db.session.commit()
+        
+        flash('Senha alterada com sucesso!', 'success')
+        if current_user.is_admin():
+            return redirect(url_for('users'))
+        else:
+            return redirect(url_for('index'))
+    
+    return render_template('change_password.html', form=form, user=user)
+
 @app.route('/teachers')
+@login_required
 def teachers():
     """List all teachers"""
     teachers_list = Teacher.query.all()
     return render_template('teachers.html', teachers=teachers_list)
 
 @app.route('/teachers/add', methods=['GET', 'POST'])
+@login_required
 def add_teacher():
     """Add new teacher"""
     form = TeacherForm()
@@ -59,7 +190,8 @@ def add_teacher():
             subjects=form.subjects.data,
             workload=form.workload.data,
             email=form.email.data,
-            phone=form.phone.data
+            phone=form.phone.data,
+            observations=form.observations.data
         )
         
         db.session.add(teacher)
@@ -71,6 +203,7 @@ def add_teacher():
     return render_template('teachers.html', form=form, teachers=Teacher.query.all())
 
 @app.route('/teachers/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_teacher(id):
     """Edit teacher"""
     teacher = Teacher.query.get_or_404(id)
@@ -86,6 +219,7 @@ def edit_teacher(id):
     return render_template('teachers.html', form=form, teacher=teacher, teachers=Teacher.query.all())
 
 @app.route('/teachers/delete/<int:id>')
+@login_required
 def delete_teacher(id):
     """Delete teacher"""
     teacher = Teacher.query.get_or_404(id)
@@ -101,6 +235,7 @@ def delete_teacher(id):
     return redirect(url_for('teachers'))
 
 @app.route('/teachers/template')
+@login_required
 def download_teachers_template():
     """Download Excel template for teacher import"""
     try:
@@ -116,6 +251,7 @@ def download_teachers_template():
         return redirect(url_for('teachers'))
 
 @app.route('/teachers/import', methods=['POST'])
+@login_required
 def import_teachers_excel():
     """Import teachers from Excel file"""
     if 'excel_file' not in request.files:
@@ -173,12 +309,14 @@ def import_teachers_excel():
     return redirect(url_for('teachers'))
 
 @app.route('/courses')
+@login_required
 def courses():
     """List all courses"""
     courses_list = Course.query.all()
     return render_template('courses.html', courses=courses_list)
 
 @app.route('/courses/add', methods=['GET', 'POST'])
+@login_required
 def add_course():
     """Add new course"""
     form = CourseForm()
@@ -200,6 +338,7 @@ def add_course():
     return render_template('courses.html', form=form, courses=Course.query.all())
 
 @app.route('/courses/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_course(id):
     """Edit course"""
     course = Course.query.get_or_404(id)
@@ -215,6 +354,7 @@ def edit_course(id):
     return render_template('courses.html', form=form, course=course, courses=Course.query.all())
 
 @app.route('/courses/delete/<int:id>')
+@login_required
 def delete_course(id):
     """Delete course"""
     course = Course.query.get_or_404(id)
@@ -229,13 +369,89 @@ def delete_course(id):
     
     return redirect(url_for('courses'))
 
+@app.route('/courses/template')
+@login_required
+def download_courses_template():
+    """Download Excel template for course import"""
+    try:
+        template_buffer = generate_courses_excel_template()
+        return send_file(
+            template_buffer,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='modelo_importacao_cursos.xlsx'
+        )
+    except Exception as e:
+        flash(f'Erro ao gerar modelo: {str(e)}', 'error')
+        return redirect(url_for('courses'))
+
+@app.route('/courses/import', methods=['POST'])
+@login_required
+def import_courses_excel():
+    """Import courses from Excel file"""
+    if 'excel_file' not in request.files:
+        flash('Nenhum arquivo selecionado.', 'error')
+        return redirect(url_for('courses'))
+    
+    file = request.files['excel_file']
+    if file.filename == '':
+        flash('Nenhum arquivo selecionado.', 'error')
+        return redirect(url_for('courses'))
+    
+    if not file.filename.lower().endswith(('.xlsx', '.xls')):
+        flash('Por favor, selecione um arquivo Excel (.xlsx ou .xls).', 'error')
+        return redirect(url_for('courses'))
+    
+    try:
+        # Save uploaded file temporarily
+        file_info = save_uploaded_file(file)
+        if not file_info:
+            flash('Erro ao salvar arquivo temporário.', 'error')
+            return redirect(url_for('courses'))
+        
+        # Process the Excel file
+        results = process_courses_excel_import(file_info['file_path'])
+        
+        # Clean up temporary file
+        try:
+            os.remove(file_info['file_path'])
+        except:
+            pass
+        
+        # Show results
+        if results['success'] > 0:
+            flash(f'Importação concluída! {results["success"]} curso(s) importado(s) com sucesso.', 'success')
+        
+        if results['warnings']:
+            for warning in results['warnings'][:5]:  # Show first 5 warnings
+                flash(warning, 'warning')
+            if len(results['warnings']) > 5:
+                flash(f'... e mais {len(results["warnings"]) - 5} avisos.', 'warning')
+        
+        if results['errors']:
+            for error in results['errors'][:5]:  # Show first 5 errors
+                flash(error, 'error')
+            if len(results['errors']) > 5:
+                flash(f'... e mais {len(results["errors"]) - 5} erros.', 'error')
+        
+        if results['success'] == 0 and results['errors']:
+            flash('Nenhum curso foi importado devido aos erros encontrados.', 'error')
+        
+    except Exception as e:
+        flash(f'Erro ao processar arquivo Excel: {str(e)}', 'error')
+        current_app.logger.error(f"Excel import error: {str(e)}")
+    
+    return redirect(url_for('courses'))
+
 @app.route('/evaluators')
+@login_required
 def evaluators():
     """List all evaluators"""
     evaluators_list = Evaluator.query.all()
     return render_template('evaluators.html', evaluators=evaluators_list)
 
 @app.route('/evaluators/add', methods=['GET', 'POST'])
+@login_required
 def add_evaluator():
     """Add new evaluator"""
     form = EvaluatorForm()
@@ -256,6 +472,7 @@ def add_evaluator():
     return render_template('evaluators.html', form=form, evaluators=Evaluator.query.all())
 
 @app.route('/evaluators/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_evaluator(id):
     """Edit evaluator"""
     evaluator = Evaluator.query.get_or_404(id)
@@ -271,6 +488,7 @@ def edit_evaluator(id):
     return render_template('evaluators.html', form=form, evaluator=evaluator, evaluators=Evaluator.query.all())
 
 @app.route('/evaluators/delete/<int:id>')
+@login_required
 def delete_evaluator(id):
     """Delete evaluator"""
     evaluator = Evaluator.query.get_or_404(id)
@@ -286,6 +504,7 @@ def delete_evaluator(id):
     return redirect(url_for('evaluators'))
 
 @app.route('/evaluations')
+@login_required
 def evaluations():
     """List all evaluations"""
     page = request.args.get('page', 1, type=int)

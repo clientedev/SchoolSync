@@ -2,6 +2,31 @@ from app import db
 from datetime import datetime
 from sqlalchemy import Text, Integer, String, DateTime, Boolean, ForeignKey, Float
 from sqlalchemy.orm import relationship
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
+
+class User(db.Model, UserMixin):
+    id = db.Column(Integer, primary_key=True)
+    username = db.Column(String(80), unique=True, nullable=False)
+    password_hash = db.Column(String(255), nullable=False)
+    name = db.Column(String(100), nullable=False)
+    role = db.Column(String(50), nullable=False, default='evaluator')  # 'admin' or 'evaluator'
+    email = db.Column(String(120), nullable=True)
+    is_active = db.Column(Boolean, default=True)
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    created_by = db.Column(Integer, ForeignKey('user.id'), nullable=True)
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    def is_admin(self):
+        return self.role == 'admin'
+    
+    def __repr__(self):
+        return f'<User {self.username}>'
 
 class Teacher(db.Model):
     id = db.Column(Integer, primary_key=True)
@@ -11,6 +36,7 @@ class Teacher(db.Model):
     workload = db.Column(Integer, nullable=True)  # Hours per week
     email = db.Column(String(120), nullable=True)
     phone = db.Column(String(20), nullable=True)
+    observations = db.Column(Text, nullable=True)  # Teacher observations field
     created_at = db.Column(DateTime, default=datetime.utcnow)
     
     # Relationships
