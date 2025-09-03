@@ -522,13 +522,11 @@ def new_evaluation():
     # Populate choices
     form.teacher_id.choices = [(t.id, t.name) for t in Teacher.query.all()]
     form.course_id.choices = [(c.id, f"{c.name} - {c.period}") for c in Course.query.all()]
-    form.evaluator_id.choices = [(e.id, e.name) for e in Evaluator.query.all()]
     
     if form.validate_on_submit():
         evaluation = Evaluation(
             teacher_id=form.teacher_id.data,
             course_id=form.course_id.data,
-            evaluator_id=form.evaluator_id.data,
             period=form.period.data,
             class_time=form.class_time.data,
             
@@ -608,7 +606,6 @@ def edit_evaluation(id):
     # Populate choices
     form.teacher_id.choices = [(t.id, t.name) for t in Teacher.query.all()]
     form.course_id.choices = [(c.id, f"{c.name} - {c.period}") for c in Course.query.all()]
-    form.evaluator_id.choices = [(e.id, e.name) for e in Evaluator.query.all()]
     
     if form.validate_on_submit():
         form.populate_obj(evaluation)

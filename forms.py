@@ -26,7 +26,6 @@ class EvaluatorForm(FlaskForm):
 class EvaluationForm(FlaskForm):
     teacher_id = SelectField('Docente', coerce=int, validators=[DataRequired()])
     course_id = SelectField('Curso/Turma', coerce=int, validators=[DataRequired()])
-    evaluator_id = SelectField('Responsável pelo Acompanhamento', coerce=int, validators=[DataRequired()])
     
     period = SelectField('Período', choices=[
         ('Manhã', 'Manhã'),
