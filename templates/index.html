@@ -140,6 +140,48 @@
     </div>
 </div>
 
+<!-- Monthly Schedule Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Progresso de Agendamentos por Mês - {{ current_semester.name if current_semester else 'Semestre Atual' }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="monthlyChart" style="height: 300px;"></div>
+                
+                <!-- Chart Legend -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary rounded me-2" style="width: 15px; height: 15px;"></div>
+                            <small>Agendamentos Total</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success rounded me-2" style="width: 15px; height: 15px;"></div>
+                            <small>Avaliações Concluídas</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tooltip for detailed info -->
+                <div id="monthTooltip" class="card mt-3" style="display: none;">
+                    <div class="card-header">
+                        <h6 class="mb-0" id="tooltipTitle">Detalhes do Mês</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="tooltipContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Recent Evaluations -->
 <div class="row mb-4">
     <div class="col-md-8">
@@ -318,45 +360,151 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Load dashboard charts
+// Monthly schedule data from server
+const monthlyData = {{ monthly_schedule_summary | tojson }};
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Monthly evaluations chart
-    fetch('/api/dashboard-data')
-        .then(response => response.json())
-        .then(data => {
-            const ctx = document.getElementById('monthlyChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.monthly_evaluations.labels,
-                    datasets: [{
-                        label: 'Avaliações',
-                        data: data.monthly_evaluations.data,
-                        borderColor: 'rgb(54, 162, 235)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                        tension: 0.1
-                    }]
+    createMonthlyChart();
+});
+
+function createMonthlyChart() {
+    const ctx = document.getElementById('monthlyChart');
+    if (!ctx) return;
+    
+    // Prepare data for Chart.js
+    const months = [];
+    const scheduledData = [];
+    const completedData = [];
+    
+    for (let i = 1; i <= 12; i++) {
+        if (monthlyData[i]) {
+            months.push(monthlyData[i].name);
+            scheduledData.push(monthlyData[i].scheduled);
+            completedData.push(monthlyData[i].completed);
+        }
+    }
+    
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: 'Agendados',
+                    data: scheduledData,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.4,
+                    pointBackgroundColor: '#0d6efd',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
+                {
+                    label: 'Concluídos',
+                    data: completedData,
+                    borderColor: '#198754',
+                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    tension: 0.4,
+                    pointBackgroundColor: '#198754',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        afterBody: function(context) {
+                            const monthIndex = context[0].dataIndex + 1;
+                            if (monthlyData[monthIndex] && monthlyData[monthIndex].teachers.length > 0) {
+                                showMonthDetails(monthIndex);
                             }
+                            return '';
                         }
                     }
                 }
-            });
-        })
-        .catch(error => console.error('Error loading chart data:', error));
-});
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            onHover: function(event, elements) {
+                if (elements.length > 0) {
+                    const monthIndex = elements[0].index + 1;
+                    showMonthDetails(monthIndex);
+                } else {
+                    hideMonthDetails();
+                }
+            }
+        }
+    });
+}
+
+function showMonthDetails(monthIndex) {
+    const tooltip = document.getElementById('monthTooltip');
+    const title = document.getElementById('tooltipTitle');
+    const content = document.getElementById('tooltipContent');
+    
+    if (!monthlyData[monthIndex] || monthlyData[monthIndex].teachers.length === 0) {
+        hideMonthDetails();
+        return;
+    }
+    
+    const monthData = monthlyData[monthIndex];
+    title.textContent = `Detalhes de ${monthData.name}`;
+    
+    let html = `
+        <div class="row mb-2">
+            <div class="col-6"><strong>Agendados:</strong> ${monthData.scheduled}</div>
+            <div class="col-6"><strong>Concluídos:</strong> ${monthData.completed}</div>
+        </div>
+    `;
+    
+    if (monthData.teachers.length > 0) {
+        html += '<h6>Docentes:</h6><ul class="list-unstyled">';
+        monthData.teachers.forEach(teacher => {
+            const status = teacher.is_completed ? 
+                '<span class="badge bg-success">Concluída</span>' : 
+                '<span class="badge bg-warning">Pendente</span>';
+            html += `
+                <li class="mb-1">
+                    <small>
+                        <strong>${teacher.name}</strong> - ${teacher.curricular_unit}<br>
+                        <span class="text-muted">${teacher.scheduled_date || 'Data não definida'}</span> ${status}
+                    </small>
+                </li>
+            `;
+        });
+        html += '</ul>';
+    }
+    
+    content.innerHTML = html;
+    tooltip.style.display = 'block';
+}
+
+function hideMonthDetails() {
+    const tooltip = document.getElementById('monthTooltip');
+    tooltip.style.display = 'none';
+}
 </script>
 {% endblock %}

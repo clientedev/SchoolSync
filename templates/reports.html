@@ -327,9 +327,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const teachersData = [
         {% for teacher in teachers %}
             {
-                name: '{{ teacher.name }}',
-                planning: {% if teacher.evaluations %}{{ (teacher.evaluations|map(attribute='calculate_planning_percentage')|sum) / (teacher.evaluations|length) }}{% else %}0{% endif %},
-                class: {% if teacher.evaluations %}{{ (teacher.evaluations|map(attribute='calculate_class_percentage')|sum) / (teacher.evaluations|length) }}{% else %}0{% endif %}
+                name: '{{ teacher.name|safe }}',
+                planning: {% if teacher.evaluations %}{{ "%.1f"|format((teacher.evaluations|map(attribute='calculate_planning_percentage')|sum) / (teacher.evaluations|length)) }}{% else %}0{% endif %},
+                class: {% if teacher.evaluations %}{{ "%.1f"|format((teacher.evaluations|map(attribute='calculate_class_percentage')|sum) / (teacher.evaluations|length)) }}{% else %}0{% endif %}
             }{% if not loop.last %},{% endif %}
         {% endfor %}
     ];

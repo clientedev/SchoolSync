@@ -211,6 +211,16 @@
                                 <div class="form-control-plaintext">{{ evaluation.course.curriculum_component }}</div>
                             </div>
                             <div class="col-md-4 mb-3">
+                                <label class="form-label">Unidade Curricular:</label>
+                                <div class="form-control-plaintext">
+                                    {% if evaluation.curricular_unit %}
+                                        {{ evaluation.curricular_unit.name }}
+                                    {% else %}
+                                        Não especificada
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Período:</label>
                                 <div class="form-control-plaintext">{{ evaluation.period }}</div>
                             </div>
@@ -232,6 +242,15 @@
                                 {% if form.course_id.errors %}
                                     <div class="text-danger small">
                                         {% for error in form.course_id.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.curricular_unit_id.label(class="form-label") }}
+                                {{ form.curricular_unit_id(class="form-select") }}
+                                {% if form.curricular_unit_id.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.curricular_unit_id.errors %}{{ error }}{% endfor %}
                                     </div>
                                 {% endif %}
                             </div>

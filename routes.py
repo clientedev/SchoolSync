@@ -305,7 +305,8 @@ def change_user_password(id):
 def teachers():
     """List all teachers"""
     teachers_list = Teacher.query.all()
-    return render_template('teachers.html', teachers=teachers_list)
+    form = TeacherForm()  # Always provide form for modal
+    return render_template('teachers.html', teachers=teachers_list, form=form)
 
 @app.route('/teachers/add', methods=['GET', 'POST'])
 @login_required
@@ -634,18 +635,52 @@ def add_course():
     """Add new course"""
     form = CourseForm()
     
-    if form.validate_on_submit():
-        course = Course()  # type: ignore
-        course.name = form.name.data
-        course.period = form.period.data
-        course.curriculum_component = form.curriculum_component.data
-        course.class_code = form.class_code.data
-        
-        db.session.add(course)
-        db.session.commit()
-        
-        flash(f'Curso {course.name} cadastrado com sucesso!', 'success')
-        return redirect(url_for('courses'))
+    if request.method == 'POST':
+        # Check basic form validation
+        if form.validate_on_submit():
+            course = Course()  # type: ignore
+            course.name = form.name.data
+            course.period = form.period.data
+            course.curriculum_component = form.curriculum_component.data
+            course.class_code = form.class_code.data
+            
+            db.session.add(course)
+            db.session.flush()  # Get course ID
+            
+            # Process curricular units
+            curricular_units = request.form.getlist('curricular_units[]')
+            curricular_units = [unit.strip() for unit in curricular_units if unit.strip()]
+            
+            if not curricular_units:
+                flash('Pelo menos uma unidade curricular é obrigatória.', 'error')
+                return render_template('courses.html', form=form, courses=Course.query.all())
+            
+            units_added = 0
+            for unit_name in curricular_units:
+                # Check if unit already exists for this course
+                existing_unit = CurricularUnit.query.filter_by(
+                    name=unit_name, 
+                    course_id=course.id
+                ).first()
+                
+                if not existing_unit:
+                    unit = CurricularUnit()  # type: ignore
+                    unit.name = unit_name
+                    unit.course_id = course.id
+                    unit.description = f"Unidade curricular do curso {course.name}"
+                    unit.is_active = True
+                    db.session.add(unit)
+                    units_added += 1
+            
+            db.session.commit()
+            
+            flash(f'Curso {course.name} cadastrado com sucesso! {units_added} unidade(s) curricular(es) adicionada(s).', 'success')
+            return redirect(url_for('courses'))
+        else:
+            # Form validation failed
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f'{getattr(form, field).label.text}: {error}', 'error')
     
     return render_template('courses.html', form=form, courses=Course.query.all())
 
