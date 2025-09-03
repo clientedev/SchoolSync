@@ -1,0 +1,102 @@
+ProgrammingError
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column evaluation.semester_id does not exist
+LINE 2: ...aluation.is_completed AS evaluation_is_completed, evaluation...
+                                                             ^
+
+[SQL: SELECT count(*) AS count_1 
+FROM (SELECT evaluation.id AS evaluation_id, evaluation.teacher_id AS evaluation_teacher_id, evaluation.course_id AS evaluation_course_id, evaluation.evaluator_id AS evaluation_evaluator_id, evaluation.evaluation_date AS evaluation_evaluation_date, evaluation.period AS evaluation_period, evaluation.class_time AS evaluation_class_time, evaluation.planning_schedule AS evaluation_planning_schedule, evaluation.planning_lesson_plan AS evaluation_planning_lesson_plan, evaluation.planning_evaluation AS evaluation_planning_evaluation, evaluation.planning_documents AS evaluation_planning_documents, evaluation.planning_diversified AS evaluation_planning_diversified, evaluation.planning_local_work AS evaluation_planning_local_work, evaluation.planning_tools AS evaluation_planning_tools, evaluation.planning_educational_portal AS evaluation_planning_educational_portal, evaluation.class_presentation AS evaluation_class_presentation, evaluation.class_knowledge AS evaluation_class_knowledge, evaluation.class_student_performance AS evaluation_class_student_performance, evaluation.class_attendance AS evaluation_class_attendance, evaluation.class_difficulties AS evaluation_class_difficulties, evaluation.class_theoretical_practical AS evaluation_class_theoretical_practical, evaluation.class_previous_lesson AS evaluation_class_previous_lesson, evaluation.class_objectives AS evaluation_class_objectives, evaluation.class_questions AS evaluation_class_questions, evaluation.class_content_assimilation AS evaluation_class_content_assimilation, evaluation.class_student_participation AS evaluation_class_student_participation, evaluation.class_recovery_process AS evaluation_class_recovery_process, evaluation.class_school_pedagogy AS evaluation_class_school_pedagogy, evaluation.class_learning_exercises AS evaluation_class_learning_exercises, evaluation.class_discipline AS evaluation_class_discipline, evaluation.class_educational_orientation AS evaluation_class_educational_orientation, evaluation.class_teaching_strategies AS evaluation_class_teaching_strategies, evaluation.class_machines_equipment AS evaluation_class_machines_equipment, evaluation.class_safety_procedures AS evaluation_class_safety_procedures, evaluation.planning_observations AS evaluation_planning_observations, evaluation.class_observations AS evaluation_class_observations, evaluation.general_observations AS evaluation_general_observations, evaluation.teacher_signature_date AS evaluation_teacher_signature_date, evaluation.evaluator_signature_date AS evaluation_evaluator_signature_date, evaluation.is_completed AS evaluation_is_completed, evaluation.semester_id AS evaluation_semester_id, evaluation.curricular_unit_id AS evaluation_curricular_unit_id, evaluation.scheduled_evaluation_id AS evaluation_scheduled_evaluation_id, evaluation.teacher_signed AS evaluation_teacher_signed, evaluation.evaluator_signed AS evaluation_evaluator_signed, evaluation.created_at AS evaluation_created_at, evaluation.updated_at AS evaluation_updated_at 
+FROM evaluation) AS anon_1]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+Traceback (most recent call last)
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+self.dialect.do_execute(
+^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+cursor.execute(statement, parameters)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The above exception was the direct cause of the following exception:
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 1536, in __call__
+return self.wsgi_app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/werkzeug/middleware/proxy_fix.py", line 183, in __call__
+return self.app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 1514, in wsgi_app
+response = self.handle_exception(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
+response = self.full_dispatch_request()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
+rv = self.handle_user_exception(e)
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
+rv = self.dispatch_request()
+     ^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
+return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask_login/utils.py", line 290, in decorated_view
+return current_app.ensure_sync(func)(*args, **kwargs)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/app/routes.py", line 42, in index
+total_evaluations = Evaluation.query.count()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 3146, in count
+self._legacy_from_self(col).enable_eagerloads(False).scalar()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2835, in scalar
+ret = self.one()
+      ^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2808, in one
+return self._iter().one()  # type: ignore
+       ^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                              
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+return self._execute_internal(
+       
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+result: Result[Any] = compile_state_cls.orm_execute_statement(
+                      
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+result = conn.execute(
+         
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+return meth(
+       
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+return connection._execute_clauseelement(
+       
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+ret = self._execute_context(
+      
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+return self._exec_single_context(
+       
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+self._handle_dbapi_exception(
+^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+self.dialect.do_execute(
+^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+cursor.execute(statement, parameters)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column evaluation.semester_id does not exist
+LINE 2: ...aluation.is_completed AS evaluation_is_completed, evaluation...
+^
+
+[SQL: SELECT count(*) AS count_1
+FROM (SELECT evaluation.id AS evaluation_id, evaluation.teacher_id AS evaluation_teacher_id, evaluation.course_id AS evaluation_course_id, evaluation.evaluator_id AS evaluation_evaluator_id, evaluation.evaluation_date AS evaluation_evaluation_date, evaluation.period AS evaluation_period, evaluation.class_time AS evaluation_class_time, evaluation.planning_schedule AS evaluation_planning_schedule, evaluation.planning_lesson_plan AS evaluation_planning_lesson_plan, evaluation.planning_evaluation AS evaluation_planning_evaluation, evaluation.planning_documents AS evaluation_planning_documents, evaluation.planning_diversified AS evaluation_planning_diversified, evaluation.planning_local_work AS evaluation_planning_local_work, evaluation.planning_tools AS evaluation_planning_tools, evaluation.planning_educational_portal AS evaluation_planning_educational_portal, evaluation.class_presentation AS evaluation_class_presentation, evaluation.class_knowledge AS evaluation_class_knowledge, evaluation.class_student_performance AS evaluation_class_student_performance, evaluation.class_attendance AS evaluation_class_attendance, evaluation.class_difficulties AS evaluation_class_difficulties, evaluation.class_theoretical_practical AS evaluation_class_theoretical_practical, evaluation.class_previous_lesson AS evaluation_class_previous_lesson, evaluation.class_objectives AS evaluation_class_objectives, evaluation.class_questions AS evaluation_class_questions, evaluation.class_content_assimilation AS evaluation_class_content_assimilation, evaluation.class_student_participation AS evaluation_class_student_participation, evaluation.class_recovery_process AS evaluation_class_recovery_process, evaluation.class_school_pedagogy AS evaluation_class_school_pedagogy, evaluation.class_learning_exercises AS evaluation_class_learning_exercises, evaluation.class_discipline AS evaluation_class_discipline, evaluation.class_educational_orientation AS evaluation_class_educational_orientation, evaluation.class_teaching_strategies AS evaluation_class_teaching_strategies, evaluation.class_machines_equipment AS evaluation_class_machines_equipment, evaluation.class_safety_procedures AS evaluation_class_safety_procedures, evaluation.planning_observations AS evaluation_planning_observations, evaluation.class_observations AS evaluation_class_observations, evaluation.general_observations AS evaluation_general_observations, evaluation.teacher_signature_date AS evaluation_teacher_signature_date, evaluation.evaluator_signature_date AS evaluation_evaluator_signature_date, evaluation.is_completed AS evaluation_is_completed, evaluation.semester_id AS evaluation_semester_id, evaluation.curricular_unit_id AS evaluation_curricular_unit_id, evaluation.scheduled_evaluation_id AS evaluation_scheduled_evaluation_id, evaluation.teacher_signed AS evaluation_teacher_signed, evaluation.evaluator_signed AS evaluation_evaluator_signed, evaluation.created_at AS evaluation_created_at, evaluation.updated_at AS evaluation_updated_at
+FROM evaluation) AS anon_1]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+The debugger caught an exception in your WSGI application. You can now look at the traceback which led to the error.
+To switch between the interactive traceback and the plaintext one, you can click on the "Traceback" headline. From the text traceback you can also create a paste of it.
+
+Brou
