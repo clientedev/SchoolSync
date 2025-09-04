@@ -58,7 +58,9 @@
                                             <code>{{ teacher.nif }}</code>
                                         </td>
                                         <td>
-                                            <strong>{{ teacher.name }}</strong>
+                                            <a href="{{ url_for('teacher_profile', id=teacher.id) }}" class="text-decoration-none">
+                                                <strong>{{ teacher.name }}</strong>
+                                            </a>
                                         </td>
                                         <td>{{ teacher.area }}</td>
                                         <td>

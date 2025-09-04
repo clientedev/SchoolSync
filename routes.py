@@ -318,6 +318,35 @@ def teachers():
     form = TeacherForm()  # Always provide form for modal
     return render_template('teachers.html', teachers=teachers_list, form=form)
 
+@app.route('/teachers/<int:id>/profile')
+@login_required
+def teacher_profile(id):
+    """View teacher profile with complete information"""
+    teacher = Teacher.query.get_or_404(id)
+    evaluations = Evaluation.query.filter_by(teacher_id=id).order_by(Evaluation.evaluation_date.desc()).all()
+    
+    # Get teacher's user account
+    teacher_user = User.query.filter_by(username=teacher.nif.lower()).first()
+    
+    # Calculate statistics
+    total_evaluations = len(evaluations)
+    avg_planning = 0
+    avg_class = 0
+    
+    if evaluations:
+        planning_sum = sum(eval.calculate_planning_percentage() for eval in evaluations)
+        class_sum = sum(eval.calculate_class_percentage() for eval in evaluations)
+        avg_planning = planning_sum / total_evaluations
+        avg_class = class_sum / total_evaluations
+    
+    return render_template('teacher_profile.html', 
+                         teacher=teacher, 
+                         teacher_user=teacher_user,
+                         evaluations=evaluations,
+                         total_evaluations=total_evaluations,
+                         avg_planning=avg_planning,
+                         avg_class=avg_class)
+
 @app.route('/teachers/add', methods=['GET', 'POST'])
 @login_required
 def add_teacher():
@@ -917,16 +946,16 @@ def new_evaluation():
         evaluation.teacher_id = form.teacher_id.data
         evaluation.course_id = form.course_id.data
         evaluation.curricular_unit_id = form.curricular_unit_id.data if form.curricular_unit_id.data and form.curricular_unit_id.data != 0 else None
-        # Buscar ou criar avaliador padrão (já que o formulário não especifica avaliador)
-        default_evaluator = Evaluator.query.filter_by(role='Sistema').first()
-        if not default_evaluator:
-            default_evaluator = Evaluator()  # type: ignore
-            default_evaluator.name = 'Sistema'
-            default_evaluator.role = 'Sistema'
-            default_evaluator.email = 'sistema@escola.edu'
-            db.session.add(default_evaluator)
+        # Buscar ou criar avaliador baseado no usuário atual
+        current_evaluator = Evaluator.query.filter_by(name=current_user.name).first()
+        if not current_evaluator:
+            current_evaluator = Evaluator()  # type: ignore
+            current_evaluator.name = current_user.name
+            current_evaluator.role = current_user.role if current_user.role == 'admin' else 'Coordenador'
+            current_evaluator.email = current_user.email if hasattr(current_user, 'email') else f"{current_user.name.lower().replace(' ', '.')}@senai.br"
+            db.session.add(current_evaluator)
             db.session.flush()
-        evaluation.evaluator_id = default_evaluator.id
+        evaluation.evaluator_id = current_evaluator.id
         evaluation.period = form.period.data
         evaluation.class_time = form.class_time.data
         

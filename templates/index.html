@@ -387,33 +387,27 @@ function createMonthlyChart() {
     }
     
     const chart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: months,
             datasets: [
                 {
                     label: 'Agendados',
                     data: scheduledData,
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
                     borderColor: '#0d6efd',
-                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                    tension: 0.4,
-                    pointBackgroundColor: '#0d6efd',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    pointHoverRadius: 8
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
                 },
                 {
                     label: 'Concluídos',
                     data: completedData,
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
                     borderColor: '#198754',
-                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                    tension: 0.4,
-                    pointBackgroundColor: '#198754',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    pointHoverRadius: 8
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
                 }
             ]
         },
