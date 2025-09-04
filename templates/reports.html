@@ -61,7 +61,9 @@
                             {% set total_evaluations = [] %}
                             {% for teacher in teachers %}
                                 {% for eval in teacher.evaluations %}
-                                    {% set _ = total_evaluations.append(1) %}
+                                    {% if eval.is_completed %}
+                                        {% set _ = total_evaluations.append(1) %}
+                                    {% endif %}
                                 {% endfor %}
                             {% endfor %}
                             <h3 class="text-success">{{ total_evaluations|length }}</h3>
@@ -87,7 +89,7 @@
                             {% set this_month_count = 0 %}
                             {% for teacher in teachers %}
                                 {% for eval in teacher.evaluations %}
-                                    {% if eval.evaluation_date.month == 9 %}
+                                    {% if eval.is_completed and eval.evaluation_date.month == 9 and eval.evaluation_date.year == 2025 %}
                                         {% set this_month_count = this_month_count + 1 %}
                                     {% endif %}
                                 {% endfor %}
@@ -103,9 +105,11 @@
                             {% set total_evals = 0 %}
                             {% for teacher in teachers %}
                                 {% for eval in teacher.evaluations %}
-                                    {% set avg_planning = avg_planning + eval.calculate_planning_percentage() %}
-                                    {% set avg_class = avg_class + eval.calculate_class_percentage() %}
-                                    {% set total_evals = total_evals + 1 %}
+                                    {% if eval.is_completed %}
+                                        {% set avg_planning = avg_planning + eval.calculate_planning_percentage() %}
+                                        {% set avg_class = avg_class + eval.calculate_class_percentage() %}
+                                        {% set total_evals = total_evals + 1 %}
+                                    {% endif %}
                                 {% endfor %}
                             {% endfor %}
                             {% if total_evals > 0 %}
@@ -123,7 +127,7 @@
                             {% for teacher in teachers %}
                                 {% set has_eval_this_month = False %}
                                 {% for eval in teacher.evaluations %}
-                                    {% if eval.evaluation_date.month == 9 and eval.evaluation_date.year == 2025 %}
+                                    {% if eval.is_completed and eval.evaluation_date.month == 9 and eval.evaluation_date.year == 2025 %}
                                         {% set has_eval_this_month = True %}
                                     {% endif %}
                                 {% endfor %}
@@ -176,42 +180,46 @@
                                         </td>
                                         <td>{{ teacher.area }}</td>
                                         <td class="text-center">
-                                            <span class="badge bg-info">{{ teacher.evaluations|length }}</span>
+                                            {% set completed_evals = teacher.evaluations|selectattr('is_completed')|list %}
+                                            <span class="badge bg-info">{{ completed_evals|length }}</span>
                                         </td>
                                         <td class="text-center">
-                                            {% if teacher.evaluations %}
+                                            {% set completed_evals = teacher.evaluations|selectattr('is_completed')|list %}
+                                            {% if completed_evals %}
                                                 {% set planning_sum = 0 %}
-                                                {% for eval in teacher.evaluations %}
+                                                {% for eval in completed_evals %}
                                                     {% set planning_sum = planning_sum + eval.calculate_planning_percentage() %}
                                                 {% endfor %}
-                                                {% set planning_avg = planning_sum / teacher.evaluations|length %}
+                                                {% set planning_avg = planning_sum / completed_evals|length %}
                                                 <span class="badge bg-info">{{ "%.1f"|format(planning_avg) }}%</span>
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
                                         <td class="text-center">
-                                            {% if teacher.evaluations %}
+                                            {% set completed_evals = teacher.evaluations|selectattr('is_completed')|list %}
+                                            {% if completed_evals %}
                                                 {% set class_sum = 0 %}
-                                                {% for eval in teacher.evaluations %}
+                                                {% for eval in completed_evals %}
                                                     {% set class_sum = class_sum + eval.calculate_class_percentage() %}
                                                 {% endfor %}
-                                                {% set class_avg = class_sum / teacher.evaluations|length %}
+                                                {% set class_avg = class_sum / completed_evals|length %}
                                                 <span class="badge bg-success">{{ "%.1f"|format(class_avg) }}%</span>
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
                                         <td class="text-center">
-                                            {% if teacher.evaluations %}
+                                            {% set completed_evals = teacher.evaluations|selectattr('is_completed')|list %}
+                                            {% if completed_evals %}
                                                 {% set planning_sum = 0 %}
                                                 {% set class_sum = 0 %}
-                                                {% for eval in teacher.evaluations %}
+                                                {% for eval in completed_evals %}
                                                     {% set planning_sum = planning_sum + eval.calculate_planning_percentage() %}
                                                     {% set class_sum = class_sum + eval.calculate_class_percentage() %}
                                                 {% endfor %}
-                                                {% set planning_avg = planning_sum / teacher.evaluations|length %}
-                                                {% set class_avg = class_sum / teacher.evaluations|length %}
+                                                {% set planning_avg = planning_sum / completed_evals|length %}
+                                                {% set class_avg = class_sum / completed_evals|length %}
                                                 {% set overall_avg = (planning_avg + class_avg) / 2 %}
                                                 {% if overall_avg >= 80 %}
                                                     <span class="badge bg-success">{{ "%.1f"|format(overall_avg) }}%</span>
@@ -225,8 +233,9 @@
                                             {% endif %}
                                         </td>
                                         <td class="text-center">
-                                            {% if teacher.evaluations %}
-                                                {% set latest_eval = teacher.evaluations|sort(attribute='evaluation_date', reverse=True)|first %}
+                                            {% set completed_evals = teacher.evaluations|selectattr('is_completed')|list %}
+                                            {% if completed_evals %}
+                                                {% set latest_eval = completed_evals|sort(attribute='evaluation_date', reverse=True)|first %}
                                                 <small>{{ latest_eval.evaluation_date.strftime('%d/%m/%Y') }}</small>
                                             {% else %}
                                                 <span class="text-muted">Nunca</span>

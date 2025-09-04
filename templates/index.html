@@ -150,7 +150,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <div id="monthlyChart" style="height: 300px;"></div>
+                <canvas id="monthlyChart" style="height: 300px;"></canvas>
                 
                 <!-- Chart Legend -->
                 <div class="row mt-3">
@@ -371,7 +371,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function createMonthlyChart() {
     const ctx = document.getElementById('monthlyChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.error('monthlyChart canvas not found');
+        return;
+    }
     
     // Prepare data for Chart.js
     const months = [];
