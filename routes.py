@@ -867,13 +867,13 @@ def new_evaluation():
     # Populate choices
     form.teacher_id.choices = [(t.id, t.name) for t in Teacher.query.all()]
     form.course_id.choices = [(c.id, f"{c.name} - {c.period}") for c in Course.query.all()]
-    form.curricular_unit_id.choices = [('', 'Nenhuma unidade curricular específica')] + [(u.id, f"{u.name} ({u.course.name})") for u in CurricularUnit.query.join(Course).all()]
+    form.curricular_unit_id.choices = [(0, 'Nenhuma unidade curricular específica')] + [(u.id, f"{u.name} ({u.course.name})") for u in CurricularUnit.query.join(Course).all()]
     
     if form.validate_on_submit():
         evaluation = Evaluation()  # type: ignore
         evaluation.teacher_id = form.teacher_id.data
         evaluation.course_id = form.course_id.data
-        evaluation.curricular_unit_id = form.curricular_unit_id.data if form.curricular_unit_id.data else None
+        evaluation.curricular_unit_id = form.curricular_unit_id.data if form.curricular_unit_id.data and form.curricular_unit_id.data != 0 else None
         # Buscar ou criar avaliador padrão (já que o formulário não especifica avaliador)
         default_evaluator = Evaluator.query.filter_by(role='Sistema').first()
         if not default_evaluator:
@@ -961,7 +961,7 @@ def edit_evaluation(id):
     # Populate choices
     form.teacher_id.choices = [(t.id, t.name) for t in Teacher.query.all()]
     form.course_id.choices = [(c.id, f"{c.name} - {c.period}") for c in Course.query.all()]
-    form.curricular_unit_id.choices = [('', 'Nenhuma unidade curricular específica')] + [(u.id, f"{u.name} ({u.course.name})") for u in CurricularUnit.query.join(Course).all()]
+    form.curricular_unit_id.choices = [(0, 'Nenhuma unidade curricular específica')] + [(u.id, f"{u.name} ({u.course.name})") for u in CurricularUnit.query.join(Course).all()]
     
     if form.validate_on_submit():
         form.populate_obj(evaluation)
