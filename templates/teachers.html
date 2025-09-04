@@ -44,11 +44,9 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
+                                    <th>NIF</th>
                                     <th>Nome</th>
                                     <th>Área</th>
-                                    <th>Disciplinas</th>
-                                    <th>Carga Horária</th>
-                                    <th>Email</th>
                                     <th>Avaliações</th>
                                     <th>Ações</th>
                                 </tr>
@@ -57,35 +55,19 @@
                                 {% for teacher in teachers %}
                                     <tr>
                                         <td>
+                                            <code>{{ teacher.nif }}</code>
+                                        </td>
+                                        <td>
                                             <strong>{{ teacher.name }}</strong>
                                         </td>
                                         <td>{{ teacher.area }}</td>
-                                        <td>
-                                            <small class="text-muted">
-                                                {{ teacher.subjects or 'Não informado' }}
-                                            </small>
-                                        </td>
-                                        <td>
-                                            {% if teacher.workload %}
-                                                {{ teacher.workload }}h/sem
-                                            {% else %}
-                                                <span class="text-muted">-</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if teacher.email %}
-                                                <a href="mailto:{{ teacher.email }}">{{ teacher.email }}</a>
-                                            {% else %}
-                                                <span class="text-muted">Não informado</span>
-                                            {% endif %}
-                                        </td>
                                         <td>
                                             <span class="badge bg-info">{{ teacher.evaluations|length }}</span>
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
                                                 <button class="btn btn-outline-primary" 
-                                                        onclick="editTeacher({{ teacher.id }}, '{{ teacher.name }}', '{{ teacher.area }}', '{{ teacher.subjects or '' }}', {{ teacher.workload or 'null' }}, '{{ teacher.email or '' }}', '{{ teacher.phone or '' }}')">
+                                                        onclick="editTeacher({{ teacher.id }}, '{{ teacher.nif }}', '{{ teacher.name }}', '{{ teacher.area }}')">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <a href="{{ url_for('reports') }}?teacher_id={{ teacher.id }}" class="btn btn-outline-info">
@@ -128,25 +110,24 @@
                 </div>
                 <div class="modal-body">
                     {% if form %}
-                        <div class="row">
-                            <div class="col-md-8 mb-3">
-                                {{ form.name.label(class="form-label") }}
-                                {{ form.name(class="form-control") }}
-                                {% if form.name.errors %}
-                                    <div class="text-danger small">
-                                        {% for error in form.name.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                {{ form.workload.label(class="form-label") }}
-                                {{ form.workload(class="form-control") }}
-                                {% if form.workload.errors %}
-                                    <div class="text-danger small">
-                                        {% for error in form.workload.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
+                        <div class="mb-3">
+                            {{ form.nif.label(class="form-label") }}
+                            {{ form.nif(class="form-control", placeholder="SN1234567") }}
+                            <small class="form-text text-muted">Formato: SN seguido de 7 dígitos</small>
+                            {% if form.nif.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.nif.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control") }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
                         <div class="mb-3">
                             {{ form.area.label(class="form-label") }}
@@ -156,36 +137,6 @@
                                     {% for error in form.area.errors %}{{ error }}{% endfor %}
                                 </div>
                             {% endif %}
-                        </div>
-                        <div class="mb-3">
-                            {{ form.subjects.label(class="form-label") }}
-                            {{ form.subjects(class="form-control", rows="3") }}
-                            <small class="form-text text-muted">Separe as disciplinas por vírgula</small>
-                            {% if form.subjects.errors %}
-                                <div class="text-danger small">
-                                    {% for error in form.subjects.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="row">
-                            <div class="col-md-8 mb-3">
-                                {{ form.email.label(class="form-label") }}
-                                {{ form.email(class="form-control") }}
-                                {% if form.email.errors %}
-                                    <div class="text-danger small">
-                                        {% for error in form.email.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                {{ form.phone.label(class="form-label") }}
-                                {{ form.phone(class="form-control") }}
-                                {% if form.phone.errors %}
-                                    <div class="text-danger small">
-                                        {% for error in form.phone.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
                         </div>
                     {% endif %}
                 </div>
@@ -277,17 +228,14 @@
 
 {% block extra_scripts %}
 <script>
-function editTeacher(id, name, area, subjects, workload, email, phone) {
+function editTeacher(id, nif, name, area) {
     document.getElementById('modalTitle').textContent = 'Editar Docente';
     document.getElementById('teacherForm').action = `/teachers/edit/${id}`;
     
     // Populate form fields
+    document.querySelector('input[name="nif"]').value = nif;
     document.querySelector('input[name="name"]').value = name;
     document.querySelector('input[name="area"]').value = area;
-    document.querySelector('textarea[name="subjects"]').value = subjects;
-    document.querySelector('input[name="workload"]').value = workload || '';
-    document.querySelector('input[name="email"]').value = email;
-    document.querySelector('input[name="phone"]').value = phone;
     
     // Show modal
     new bootstrap.Modal(document.getElementById('teacherModal')).show();
