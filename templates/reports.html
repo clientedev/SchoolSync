@@ -331,6 +331,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function generateIndividualReport(teacherId, teacherName) {
     document.getElementById('teacher_select').value = teacherId;
@@ -340,53 +341,103 @@ function generateIndividualReport(teacherId, teacherName) {
 
 // Performance Chart
 document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('performanceChart').getContext('2d');
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js não está carregado');
+        return;
+    }
     
-    // Sample data - in a real application, this would come from the server
+    const ctx = document.getElementById('performanceChart');
+    if (!ctx) {
+        console.error('Canvas performanceChart não encontrado');
+        return;
+    }
+    
+    const chartCtx = ctx.getContext('2d');
+    
+    // Data from server with safety checks
     const teachersData = [
         {% for teacher in teachers %}
             {
-                name: '{{ teacher.name|safe }}',
-                planning: {% if teacher.evaluations %}{% set planning_sum = 0 %}{% for eval in teacher.evaluations %}{% set planning_sum = planning_sum + eval.calculate_planning_percentage() %}{% endfor %}{{ "%.1f"|format(planning_sum / teacher.evaluations|length) }}{% else %}0{% endif %},
-                class: {% if teacher.evaluations %}{% set class_sum = 0 %}{% for eval in teacher.evaluations %}{% set class_sum = class_sum + eval.calculate_class_percentage() %}{% endfor %}{{ "%.1f"|format(class_sum / teacher.evaluations|length) }}{% else %}0{% endif %}
+                name: '{{ teacher.name|replace("'", "\\'")|safe }}',
+                planning: {% if teacher.evaluations and teacher.evaluations|length > 0 %}{% set planning_sum = 0 %}{% for eval in teacher.evaluations %}{% if eval.is_completed %}{% set planning_sum = planning_sum + eval.calculate_planning_percentage() %}{% endif %}{% endfor %}{{ "%.1f"|format(planning_sum / teacher.evaluations|selectattr('is_completed')|list|length) if teacher.evaluations|selectattr('is_completed')|list|length > 0 else 0 }}{% else %}0{% endif %},
+                class: {% if teacher.evaluations and teacher.evaluations|length > 0 %}{% set class_sum = 0 %}{% for eval in teacher.evaluations %}{% if eval.is_completed %}{% set class_sum = class_sum + eval.calculate_class_percentage() %}{% endif %}{% endfor %}{{ "%.1f"|format(class_sum / teacher.evaluations|selectattr('is_completed')|list|length) if teacher.evaluations|selectattr('is_completed')|list|length > 0 else 0 }}{% else %}0{% endif %},
+                totalEvaluations: {{ teacher.evaluations|selectattr('is_completed')|list|length }}
             }{% if not loop.last %},{% endif %}
         {% endfor %}
     ];
 
-    const labels = teachersData.map(t => t.name.split(' ')[0]); // First name only
-    const planningData = teachersData.map(t => t.planning);
-    const classData = teachersData.map(t => t.class);
+    // Filter teachers with evaluations for cleaner chart
+    const activeTeachers = teachersData.filter(t => t.totalEvaluations > 0);
+    
+    if (activeTeachers.length === 0) {
+        ctx.parentElement.innerHTML = '<div class="alert alert-info text-center"><i class="fas fa-info-circle me-2"></i>Nenhum dados de avaliação disponíveis para exibir no gráfico.</div>';
+        return;
+    }
+    
+    const labels = activeTeachers.map(t => {
+        const nameParts = t.name.split(' ');
+        return nameParts.length > 1 ? nameParts[0] + ' ' + nameParts[nameParts.length - 1] : nameParts[0];
+    });
+    const planningData = activeTeachers.map(t => t.planning);
+    const classData = activeTeachers.map(t => t.class);
 
-    new Chart(ctx, {
+    new Chart(chartCtx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [
                 {
-                    label: 'Planejamento',
+                    label: 'Planejamento (%)',
                     data: planningData,
-                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false
                 },
                 {
-                    label: 'Condução da Aula',
+                    label: 'Condução da Aula (%)',
                     data: classData,
-                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false
                 }
             ]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             plugins: {
                 legend: {
                     position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
                 },
                 title: {
                     display: true,
-                    text: 'Desempenho Médio por Docente'
+                    text: 'Desempenho Médio por Docente',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    padding: 20
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const teacher = activeTeachers[context.dataIndex];
+                            return `${context.dataset.label}: ${context.parsed.y}% (${teacher.totalEvaluations} avaliações)`;
+                        }
+                    }
                 }
             },
             scales: {
@@ -396,13 +447,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     ticks: {
                         callback: function(value) {
                             return value + '%';
-                        }
+                        },
+                        stepSize: 10
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
                     }
-                }
-            },
-            elements: {
-                bar: {
-                    borderRadius: 4
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 0
+                    }
                 }
             }
         }

@@ -995,6 +995,22 @@ def new_evaluation():
         evaluation.class_observations = form.class_observations.data
         evaluation.general_observations = form.general_observations.data
         
+        # Set semester and link to scheduled evaluation if exists
+        current_semester = get_or_create_current_semester()
+        evaluation.semester_id = current_semester.id
+        
+        # Try to find and link corresponding scheduled evaluation
+        if evaluation.curricular_unit_id:
+            scheduled_evaluation = ScheduledEvaluation.query.filter_by(
+                teacher_id=evaluation.teacher_id,
+                curricular_unit_id=evaluation.curricular_unit_id,
+                semester_id=current_semester.id,
+                is_completed=False
+            ).first()
+            
+            if scheduled_evaluation:
+                evaluation.scheduled_evaluation_id = scheduled_evaluation.id
+        
         db.session.add(evaluation)
         db.session.flush()  # Get the ID before commit
         
@@ -1067,6 +1083,28 @@ def complete_evaluation(id):
     evaluation.is_completed = True
     evaluation.teacher_signature_date = datetime.utcnow()
     evaluation.evaluator_signature_date = datetime.utcnow()
+    
+    # Update the corresponding scheduled evaluation if it exists
+    if evaluation.scheduled_evaluation_id:
+        scheduled_evaluation = ScheduledEvaluation.query.get(evaluation.scheduled_evaluation_id)
+        if scheduled_evaluation:
+            scheduled_evaluation.is_completed = True
+            scheduled_evaluation.completed_at = datetime.utcnow()
+    else:
+        # Try to find scheduled evaluation by teacher, curricular unit and semester
+        current_semester = get_or_create_current_semester()
+        scheduled_evaluation = ScheduledEvaluation.query.filter_by(
+            teacher_id=evaluation.teacher_id,
+            curricular_unit_id=evaluation.curricular_unit_id,
+            semester_id=current_semester.id,
+            is_completed=False
+        ).first()
+        
+        if scheduled_evaluation:
+            scheduled_evaluation.is_completed = True
+            scheduled_evaluation.completed_at = datetime.utcnow()
+            # Link the evaluation to the scheduled evaluation
+            evaluation.scheduled_evaluation_id = scheduled_evaluation.id
     
     db.session.commit()
     
@@ -1815,6 +1853,28 @@ def teacher_sign_evaluation_new(id):
     # Check if evaluation is complete (teacher signed)
     if evaluation.teacher_signed:
         evaluation.is_completed = True
+        
+        # Update the corresponding scheduled evaluation if it exists
+        if evaluation.scheduled_evaluation_id:
+            scheduled_evaluation = ScheduledEvaluation.query.get(evaluation.scheduled_evaluation_id)
+            if scheduled_evaluation:
+                scheduled_evaluation.is_completed = True
+                scheduled_evaluation.completed_at = datetime.utcnow()
+        else:
+            # Try to find scheduled evaluation by teacher, curricular unit and semester
+            current_semester = get_or_create_current_semester()
+            scheduled_evaluation = ScheduledEvaluation.query.filter_by(
+                teacher_id=evaluation.teacher_id,
+                curricular_unit_id=evaluation.curricular_unit_id,
+                semester_id=current_semester.id,
+                is_completed=False
+            ).first()
+            
+            if scheduled_evaluation:
+                scheduled_evaluation.is_completed = True
+                scheduled_evaluation.completed_at = datetime.utcnow()
+                # Link the evaluation to the scheduled evaluation
+                evaluation.scheduled_evaluation_id = scheduled_evaluation.id
     
     db.session.commit()
     
