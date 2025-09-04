@@ -100,7 +100,7 @@
                                     <td>{{ evaluation.period }}</td>
                                     <td>{{ evaluation.evaluator.name if evaluation.evaluator else 'Sistema' }}</td>
                                     <td>
-                                        <a href="{{ url_for('teacher_view_evaluation', id=evaluation.id) }}" 
+                                        <a href="{{ url_for('teacher_view_evaluation_details', id=evaluation.id) }}" 
                                            class="btn btn-primary btn-sm">
                                             <i class="fas fa-eye"></i> Visualizar e Assinar
                                         </a>
@@ -159,7 +159,7 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{{ url_for('teacher_view_evaluation', id=evaluation.id) }}" 
+                                        <a href="{{ url_for('teacher_view_evaluation_details', id=evaluation.id) }}" 
                                            class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-eye"></i> Visualizar
                                         </a>

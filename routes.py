@@ -7,11 +7,15 @@ from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment,
 from forms import TeacherForm, CourseForm, EvaluatorForm, EvaluationForm, LoginForm, UserForm, UserEditForm, ChangePasswordForm
 from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import, generate_courses_excel_template, process_courses_excel_import, generate_curricular_units_excel_template, process_curricular_units_excel_import, get_or_create_current_semester
 
+def redirect_by_role():
+    """Helper function to redirect users based on their role"""
+    return redirect(url_for('teacher_dashboard') if current_user.is_teacher() else url_for('index'))
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Login page"""
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     form = LoginForm()
     if form.validate_on_submit():
@@ -19,6 +23,9 @@ def login():
         if user and user.check_password(form.password.data) and user.is_active:
             login_user(user)
             next_page = request.args.get('next')
+            # Redirect teachers to their restricted dashboard
+            if user.is_teacher():
+                return redirect(next_page) if next_page and next_page.startswith('/teacher/') else redirect(url_for('teacher_dashboard'))
             return redirect(next_page) if next_page else redirect(url_for('index'))
         else:
             flash('Usuário ou senha inválidos.', 'error')
@@ -36,7 +43,10 @@ def logout():
 @app.route('/')
 @login_required
 def index():
-    """Dashboard - Main page"""
+    """Dashboard - Main page (Admin/Evaluator only)"""
+    # Redirect teachers to their restricted dashboard
+    if current_user.is_teacher():
+        return redirect(url_for('teacher_dashboard'))
     # Get or create current semester based on current date
     current_semester = get_or_create_current_semester()
     
@@ -206,7 +216,7 @@ def users():
     """List all users (admin only)"""
     if not current_user.is_admin():
         flash('Acesso negado. Apenas administradores podem gerenciar usuários.', 'error')
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     users_list = User.query.all()
     return render_template('users.html', users=users_list)
@@ -217,7 +227,7 @@ def add_user():
     """Add new user (admin only)"""
     if not current_user.is_admin():
         flash('Acesso negado. Apenas administradores podem criar usuários.', 'error')
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     form = UserForm()
     
@@ -250,7 +260,7 @@ def edit_user(id):
     """Edit user (admin only)"""
     if not current_user.is_admin():
         flash('Acesso negado. Apenas administradores podem editar usuários.', 'error')
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     user = User.query.get_or_404(id)
     form = UserEditForm(obj=user)
@@ -284,7 +294,7 @@ def change_user_password(id):
     # Admin can change any password, user can only change their own
     if not (current_user.is_admin() or current_user.id == user.id):
         flash('Acesso negado.', 'error')
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     form = ChangePasswordForm()
     
@@ -296,7 +306,7 @@ def change_user_password(id):
         if current_user.is_admin():
             return redirect(url_for('users'))
         else:
-            return redirect(url_for('index'))
+            return redirect_by_role()
     
     return render_template('change_password.html', form=form, user=user)
 
@@ -366,7 +376,7 @@ def show_teacher_credentials():
     """Show new teacher credentials"""
     if not current_user.is_admin():
         flash('Acesso negado.', 'error')
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     credentials = session.pop('new_teacher_credentials', None)
     if not credentials:
@@ -381,7 +391,7 @@ def manage_accounts():
     """Manage teacher accounts - Admin only"""
     if not current_user.is_admin():
         flash('Acesso negado. Apenas administradores podem gerenciar contas.', 'error')
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     # Get all teacher accounts
     teacher_users = User.query.filter_by(role='teacher').order_by(User.name).all()
@@ -1216,7 +1226,7 @@ def scheduling():
     """Scheduling dashboard"""
     if not current_user.is_admin():
         flash('Acesso negado. Apenas administradores podem gerenciar agendamentos.', 'error')
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     # Get or create current semester based on current date
     current_semester = get_or_create_current_semester()
@@ -1328,7 +1338,7 @@ def semesters():
     """Manage semesters"""
     if not current_user.is_admin():
         flash('Acesso negado. Apenas administradores podem gerenciar semestres.', 'error')
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     semesters_list = Semester.query.order_by(Semester.year.desc(), Semester.number.desc()).all()
     return render_template('semesters.html', semesters=semesters_list)
@@ -1415,7 +1425,7 @@ def curricular_units():
     """Manage curricular units"""
     if not current_user.is_admin():
         flash('Acesso negado. Apenas administradores podem gerenciar unidades curriculares.', 'error')
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     # Check if filtering by course
     course_id = request.args.get('course_id', type=int)
@@ -1554,7 +1564,7 @@ def download_curricular_units_template():
     """Download Excel template for curricular units import"""
     if not current_user.is_admin():
         flash('Acesso negado. Apenas administradores podem gerenciar unidades curriculares.', 'error')
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     try:
         template_buffer = generate_curricular_units_excel_template()
@@ -1574,7 +1584,7 @@ def import_curricular_units_excel():
     """Import curricular units from Excel file"""
     if not current_user.is_admin():
         flash('Acesso negado. Apenas administradores podem gerenciar unidades curriculares.', 'error')
-        return redirect(url_for('index'))
+        return redirect_by_role()
     
     if 'excel_file' not in request.files:
         flash('Nenhum arquivo selecionado.', 'error')
