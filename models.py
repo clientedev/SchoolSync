@@ -33,13 +33,9 @@ class User(db.Model, UserMixin):
 
 class Teacher(db.Model):
     id = db.Column(Integer, primary_key=True)
+    nif = db.Column(String(10), unique=True, nullable=False)  # NIF format: SN1234567
     name = db.Column(String(100), nullable=False)
     area = db.Column(String(100), nullable=False)
-    subjects = db.Column(Text, nullable=True)  # Comma-separated subjects
-    workload = db.Column(Integer, nullable=True)  # Hours per week
-    email = db.Column(String(120), nullable=True)
-    phone = db.Column(String(20), nullable=True)
-    observations = db.Column(Text, nullable=True)  # Teacher observations field
     user_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)  # Linked user account
     created_at = db.Column(DateTime, default=datetime.utcnow)
     

@@ -23,10 +23,11 @@
             <div class="card bg-primary text-white">
                 <div class="card-body">
                     <h4 class="card-title">Bem-vindo, {{ teacher.name }}!</h4>
-                    <p class="card-text">Área: {{ teacher.area }}</p>
-                    {% if current_semester %}
-                    <p class="card-text">Semestre Atual: {{ current_semester.name }}</p>
-                    {% endif %}
+                    <p class="card-text">NIF: {{ teacher.nif }} | Área: {{ teacher.area }}</p>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Para qualquer dúvida, procure sua gestão.
+                    </div>
                 </div>
             </div>
         </div>

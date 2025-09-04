@@ -4,13 +4,9 @@ from wtforms import StringField, TextAreaField, SelectField, IntegerField, DateT
 from wtforms.validators import DataRequired, Email, Optional, Length, EqualTo
 
 class TeacherForm(FlaskForm):
+    nif = StringField('NIF (ex: SN1234567)', validators=[DataRequired(), Length(min=9, max=9)])
     name = StringField('Nome', validators=[DataRequired(), Length(max=100)])
     area = StringField('Área', validators=[DataRequired(), Length(max=100)])
-    subjects = TextAreaField('Disciplinas (separadas por vírgula)', validators=[Optional()])
-    workload = IntegerField('Carga Horária (horas/semana)', validators=[Optional()])
-    email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
-    phone = StringField('Telefone', validators=[Optional(), Length(max=20)])
-    observations = TextAreaField('Observações', validators=[Optional()])
 
 class CourseForm(FlaskForm):
     name = StringField('Nome do Curso', validators=[DataRequired(), Length(max=100)])

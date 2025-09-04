@@ -323,9 +323,9 @@ def generate_teachers_excel_template():
     
     # Create sample data with headers
     data = {
+        'NIF': ['SN1234567', 'SN7654321'],
         'Nome': ['João Silva', 'Maria Santos'],
-        'Curso': ['Técnico em Eletrônica', 'Técnico em Informática'],
-        'Área do Curso': ['Eletrônica', 'Informática']
+        'Área': ['Eletrônica', 'Informática']
     }
     
     df = pd.DataFrame(data)
@@ -367,10 +367,10 @@ def generate_teachers_excel_template():
         ["INSTRUÇÕES PARA IMPORTAÇÃO DE DOCENTES"],
         [""],
         ["1. Preencha os dados dos docentes na aba 'Docentes'"],
-        ["2. Campos obrigatórios: Nome, Curso, Área do Curso"],
-        ["3. Nome: nome completo do docente"],
-        ["4. Curso: nome do curso que o docente ministra"],
-        ["5. Área do Curso: área de atuação do curso (ex: Eletrônica, Informática)"],
+        ["2. Campos obrigatórios: NIF, Nome, Área"],
+        ["3. NIF: número de identificação funcional no formato SN1234567"],
+        ["4. Nome: nome completo do docente"],
+        ["5. Área: área de atuação do docente (ex: Eletrônica, Informática)"],
         [""],
         ["IMPORTANTE:"],
         ["- Não altere os nomes das colunas"],
@@ -429,51 +429,69 @@ def process_teachers_excel_import(file_path):
         for index, row in df.iterrows():
             try:
                 # Skip empty rows
-                if pd.isna(row.get('Nome', '')) or str(row.get('Nome', '')).strip() == '':
+                if pd.isna(row.get('NIF', '')) or str(row.get('NIF', '')).strip() == '':
                     continue
                 
                 # Extract data with defaults
-                name = str(row['Nome']).strip()
-                course = str(row.get('Curso', '')).strip() if not pd.isna(row.get('Curso')) else ''
-                area = str(row.get('Área do Curso', '')).strip() if not pd.isna(row.get('Área do Curso')) else ''
+                nif = str(row['NIF']).strip().upper()
+                name = str(row.get('Nome', '')).strip()
+                area = str(row.get('Área', '')).strip()
                 
                 # Validate required fields
+                if not nif:
+                    results['errors'].append(f'Linha {index + 2}: NIF é obrigatório')
+                    continue
+                    
+                if not nif.startswith('SN') or len(nif) != 9:
+                    results['errors'].append(f'Linha {index + 2}: NIF deve estar no formato SN1234567')
+                    continue
+                
                 if not name:
                     results['errors'].append(f'Linha {index + 2}: Nome é obrigatório')
                     continue
-                
-                if not course:
-                    results['errors'].append(f'Linha {index + 2}: Curso é obrigatório')
-                    continue
                     
                 if not area:
-                    results['errors'].append(f'Linha {index + 2}: Área do Curso é obrigatória')
+                    results['errors'].append(f'Linha {index + 2}: Área é obrigatória')
                     continue
                 
                 # Check if teacher already exists
-                existing_teacher = Teacher.query.filter_by(name=name).first()
+                existing_teacher = Teacher.query.filter_by(nif=nif).first()
                 if existing_teacher:
-                    results['warnings'].append(f'Linha {index + 2}: Docente "{name}" já existe, pulando...')
+                    results['warnings'].append(f'Linha {index + 2}: Docente com NIF "{nif}" já existe, pulando...')
                     continue
                 
                 # Create new teacher
                 teacher = Teacher(
+                    nif=nif,
                     name=name,
-                    area=area,
-                    subjects=course,  # Store course in subjects field for now
-                    workload=None,
-                    email=None,
-                    phone=None,
-                    observations=f'Curso: {course}' if course else None
+                    area=area
                 )
                 
                 db.session.add(teacher)
                 db.session.flush()  # Get teacher ID before commit
                 
-                # Verify if course exists in the system
-                existing_course = Course.query.filter_by(name=course).first()
-                if not existing_course:
-                    results['warnings'].append(f'Linha {index + 2}: Curso "{course}" não encontrado no sistema para o docente "{name}"')
+                # Create user account for teacher
+                from models import User
+                import random
+                import string
+                
+                # Generate random password
+                password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+                
+                user = User(
+                    username=nif.lower(),
+                    name=name,
+                    role='teacher'
+                )
+                user.set_password(password)
+                
+                db.session.add(user)
+                db.session.flush()
+                
+                teacher.user_id = user.id
+                
+                # Store the password for later notification (you might want to email this)
+                results['warnings'].append(f'Docente {name} (NIF: {nif}) - Senha gerada: {password}')
                 
                 results['success'] += 1
                 

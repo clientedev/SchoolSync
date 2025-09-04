@@ -315,47 +315,29 @@ def add_teacher():
     form = TeacherForm()
     
     if form.validate_on_submit():
+        # Check if NIF already exists
+        existing_teacher = Teacher.query.filter_by(nif=form.nif.data).first()
+        if existing_teacher:
+            flash(f'Já existe um docente com NIF {form.nif.data}.', 'error')
+            return render_template('teachers.html', form=form, teachers=Teacher.query.all())
+        
         teacher = Teacher()  # type: ignore
+        teacher.nif = form.nif.data.upper()
         teacher.name = form.name.data
         teacher.area = form.area.data
-        teacher.subjects = form.subjects.data
-        teacher.workload = form.workload.data
-        teacher.email = form.email.data
-        teacher.phone = form.phone.data
-        teacher.observations = form.observations.data
         
         # Create user account automatically for teacher
         teacher_user = User()  # type: ignore
-        
-        # Generate username from email or name
-        if form.email.data:
-            username = form.email.data.split('@')[0].lower().replace('.', '_').replace('-', '_')
-        else:
-            # Create username from name
-            name_parts = (form.name.data or '').lower().split()
-            if len(name_parts) >= 2:
-                username = f"{name_parts[0]}.{name_parts[-1]}"
-            else:
-                username = name_parts[0] if name_parts else 'docente'
-        
-        # Ensure username is unique
-        base_username = username
-        counter = 1
-        while User.query.filter_by(username=username).first():
-            username = f"{base_username}_{counter}"
-            counter += 1
-        
-        teacher_user.username = username
+        teacher_user.username = form.nif.data.lower()  # Use NIF as username
         teacher_user.name = form.name.data
         teacher_user.role = 'teacher'
-        teacher_user.email = form.email.data
         teacher_user.created_by = current_user.id
         
         # Generate secure password (teacher can change later)
         import secrets
         import string
         password_chars = string.ascii_letters + string.digits
-        password = ''.join(secrets.choice(password_chars) for _ in range(10))
+        password = ''.join(secrets.choice(password_chars) for _ in range(8))
         teacher_user.set_password(password)
         
         db.session.add(teacher_user)
@@ -368,11 +350,12 @@ def add_teacher():
         # Store password for display (in a real system, you might want to email this)
         session['new_teacher_credentials'] = {
             'name': teacher.name,
-            'username': username,
+            'nif': teacher.nif,
+            'username': teacher.nif.lower(),
             'password': password
         }
         
-        flash(f'Professor {teacher.name} cadastrado com sucesso! Conta criada.', 'success')
+        flash(f'Docente {teacher.name} cadastrado com sucesso! Conta criada.', 'success')
         return redirect(url_for('show_teacher_credentials'))
     
     return render_template('teachers.html', form=form, teachers=Teacher.query.all())
@@ -523,10 +506,18 @@ def edit_teacher(id):
     form = TeacherForm(obj=teacher)
     
     if form.validate_on_submit():
-        form.populate_obj(teacher)
+        # Check if NIF already exists (but not for current teacher)
+        existing_teacher = Teacher.query.filter(Teacher.nif == form.nif.data, Teacher.id != teacher.id).first()
+        if existing_teacher:
+            flash(f'Já existe outro docente com NIF {form.nif.data}.', 'error')
+            return render_template('teachers.html', form=form, teacher=teacher, teachers=Teacher.query.all())
+        
+        teacher.nif = form.nif.data.upper()
+        teacher.name = form.name.data
+        teacher.area = form.area.data
         db.session.commit()
         
-        flash(f'Professor {teacher.name} atualizado com sucesso!', 'success')
+        flash(f'Docente {teacher.name} atualizado com sucesso!', 'success')
         return redirect(url_for('teachers'))
     
     return render_template('teachers.html', form=form, teacher=teacher, teachers=Teacher.query.all())
@@ -852,12 +843,54 @@ def delete_evaluator(id):
 @app.route('/evaluations')
 @login_required
 def evaluations():
-    """List all evaluations"""
-    page = request.args.get('page', 1, type=int)
-    evaluations_list = Evaluation.query.order_by(Evaluation.evaluation_date.desc()).paginate(
-        page=page, per_page=20, error_out=False
-    )
-    return render_template('evaluation_form.html', evaluations=evaluations_list)
+    """List all evaluations grouped by teacher"""
+    # Get filter parameters
+    teacher_id = request.args.get('teacher_id', type=int)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Base query
+    query = Evaluation.query
+    
+    # Apply filters
+    if teacher_id:
+        query = query.filter_by(teacher_id=teacher_id)
+    
+    if start_date:
+        try:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+            query = query.filter(Evaluation.evaluation_date >= start_date_obj)
+        except ValueError:
+            flash('Data inicial inválida.', 'error')
+    
+    if end_date:
+        try:
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+            end_date_obj = end_date_obj.replace(hour=23, minute=59, second=59)
+            query = query.filter(Evaluation.evaluation_date <= end_date_obj)
+        except ValueError:
+            flash('Data final inválida.', 'error')
+    
+    # Get evaluations ordered by teacher name and date
+    evaluations_list = query.join(Teacher).order_by(Teacher.name, Evaluation.evaluation_date.desc()).all()
+    
+    # Group evaluations by teacher
+    evaluations_by_teacher = {}
+    for eval in evaluations_list:
+        teacher_key = (eval.teacher.id, eval.teacher.name, eval.teacher.nif, eval.teacher.area)
+        if teacher_key not in evaluations_by_teacher:
+            evaluations_by_teacher[teacher_key] = []
+        evaluations_by_teacher[teacher_key].append(eval)
+    
+    # Get all teachers for filter dropdown
+    teachers = Teacher.query.order_by(Teacher.name).all()
+    
+    return render_template('evaluations_by_teacher.html', 
+                         evaluations_by_teacher=evaluations_by_teacher,
+                         teachers=teachers,
+                         selected_teacher_id=teacher_id,
+                         start_date=start_date,
+                         end_date=end_date)
 
 @app.route('/evaluations/new', methods=['GET', 'POST'])
 def new_evaluation():
@@ -1129,109 +1162,8 @@ def not_found_error(error):
     return render_template('base.html', error_message="Página não encontrada"), 404
 
 # Teacher Portal Routes
-@app.route('/teacher_dashboard')
-@login_required
-def teacher_dashboard():
-    """Dashboard for teachers"""
-    if not current_user.is_teacher():
-        flash('Acesso negado. Esta área é destinada apenas aos docentes.', 'error')
-        return redirect(url_for('index'))
-    
-    # Get teacher profile
-    teacher = Teacher.query.filter_by(user_id=current_user.id).first()
-    if not teacher:
-        flash('Perfil de docente não encontrado.', 'error')
-        return redirect(url_for('logout'))
-    
-    # Get current semester
-    current_semester = Semester.query.filter_by(is_active=True).first()
-    
-    # Get evaluations for this teacher
-    evaluations = Evaluation.query.filter_by(teacher_id=teacher.id).all()
-    
-    # Get pending evaluations (those not signed by teacher)
-    pending_evaluations = [e for e in evaluations if not e.teacher_signed and e.evaluator_signed]
-    
-    # Get scheduled evaluations
-    scheduled = []
-    if current_semester:
-        scheduled = ScheduledEvaluation.query.filter_by(
-            teacher_id=teacher.id,
-            semester_id=current_semester.id,
-            is_completed=False
-        ).all()
-    
-    return render_template('teacher_dashboard.html', 
-                         teacher=teacher,
-                         evaluations=evaluations,
-                         pending_evaluations=pending_evaluations,
-                         scheduled_evaluations=scheduled,
-                         current_semester=current_semester)
 
-@app.route('/teacher_evaluation/<int:id>')
-@login_required 
-def teacher_view_evaluation(id):
-    """Teacher views their evaluation"""
-    if not current_user.is_teacher():
-        flash('Acesso negado.', 'error')
-        return redirect(url_for('index'))
-    
-    teacher = Teacher.query.filter_by(user_id=current_user.id).first()
-    if not teacher:
-        flash('Perfil de docente não encontrado.', 'error')
-        return redirect(url_for('logout'))
-    
-    evaluation = Evaluation.query.filter_by(id=id, teacher_id=teacher.id).first_or_404()
-    
-    return render_template('teacher_evaluation_view.html', evaluation=evaluation)
 
-@app.route('/teacher_sign_evaluation/<int:id>', methods=['POST'])
-@login_required
-def teacher_sign_evaluation(id):
-    """Teacher signs their evaluation digitally"""
-    if not current_user.is_teacher():
-        return jsonify({'error': 'Acesso negado'}), 403
-    
-    teacher = Teacher.query.filter_by(user_id=current_user.id).first()
-    if not teacher:
-        return jsonify({'error': 'Perfil de docente não encontrado'}), 404
-    
-    evaluation = Evaluation.query.filter_by(id=id, teacher_id=teacher.id).first_or_404()
-    
-    if evaluation.teacher_signed:
-        return jsonify({'error': 'Avaliação já foi assinada'}), 400
-    
-    signature_data = (request.json or {}).get('signature')
-    if not signature_data:
-        return jsonify({'error': 'Assinatura não fornecida'}), 400
-    
-    # Save digital signature
-    signature = DigitalSignature()  # type: ignore
-    signature.evaluation_id = evaluation.id
-    signature.user_id = current_user.id
-    signature.signature_data = signature_data
-    signature.signature_type = 'teacher'
-    signature.ip_address = request.environ.get('REMOTE_ADDR')
-    
-    # Mark evaluation as signed by teacher
-    evaluation.teacher_signed = True
-    evaluation.teacher_signature_date = datetime.utcnow()
-    
-    # Check if both teacher and evaluator have signed
-    if evaluation.teacher_signed and evaluation.evaluator_signed:
-        evaluation.is_completed = True
-        
-        # Mark scheduled evaluation as completed if exists
-        if evaluation.scheduled_evaluation_id:
-            scheduled = ScheduledEvaluation.query.get(evaluation.scheduled_evaluation_id)
-            if scheduled:
-                scheduled.is_completed = True
-                scheduled.completed_at = datetime.utcnow()
-    
-    db.session.add(signature)
-    db.session.commit()
-    
-    return jsonify({'success': True, 'message': 'Avaliação assinada com sucesso!'})
 
 @app.route('/evaluator_sign_evaluation/<int:id>', methods=['POST'])
 @login_required
@@ -1720,3 +1652,110 @@ def page_not_found(error):
 def internal_error(error):
     db.session.rollback()
     return render_template('base.html', error_message="Erro interno do servidor"), 500
+
+# Teacher-specific routes
+@app.route('/teacher/dashboard')
+@login_required
+def teacher_dashboard():
+    """Dashboard for logged-in teachers"""
+    if not current_user.is_teacher():
+        flash('Acesso negado. Esta área é apenas para docentes.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get teacher profile
+    teacher = Teacher.query.filter_by(user_id=current_user.id).first()
+    if not teacher:
+        flash('Perfil de docente não encontrado.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get teacher's evaluations
+    evaluations = Evaluation.query.filter_by(teacher_id=teacher.id).order_by(Evaluation.evaluation_date.desc()).all()
+    
+    return render_template('teacher_dashboard.html', 
+                         teacher=teacher, 
+                         evaluations=evaluations)
+
+@app.route('/teacher/evaluation/<int:id>')
+@login_required
+def teacher_view_evaluation_details(id):
+    """View evaluation details for teacher"""
+    if not current_user.is_teacher():
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    teacher = Teacher.query.filter_by(user_id=current_user.id).first()
+    if not teacher:
+        flash('Perfil de docente não encontrado.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    evaluation = Evaluation.query.filter_by(id=id, teacher_id=teacher.id).first_or_404()
+    
+    return render_template('teacher_evaluation_view.html', 
+                         evaluation=evaluation, 
+                         teacher=teacher)
+
+@app.route('/teacher/evaluation/<int:id>/sign', methods=['POST'])
+@login_required
+def teacher_sign_evaluation_new(id):
+    """Sign evaluation as teacher"""
+    if not current_user.is_teacher():
+        return jsonify({'error': 'Acesso negado'}), 403
+    
+    teacher = Teacher.query.filter_by(user_id=current_user.id).first()
+    if not teacher:
+        return jsonify({'error': 'Perfil não encontrado'}), 404
+    
+    evaluation = Evaluation.query.filter_by(id=id, teacher_id=teacher.id).first_or_404()
+    
+    if evaluation.teacher_signature_date:
+        return jsonify({'error': 'Avaliação já foi assinada'}), 400
+    
+    evaluation.teacher_signature_date = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Avaliação assinada com sucesso!'})
+
+@app.route('/teacher/evaluations')
+@login_required 
+def teacher_evaluations():
+    """List teacher's evaluations with filters"""
+    if not current_user.is_teacher():
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    teacher = Teacher.query.filter_by(user_id=current_user.id).first()
+    if not teacher:
+        flash('Perfil de docente não encontrado.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get filter parameters
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Base query
+    query = Evaluation.query.filter_by(teacher_id=teacher.id)
+    
+    # Apply date filters
+    if start_date:
+        try:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+            query = query.filter(Evaluation.evaluation_date >= start_date_obj)
+        except ValueError:
+            flash('Data inicial inválida.', 'error')
+    
+    if end_date:
+        try:
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+            # Add one day to include the entire end date
+            end_date_obj = end_date_obj.replace(hour=23, minute=59, second=59)
+            query = query.filter(Evaluation.evaluation_date <= end_date_obj)
+        except ValueError:
+            flash('Data final inválida.', 'error')
+    
+    evaluations = query.order_by(Evaluation.evaluation_date.desc()).all()
+    
+    return render_template('teacher_evaluations.html', 
+                         teacher=teacher, 
+                         evaluations=evaluations,
+                         start_date=start_date,
+                         end_date=end_date)

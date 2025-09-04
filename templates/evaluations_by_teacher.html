@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Avaliações por Docente{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-users me-2"></i>Avaliações por Docente</h2>
+            <p class="text-muted">Visualize e gerencie as avaliações organizadas por docente</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('evaluations') }}">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="teacher_id" class="form-label">Docente:</label>
+                        <select name="teacher_id" id="teacher_id" class="form-select">
+                            <option value="">Todos os docentes</option>
+                            {% for teacher in teachers %}
+                            <option value="{{ teacher.id }}" 
+                                    {% if selected_teacher_id == teacher.id %}selected{% endif %}>
+                                {{ teacher.name }} ({{ teacher.nif }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="start_date" class="form-label">Data Inicial:</label>
+                        <input type="date" name="start_date" id="start_date" class="form-control" 
+                               value="{{ start_date or '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="end_date" class="form-label">Data Final:</label>
+                        <input type="date" name="end_date" id="end_date" class="form-control" 
+                               value="{{ end_date or '' }}">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                            <a href="{{ url_for('evaluations') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    {% if evaluations_by_teacher %}
+        {% for teacher_info, teacher_evaluations in evaluations_by_teacher.items() %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user me-2"></i>{{ teacher_info[1] }}
+                        </h5>
+                        <small class="text-muted">NIF: {{ teacher_info[2] }} | Área: {{ teacher_info[3] }}</small>
+                    </div>
+                    <span class="badge bg-primary">{{ teacher_evaluations|length }} avaliação(ões)</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Curso</th>
+                                <th>Período</th>
+                                <th>Status</th>
+                                <th>Assinatura</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for evaluation in teacher_evaluations %}
+                            <tr>
+                                <td>{{ evaluation.evaluation_date.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ evaluation.course.name }}</td>
+                                <td>{{ evaluation.period }}</td>
+                                <td>
+                                    {% if evaluation.is_completed %}
+                                        <span class="badge bg-success">Concluída</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Em andamento</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if evaluation.teacher_signature_date %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>
+                                            {{ evaluation.teacher_signature_date.strftime('%d/%m/%Y') }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Não assinada</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('view_evaluation', id=evaluation.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                        {% if not evaluation.is_completed %}
+                                        <a href="{{ url_for('edit_evaluation', id=evaluation.id) }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Nenhuma avaliação encontrada com os filtros selecionados.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
