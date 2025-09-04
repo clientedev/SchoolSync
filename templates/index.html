@@ -150,7 +150,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <canvas id="monthlyChart" style="height: 300px;"></canvas>
+                <canvas id="monthlyChart" style="height: 200px; max-height: 200px;"></canvas>
                 
                 <!-- Chart Legend -->
                 <div class="row mt-3">
@@ -417,6 +417,12 @@ function createMonthlyChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 10,
+                    bottom: 10
+                }
+            },
             interaction: {
                 intersect: false,
                 mode: 'index'

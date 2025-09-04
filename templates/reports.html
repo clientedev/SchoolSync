@@ -175,8 +175,6 @@
                                     <tr>
                                         <td>
                                             <strong>{{ teacher.name }}</strong>
-                                            <br>
-                                            <small class="text-muted">{{ teacher.subjects or 'Áreas não especificadas' }}</small>
                                         </td>
                                         <td>{{ teacher.area }}</td>
                                         <td class="text-center">
@@ -369,8 +367,8 @@ document.addEventListener('DOMContentLoaded', function() {
         {% for teacher in teachers %}
             {
                 name: '{{ teacher.name|replace("'", "\\'")|safe }}',
-                planning: {% if teacher.evaluations and teacher.evaluations|length > 0 %}{% set planning_sum = 0 %}{% for eval in teacher.evaluations %}{% if eval.is_completed %}{% set planning_sum = planning_sum + eval.calculate_planning_percentage() %}{% endif %}{% endfor %}{{ "%.1f"|format(planning_sum / teacher.evaluations|selectattr('is_completed')|list|length) if teacher.evaluations|selectattr('is_completed')|list|length > 0 else 0 }}{% else %}0{% endif %},
-                class: {% if teacher.evaluations and teacher.evaluations|length > 0 %}{% set class_sum = 0 %}{% for eval in teacher.evaluations %}{% if eval.is_completed %}{% set class_sum = class_sum + eval.calculate_class_percentage() %}{% endif %}{% endfor %}{{ "%.1f"|format(class_sum / teacher.evaluations|selectattr('is_completed')|list|length) if teacher.evaluations|selectattr('is_completed')|list|length > 0 else 0 }}{% else %}0{% endif %},
+                planning: {% set completed_evals = teacher.evaluations|selectattr('is_completed')|list %}{% if completed_evals %}{% set planning_sum = 0 %}{% for eval in completed_evals %}{% set planning_sum = planning_sum + eval.calculate_planning_percentage() %}{% endfor %}{{ "%.1f"|format(planning_sum / completed_evals|length) }}{% else %}0{% endif %},
+                class: {% set completed_evals = teacher.evaluations|selectattr('is_completed')|list %}{% if completed_evals %}{% set class_sum = 0 %}{% for eval in completed_evals %}{% set class_sum = class_sum + eval.calculate_class_percentage() %}{% endfor %}{{ "%.1f"|format(class_sum / completed_evals|length) }}{% else %}0{% endif %},
                 totalEvaluations: {{ teacher.evaluations|selectattr('is_completed')|list|length }}
             }{% if not loop.last %},{% endif %}
         {% endfor %}
