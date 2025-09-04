@@ -1136,7 +1136,8 @@ def complete_evaluation(id):
 @login_required
 def reports():
     """Reports page"""
-    teachers = Teacher.query.all()
+    from sqlalchemy.orm import joinedload
+    teachers = Teacher.query.options(joinedload(Teacher.evaluations)).all()
     return render_template('reports.html', teachers=teachers)
 
 @app.route('/reports/evaluation/<int:id>')
