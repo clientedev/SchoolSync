@@ -1042,7 +1042,7 @@ def complete_evaluation(id):
     db.session.commit()
     
     # Send email notification
-    if evaluation.teacher.email:
+    if evaluation.teacher.user and evaluation.teacher.user.email:
         try:
             report_buffer = generate_evaluation_report(evaluation)
             report_path = os.path.join(current_app.config['UPLOAD_FOLDER'], f'temp_report_{evaluation.id}.pdf')
@@ -1050,7 +1050,7 @@ def complete_evaluation(id):
             with open(report_path, 'wb') as f:
                 f.write(report_buffer.read())
             
-            send_evaluation_email(evaluation.teacher.email, evaluation, report_path)
+            send_evaluation_email(evaluation.teacher.user.email, evaluation, report_path)
             
             # Clean up temp file
             if os.path.exists(report_path):
@@ -1080,6 +1080,35 @@ def download_evaluation_report(id):
     
     report_buffer = generate_evaluation_report(evaluation)
     filename = f"avaliacao_{evaluation.teacher.name.replace(' ', '_')}_{evaluation.evaluation_date.strftime('%Y%m%d')}.pdf"
+    
+    return send_file(
+        report_buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename
+    )
+
+@app.route('/teacher/evaluation/<int:id>/download')
+@login_required
+def teacher_download_evaluation_pdf(id):
+    """Download PDF for teacher's own evaluation"""
+    if not current_user.is_teacher():
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('teacher_dashboard'))
+    
+    teacher = Teacher.query.filter_by(user_id=current_user.id).first()
+    if not teacher:
+        flash('Perfil de docente não encontrado.', 'error')
+        return redirect(url_for('teacher_dashboard'))
+    
+    evaluation = Evaluation.query.filter_by(id=id, teacher_id=teacher.id).first_or_404()
+    
+    if not evaluation.teacher_signature_date:
+        flash('Avaliação deve estar assinada para ser baixada.', 'error')
+        return redirect(url_for('teacher_view_evaluation_details', id=id))
+    
+    report_buffer = generate_evaluation_report(evaluation)
+    filename = f"minha_avaliacao_{evaluation.evaluation_date.strftime('%Y%m%d')}.pdf"
     
     return send_file(
         report_buffer,
@@ -1737,6 +1766,11 @@ def teacher_sign_evaluation_new(id):
     # Mark evaluation as signed by teacher
     evaluation.teacher_signed = True
     evaluation.teacher_signature_date = datetime.utcnow()
+    
+    # Check if evaluation is complete (teacher signed)
+    if evaluation.teacher_signed:
+        evaluation.is_completed = True
+    
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'Avaliação assinada com sucesso!'})

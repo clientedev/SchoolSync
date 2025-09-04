@@ -192,6 +192,51 @@ def generate_evaluation_report(evaluation):
         story.append(Paragraph(evaluation.general_observations, styles['Normal']))
         story.append(Spacer(1, 12))
     
+    # Signatures section
+    story.append(Spacer(1, 30))
+    story.append(Paragraph("<b>Assinaturas:</b>", styles['Heading3']))
+    
+    signature_data = [
+        ['Avaliado por:', evaluation.evaluator.name if evaluation.evaluator else 'N/A'],
+        ['Data:', evaluation.evaluator_signature_date.strftime('%d/%m/%Y %H:%M') if evaluation.evaluator_signature_date else 'N/A'],
+        ['', ''],
+        ['Docente:', evaluation.teacher.name],
+        ['Data:', evaluation.teacher_signature_date.strftime('%d/%m/%Y %H:%M') if evaluation.teacher_signature_date else 'N/A']
+    ]
+    
+    signature_table = Table(signature_data, colWidths=[1.5*inch, 4.5*inch])
+    signature_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, 1), 1, colors.black),
+        ('GRID', (0, 3), (-1, 4), 1, colors.black)
+    ]))
+    
+    story.append(signature_table)
+    
+    # Add signature images if available
+    teacher_signature = evaluation.signatures and next((s for s in evaluation.signatures if s.signature_type == 'teacher'), None)
+    if teacher_signature and teacher_signature.signature_data:
+        story.append(Spacer(1, 10))
+        story.append(Paragraph("<b>Assinatura Digital do Docente:</b>", styles['Normal']))
+        try:
+            # Decode base64 signature
+            import base64
+            from io import BytesIO
+            from reportlab.lib.utils import ImageReader
+            
+            signature_b64 = teacher_signature.signature_data.split(',')[1] if ',' in teacher_signature.signature_data else teacher_signature.signature_data
+            signature_bytes = base64.b64decode(signature_b64)
+            signature_image = ImageReader(BytesIO(signature_bytes))
+            
+            from reportlab.platypus import Image
+            story.append(Image(signature_image, width=200, height=100))
+        except Exception as e:
+            story.append(Paragraph(f"[Assinatura digital registrada em {teacher_signature.signed_at.strftime('%d/%m/%Y %H:%M')}]", styles['Normal']))
+    
     # Footer
     story.append(Spacer(1, 30))
     story.append(Paragraph(f"Relatório gerado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}", 

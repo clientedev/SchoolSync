@@ -58,8 +58,13 @@
                     </div>
                     <div class="col-md-2 mb-3">
                         <div class="stat-card">
-                            {% set total_evaluations = teachers|sum(attribute='evaluations|length') %}
-                            <h3 class="text-success">{{ total_evaluations or 0 }}</h3>
+                            {% set total_evaluations = [] %}
+                            {% for teacher in teachers %}
+                                {% for eval in teacher.evaluations %}
+                                    {% set _ = total_evaluations.append(1) %}
+                                {% endfor %}
+                            {% endfor %}
+                            <h3 class="text-success">{{ total_evaluations|length }}</h3>
                             <small class="text-muted">Avaliações</small>
                         </div>
                     </div>
