@@ -1710,9 +1710,25 @@ def teacher_dashboard():
     # Get teacher's evaluations
     evaluations = Evaluation.query.filter_by(teacher_id=teacher.id).order_by(Evaluation.evaluation_date.desc()).all()
     
+    # Get evaluations pending teacher signature (evaluator signed but teacher hasn't)
+    pending_evaluations = [eval for eval in evaluations if not eval.teacher_signed]
+    
+    # Get scheduled evaluations for this teacher
+    from models import ScheduledEvaluation
+    current_semester = get_or_create_current_semester()
+    scheduled_evaluations = []
+    if current_semester:
+        scheduled_evaluations = ScheduledEvaluation.query.filter_by(
+            teacher_id=teacher.id, 
+            semester_id=current_semester.id,
+            is_completed=False
+        ).all()
+    
     return render_template('teacher_dashboard.html', 
                          teacher=teacher, 
-                         evaluations=evaluations)
+                         evaluations=evaluations,
+                         pending_evaluations=pending_evaluations,
+                         scheduled_evaluations=scheduled_evaluations)
 
 @app.route('/teacher/evaluation/<int:id>')
 @login_required

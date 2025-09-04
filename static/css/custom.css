@@ -158,6 +158,54 @@ footer {
     transform: translateY(-2px);
 }
 
+/* Hover lift effect for cards */
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Enhanced stats cards */
+.stats-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Card fade-in animation */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Animated progress bars */
+@keyframes progressAnimation {
+    from { width: 0%; }
+}
+
+.progress .progress-bar {
+    animation: progressAnimation 1.5s ease-in-out;
+}
+
 /* Responsive table improvements */
 @media (max-width: 768px) {
     .table-responsive {

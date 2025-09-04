@@ -198,10 +198,10 @@ def generate_evaluation_report(evaluation):
     
     signature_data = [
         ['Avaliado por:', evaluation.evaluator.name if evaluation.evaluator else 'N/A'],
-        ['Data:', evaluation.evaluator_signature_date.strftime('%d/%m/%Y %H:%M') if evaluation.evaluator_signature_date else 'N/A'],
+        ['Data da avaliação:', evaluation.evaluation_date.strftime('%d/%m/%Y')],
         ['', ''],
         ['Docente:', evaluation.teacher.name],
-        ['Data:', evaluation.teacher_signature_date.strftime('%d/%m/%Y %H:%M') if evaluation.teacher_signature_date else 'N/A']
+        ['Data da assinatura:', evaluation.teacher_signature_date.strftime('%d/%m/%Y %H:%M') if evaluation.teacher_signature_date else 'Pendente']
     ]
     
     signature_table = Table(signature_data, colWidths=[1.5*inch, 4.5*inch])
@@ -225,15 +225,28 @@ def generate_evaluation_report(evaluation):
         try:
             # Decode base64 signature
             import base64
-            from io import BytesIO
             from reportlab.lib.utils import ImageReader
             
             signature_b64 = teacher_signature.signature_data.split(',')[1] if ',' in teacher_signature.signature_data else teacher_signature.signature_data
             signature_bytes = base64.b64decode(signature_b64)
             signature_image = ImageReader(BytesIO(signature_bytes))
             
+            # Create a table with signature image and border for better visibility
             from reportlab.platypus import Image
-            story.append(Image(signature_image, width=200, height=100))
+            signature_img = Image(signature_image, width=200, height=80)
+            
+            signature_img_table = Table([[signature_img]], colWidths=[220])
+            signature_img_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+                ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),
+                ('BACKGROUND', (0, 0), (0, 0), colors.white),
+                ('GRID', (0, 0), (0, 0), 2, colors.black),
+                ('TOPPADDING', (0, 0), (0, 0), 8),
+                ('BOTTOMPADDING', (0, 0), (0, 0), 8),
+                ('LEFTPADDING', (0, 0), (0, 0), 10),
+                ('RIGHTPADDING', (0, 0), (0, 0), 10)
+            ]))
+            story.append(signature_img_table)
         except Exception as e:
             story.append(Paragraph(f"[Assinatura digital registrada em {teacher_signature.signed_at.strftime('%d/%m/%Y %H:%M')}]", styles['Normal']))
     

@@ -20,13 +20,26 @@
     <!-- Welcome Card -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h4 class="card-title">Bem-vindo, {{ teacher.name }}!</h4>
-                    <p class="card-text">NIF: {{ teacher.nif }} | Área: {{ teacher.area }}</p>
-                    <div class="alert alert-info mt-3">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Para qualquer dúvida, procure sua gestão.
+            <div class="card bg-gradient text-white shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body py-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="card-title mb-2">
+                                <i class="fas fa-user-graduate me-2"></i>
+                                Bem-vindo, {{ teacher.name }}!
+                            </h4>
+                            <p class="card-text mb-0">
+                                <i class="fas fa-id-card me-2"></i>NIF: {{ teacher.nif }} 
+                                <i class="fas fa-bookmark ms-3 me-2"></i>Área: {{ teacher.area }}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <i class="fas fa-chalkboard-teacher fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                    <div class="alert alert-light mt-3 mb-0">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>
+                        <span class="text-dark">Para qualquer dúvida, procure sua gestão.</span>
                     </div>
                 </div>
             </div>
@@ -35,35 +48,47 @@
 
     <!-- Stats Cards -->
     <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title text-primary">{{ evaluations|length }}</h5>
-                    <p class="card-text">Total de Avaliações</p>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100 hover-lift">
+                <div class="card-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-clipboard-list fa-2x text-primary"></i>
+                    </div>
+                    <h3 class="fw-bold text-primary mb-1">{{ evaluations|length }}</h3>
+                    <p class="card-text text-muted mb-0">Total de Avaliações</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title text-warning">{{ pending_evaluations|length }}</h5>
-                    <p class="card-text">Aguardando Assinatura</p>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100 hover-lift">
+                <div class="card-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-pen-to-square fa-2x text-warning"></i>
+                    </div>
+                    <h3 class="fw-bold text-warning mb-1">{{ pending_evaluations|length }}</h3>
+                    <p class="card-text text-muted mb-0">Aguardando Assinatura</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title text-info">{{ scheduled_evaluations|length }}</h5>
-                    <p class="card-text">Avaliações Agendadas</p>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100 hover-lift">
+                <div class="card-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-calendar-check fa-2x text-info"></i>
+                    </div>
+                    <h3 class="fw-bold text-info mb-1">{{ scheduled_evaluations|length }}</h3>
+                    <p class="card-text text-muted mb-0">Avaliações Agendadas</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title text-success">{{ evaluations|selectattr('is_completed')|list|length }}</h5>
-                    <p class="card-text">Concluídas</p>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100 hover-lift">
+                <div class="card-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <h3 class="fw-bold text-success mb-1">{{ evaluations|selectattr('is_completed')|list|length }}</h3>
+                    <p class="card-text text-muted mb-0">Concluídas</p>
                 </div>
             </div>
         </div>
