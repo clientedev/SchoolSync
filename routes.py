@@ -1720,6 +1720,22 @@ def teacher_sign_evaluation_new(id):
     if evaluation.teacher_signature_date:
         return jsonify({'error': 'Avaliação já foi assinada'}), 400
     
+    # Get signature data from request
+    signature_data = request.json.get('signature') if request.json else None
+    
+    # Save digital signature if provided
+    if signature_data:
+        from models import DigitalSignature
+        signature = DigitalSignature()
+        signature.evaluation_id = evaluation.id
+        signature.user_id = current_user.id
+        signature.signature_data = signature_data
+        signature.signature_type = 'teacher'
+        signature.ip_address = request.environ.get('REMOTE_ADDR')
+        db.session.add(signature)
+    
+    # Mark evaluation as signed by teacher
+    evaluation.teacher_signed = True
     evaluation.teacher_signature_date = datetime.utcnow()
     db.session.commit()
     

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "teacher_base.html" %}
 
 {% block title %}Avaliação - {{ evaluation.teacher.name }}{% endblock %}
 
@@ -199,7 +199,7 @@
     {% endif %}
 
     <!-- Digital Signature Section -->
-    {% if evaluation.evaluator_signed and not evaluation.teacher_signed %}
+    {% if not evaluation.teacher_signature_date %}
     <div class="row mb-4">
         <div class="col-12">
             <div class="signature-section">
@@ -255,7 +255,7 @@
                     <h6 class="card-title mb-0">Assinatura do Docente</h6>
                 </div>
                 <div class="card-body text-center">
-                    {% if evaluation.teacher_signed %}
+                    {% if evaluation.teacher_signature_date %}
                         <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
                         <p class="text-success">Assinado em {{ evaluation.teacher_signature_date.strftime('%d/%m/%Y %H:%M') if evaluation.teacher_signature_date else 'N/A' }}</p>
                     {% else %}
@@ -325,7 +325,7 @@ function saveSignature() {
     saveButton.disabled = true;
     
     // Send to server
-    fetch(`/teacher_sign_evaluation/{{ evaluation.id }}`, {
+    fetch(`/teacher/evaluation/{{ evaluation.id }}/sign`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
