@@ -412,10 +412,15 @@ def process_teachers_excel_import(file_path):
     """Process Excel file and import teachers"""
     from models import Teacher, Course
     from app import db
+    import sys
+    
+    # Ensure UTF-8 encoding
+    if sys.stdout.encoding != 'utf-8':
+        sys.stdout.reconfigure(encoding='utf-8')
     
     try:
-        # Read Excel file
-        df = pd.read_excel(file_path, sheet_name='Docentes')
+        # Read Excel file with explicit encoding
+        df = pd.read_excel(file_path, sheet_name='Docentes', engine='openpyxl')
         
         # Clean column names
         df.columns = df.columns.str.strip()
@@ -432,10 +437,16 @@ def process_teachers_excel_import(file_path):
                 if pd.isna(row.get('NIF', '')) or str(row.get('NIF', '')).strip() == '':
                     continue
                 
-                # Extract data with defaults
-                nif = str(row['NIF']).strip().upper()
-                name = str(row.get('Nome', '')).strip()
-                area = str(row.get('Área', '')).strip()
+                # Extract data with defaults - ensure UTF-8 handling
+                nif = str(row['NIF']).strip().upper() if not pd.isna(row['NIF']) else ''
+                name = str(row.get('Nome', '')).strip() if not pd.isna(row.get('Nome', '')) else ''
+                area = str(row.get('Área', '')).strip() if not pd.isna(row.get('Área', '')) else ''
+                
+                # Ensure UTF-8 encoding for text fields
+                if isinstance(name, str):
+                    name = name.encode('utf-8', errors='ignore').decode('utf-8')
+                if isinstance(area, str):
+                    area = area.encode('utf-8', errors='ignore').decode('utf-8')
                 
                 # Validate required fields
                 if not nif:
@@ -617,10 +628,15 @@ def process_courses_excel_import(file_path):
     """Process Excel file and import courses with curricular units"""
     from models import Course, CurricularUnit
     from app import db
+    import sys
+    
+    # Ensure UTF-8 encoding
+    if sys.stdout.encoding != 'utf-8':
+        sys.stdout.reconfigure(encoding='utf-8')
     
     try:
-        # Read Excel file
-        df = pd.read_excel(file_path, sheet_name='Cursos')
+        # Read Excel file with explicit encoding
+        df = pd.read_excel(file_path, sheet_name='Cursos', engine='openpyxl')
         
         # Clean column names
         df.columns = df.columns.str.strip()
@@ -637,8 +653,12 @@ def process_courses_excel_import(file_path):
                 if pd.isna(row.get('Nome do Curso', '')) or str(row.get('Nome do Curso', '')).strip() == '':
                     continue
                 
-                # Extract course name
-                course_name = str(row['Nome do Curso']).strip()
+                # Extract course name - ensure UTF-8 handling
+                course_name = str(row['Nome do Curso']).strip() if not pd.isna(row['Nome do Curso']) else ''
+                
+                # Ensure UTF-8 encoding for text fields
+                if isinstance(course_name, str):
+                    course_name = course_name.encode('utf-8', errors='ignore').decode('utf-8')
                 
                 # Validate required fields
                 if not course_name:
@@ -651,6 +671,9 @@ def process_courses_excel_import(file_path):
                     unit_column = f'Unidade Curricular {i}'
                     if unit_column in row and not pd.isna(row.get(unit_column)):
                         unit_name = str(row[unit_column]).strip()
+                        # Ensure UTF-8 encoding for unit names
+                        if isinstance(unit_name, str):
+                            unit_name = unit_name.encode('utf-8', errors='ignore').decode('utf-8')
                         if unit_name:
                             curricular_units.append(unit_name)
                 
@@ -770,10 +793,15 @@ def process_curricular_units_excel_import(file_path):
     import pandas as pd
     from models import CurricularUnit, Course
     from app import db
+    import sys
+    
+    # Ensure UTF-8 encoding
+    if sys.stdout.encoding != 'utf-8':
+        sys.stdout.reconfigure(encoding='utf-8')
     
     try:
-        # Read Excel file
-        df = pd.read_excel(file_path, sheet_name="Unidades Curriculares")
+        # Read Excel file with explicit encoding
+        df = pd.read_excel(file_path, sheet_name="Unidades Curriculares", engine='openpyxl')
         
         results = {
             "success": 0,
@@ -787,11 +815,25 @@ def process_curricular_units_excel_import(file_path):
                 if pd.isna(row.get("Nome", "")) or str(row.get("Nome", "")).strip() == "":
                     continue
                 
-                # Extract data
-                name = str(row["Nome"]).strip()
+                # Extract data - ensure UTF-8 handling
+                name = str(row["Nome"]).strip() if not pd.isna(row["Nome"]) else ""
                 code = str(row.get("Código", "")).strip() if not pd.isna(row.get("Código")) else ""
                 course_name = str(row.get("Curso", "")).strip() if not pd.isna(row.get("Curso")) else ""
                 description = str(row.get("Descrição", "")).strip() if not pd.isna(row.get("Descrição")) else ""
+                
+                # Ensure UTF-8 encoding for text fields
+                for field in [name, code, course_name, description]:
+                    if isinstance(field, str):
+                        field = field.encode('utf-8', errors='ignore').decode('utf-8')
+                # Reassign the cleaned values
+                if isinstance(name, str):
+                    name = name.encode('utf-8', errors='ignore').decode('utf-8')
+                if isinstance(code, str):
+                    code = code.encode('utf-8', errors='ignore').decode('utf-8')
+                if isinstance(course_name, str):
+                    course_name = course_name.encode('utf-8', errors='ignore').decode('utf-8')
+                if isinstance(description, str):
+                    description = description.encode('utf-8', errors='ignore').decode('utf-8')
                 
                 # Validate required fields
                 if not name:

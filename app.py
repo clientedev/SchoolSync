@@ -1,5 +1,11 @@
 import os
 import logging
+import sys
+
+# Set UTF-8 encoding for the application
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8')
+os.environ['PYTHONIOENCODING'] = 'utf-8'
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -28,6 +34,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:/
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
+    "connect_args": {"options": "-c client_encoding=utf8"}
 }
 
 # configure file uploads
