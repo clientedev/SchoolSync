@@ -180,7 +180,11 @@
                                         </td>
                                         <td class="text-center">
                                             {% if teacher.evaluations %}
-                                                {% set planning_avg = (teacher.evaluations|map(attribute='calculate_planning_percentage')|sum) / (teacher.evaluations|length) %}
+                                                {% set planning_sum = 0 %}
+                                                {% for eval in teacher.evaluations %}
+                                                    {% set planning_sum = planning_sum + eval.calculate_planning_percentage() %}
+                                                {% endfor %}
+                                                {% set planning_avg = planning_sum / teacher.evaluations|length %}
                                                 <span class="badge bg-info">{{ "%.1f"|format(planning_avg) }}%</span>
                                             {% else %}
                                                 <span class="text-muted">-</span>
@@ -188,7 +192,11 @@
                                         </td>
                                         <td class="text-center">
                                             {% if teacher.evaluations %}
-                                                {% set class_avg = (teacher.evaluations|map(attribute='calculate_class_percentage')|sum) / (teacher.evaluations|length) %}
+                                                {% set class_sum = 0 %}
+                                                {% for eval in teacher.evaluations %}
+                                                    {% set class_sum = class_sum + eval.calculate_class_percentage() %}
+                                                {% endfor %}
+                                                {% set class_avg = class_sum / teacher.evaluations|length %}
                                                 <span class="badge bg-success">{{ "%.1f"|format(class_avg) }}%</span>
                                             {% else %}
                                                 <span class="text-muted">-</span>
@@ -196,8 +204,14 @@
                                         </td>
                                         <td class="text-center">
                                             {% if teacher.evaluations %}
-                                                {% set planning_avg = (teacher.evaluations|map(attribute='calculate_planning_percentage')|sum) / (teacher.evaluations|length) %}
-                                                {% set class_avg = (teacher.evaluations|map(attribute='calculate_class_percentage')|sum) / (teacher.evaluations|length) %}
+                                                {% set planning_sum = 0 %}
+                                                {% set class_sum = 0 %}
+                                                {% for eval in teacher.evaluations %}
+                                                    {% set planning_sum = planning_sum + eval.calculate_planning_percentage() %}
+                                                    {% set class_sum = class_sum + eval.calculate_class_percentage() %}
+                                                {% endfor %}
+                                                {% set planning_avg = planning_sum / teacher.evaluations|length %}
+                                                {% set class_avg = class_sum / teacher.evaluations|length %}
                                                 {% set overall_avg = (planning_avg + class_avg) / 2 %}
                                                 {% if overall_avg >= 80 %}
                                                     <span class="badge bg-success">{{ "%.1f"|format(overall_avg) }}%</span>

@@ -176,6 +176,79 @@ def generate_evaluation_report(evaluation):
     story.append(results_table)
     story.append(Spacer(1, 20))
     
+    # Detailed Evaluation Criteria - Planning
+    story.append(Paragraph("<b>CRITÉRIOS DE AVALIAÇÃO - PLANEJAMENTO</b>", styles['Heading3']))
+    
+    planning_criteria = [
+        ['Critério', 'Resposta'],
+        ['Elabora cronograma de aula', evaluation.planning_schedule or 'N/A'],
+        ['Planeja a aula', evaluation.planning_lesson_plan or 'N/A'],
+        ['Planeja instrumentos de avaliação', evaluation.planning_evaluation or 'N/A'],
+        ['Conhece documentos estruturantes', evaluation.planning_documents or 'N/A'],
+        ['Utiliza instrumentos diversificados', evaluation.planning_diversified or 'N/A'],
+        ['Prepara previamente o local', evaluation.planning_local_work or 'N/A'],
+        ['Disponibiliza ferramentas', evaluation.planning_tools or 'N/A'],
+        ['Portal Educacional', evaluation.planning_educational_portal or 'N/A'],
+    ]
+    
+    planning_table = Table(planning_criteria, colWidths=[4*inch, 2*inch])
+    planning_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
+    ]))
+    
+    story.append(planning_table)
+    story.append(Spacer(1, 20))
+    
+    # Detailed Evaluation Criteria - Classroom
+    story.append(Paragraph("<b>CRITÉRIOS DE AVALIAÇÃO - CONDUÇÃO DA AULA</b>", styles['Heading3']))
+    
+    class_criteria = [
+        ['Critério', 'Resposta'],
+        ['Apresentação pessoal', evaluation.class_presentation or 'N/A'],
+        ['Conhecimento dos assuntos', evaluation.class_knowledge or 'N/A'],
+        ['Acompanha desempenho', evaluation.class_student_performance or 'N/A'],
+        ['Registra ocorrências', evaluation.class_attendance or 'N/A'],
+        ['Realiza levantamento de dificuldades', evaluation.class_difficulties or 'N/A'],
+        ['Aprendizado teórico e prático', evaluation.class_theoretical_practical or 'N/A'],
+        ['Retoma aula anterior', evaluation.class_previous_lesson or 'N/A'],
+        ['Explicita objetivos', evaluation.class_objectives or 'N/A'],
+        ['Propõe questões', evaluation.class_questions or 'N/A'],
+        ['Verifica assimilação', evaluation.class_content_assimilation or 'N/A'],
+        ['Estimula participação', evaluation.class_student_participation or 'N/A'],
+        ['Processo de recuperação', evaluation.class_recovery_process or 'N/A'],
+        ['Pedagogia da escola', evaluation.class_school_pedagogy or 'N/A'],
+        ['Exercícios para estimular', evaluation.class_learning_exercises or 'N/A'],
+        ['Mantém disciplina', evaluation.class_discipline or 'N/A'],
+        ['Orientação Educacional', evaluation.class_educational_orientation or 'N/A'],
+        ['Estratégias de ensino', evaluation.class_teaching_strategies or 'N/A'],
+        ['Orienta utilização de equipamentos', evaluation.class_machines_equipment or 'N/A'],
+        ['Procedimentos de segurança', evaluation.class_safety_procedures or 'N/A'],
+    ]
+    
+    class_table = Table(class_criteria, colWidths=[4*inch, 2*inch])
+    class_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
+    ]))
+    
+    story.append(class_table)
+    story.append(Spacer(1, 20))
+
     # Observations
     if evaluation.planning_observations:
         story.append(Paragraph("<b>Observações - Planejamento:</b>", styles['Heading3']))

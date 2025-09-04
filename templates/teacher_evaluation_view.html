@@ -58,7 +58,7 @@
                             {% if evaluation.is_completed %}
                                 <span class="badge bg-success fs-6">Concluída</span>
                             {% elif evaluation.teacher_signed %}
-                                <span class="badge bg-info fs-6">Aguardando Avaliador</span>
+                                <span class="badge bg-info fs-6">Enviado para Análise</span>
                             {% elif evaluation.evaluator_signed %}
                                 <span class="badge bg-warning fs-6">Aguardando sua Assinatura</span>
                             {% else %}
@@ -299,13 +299,14 @@
                     <h6 class="card-title mb-0">Avaliado por</h6>
                 </div>
                 <div class="card-body text-center">
-                    {% if evaluation.evaluator_signature_date %}
+                    {% if evaluation.evaluator %}
                         <i class="fas fa-user-check text-success fa-2x mb-2"></i>
-                        <p class="text-success"><strong>{{ evaluation.evaluator.name if evaluation.evaluator else 'Avaliador' }}</strong></p>
-                        <small class="text-muted">{{ evaluation.evaluator_signature_date.strftime('%d/%m/%Y %H:%M') if evaluation.evaluator_signature_date else 'N/A' }}</small>
+                        <p class="text-success"><strong>{{ evaluation.evaluator.name }}</strong></p>
+                        <small class="text-muted">Avaliação realizada em {{ evaluation.evaluation_date.strftime('%d/%m/%Y') }}</small>
                     {% else %}
-                        <i class="fas fa-clock text-warning fa-2x mb-2"></i>
-                        <p class="text-warning">Aguardando assinatura do avaliador</p>
+                        <i class="fas fa-user text-secondary fa-2x mb-2"></i>
+                        <p class="text-muted">Sistema</p>
+                        <small class="text-muted">Avaliação realizada em {{ evaluation.evaluation_date.strftime('%d/%m/%Y') }}</small>
                     {% endif %}
                 </div>
             </div>
