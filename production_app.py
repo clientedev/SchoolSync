@@ -77,6 +77,21 @@ login_manager.login_message = 'Faça login para acessar esta página.'
 # Create upload directory
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Add a simple route for Railway debugging BEFORE importing complex routes
+@app.route('/ping')
+def ping():
+    """Ultra simple endpoint for Railway debugging"""
+    return "PONG - System is alive!", 200
+
+# Configure user loader early
+@login_manager.user_loader
+def load_user(user_id):
+    try:
+        from models import User
+        return User.query.get(int(user_id))
+    except:
+        return None
+
 # Initialize database and routes
 with app.app_context():
     try:
@@ -84,34 +99,45 @@ with app.app_context():
         from models import User
         
         # Test database connection
-        connection = db.engine.connect()
-        connection.close()
-        logging.info("✅ Database connection successful")
-        
-        # Configure user loader
-        @login_manager.user_loader
-        def load_user(user_id):
-            return User.query.get(int(user_id))
+        try:
+            connection = db.engine.connect()
+            connection.close()
+            logging.info("✅ Database connection successful")
+        except Exception as db_error:
+            logging.warning(f"⚠️ Database connection failed: {db_error}")
+            # Continue anyway for Railway startup
         
         # Create tables if needed
-        db.create_all()
-        logging.info("✅ Database tables verified")
+        try:
+            db.create_all()
+            logging.info("✅ Database tables verified")
+        except Exception as table_error:
+            logging.warning(f"⚠️ Table creation failed: {table_error}")
         
         # Create admin user if it doesn't exist
-        admin_user = User.query.filter_by(username='edson.lemes').first()
-        if not admin_user:
-            admin_user = User()
-            admin_user.username = 'edson.lemes'
-            admin_user.name = 'Edson Lemes'
-            admin_user.role = 'admin'
-            admin_user.email = 'edson.lemes@senai.br'
-            admin_user.set_password('senai103103')
-            db.session.add(admin_user)
-            db.session.commit()
-            logging.info("✅ Admin user created")
+        try:
+            admin_user = User.query.filter_by(username='edson.lemes').first()
+            if not admin_user:
+                admin_user = User()
+                admin_user.username = 'edson.lemes'
+                admin_user.name = 'Edson Lemes'
+                admin_user.role = 'admin'
+                admin_user.email = 'edson.lemes@senai.br'
+                admin_user.set_password('senai103103')
+                db.session.add(admin_user)
+                db.session.commit()
+                logging.info("✅ Admin user created")
+        except Exception as user_error:
+            logging.warning(f"⚠️ Admin user creation failed: {user_error}")
         
         # Import routes after everything is set up
-        import routes
+        try:
+            import routes
+            logging.info("✅ Routes imported successfully")
+        except Exception as route_error:
+            logging.error(f"❌ Routes import failed: {route_error}")
+            import traceback
+            logging.error(traceback.format_exc())
         
         logging.info("✅ Application initialized successfully")
         
