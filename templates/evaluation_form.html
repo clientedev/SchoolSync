@@ -238,7 +238,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 {{ form.course_id.label(class="form-label") }}
-                                {{ form.course_id(class="form-select") }}
+                                {{ form.course_id(class="form-select", id="course_id") }}
                                 {% if form.course_id.errors %}
                                     <div class="text-danger small">
                                         {% for error in form.course_id.errors %}{{ error }}{% endfor %}
@@ -247,7 +247,7 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 {{ form.curricular_unit_id.label(class="form-label") }}
-                                {{ form.curricular_unit_id(class="form-select") }}
+                                {{ form.curricular_unit_id(class="form-select", id="curricular_unit_id") }}
                                 {% if form.curricular_unit_id.errors %}
                                     <div class="text-danger small">
                                         {% for error in form.curricular_unit_id.errors %}{{ error }}{% endfor %}

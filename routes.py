@@ -230,7 +230,8 @@ def users():
         return redirect_by_role()
     
     users_list = User.query.all()
-    return render_template('users.html', users=users_list)
+    form = UserForm()  # Create empty form for the modal
+    return render_template('users.html', users=users_list, form=form)
 
 @app.route('/users/add', methods=['GET', 'POST'])
 @login_required
