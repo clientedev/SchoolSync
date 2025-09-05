@@ -1179,7 +1179,89 @@ def reports():
     """Reports page"""
     from sqlalchemy.orm import joinedload
     teachers = Teacher.query.options(joinedload(Teacher.evaluations)).all()
-    return render_template('reports.html', teachers=teachers)
+    
+    # Pre-calculate all statistics for each teacher
+    teachers_data = []
+    total_completed_evaluations = 0
+    total_planning_sum = 0
+    total_class_sum = 0
+    total_evaluations_for_avg = 0
+    
+    for teacher in teachers:
+        completed_evals = [e for e in teacher.evaluations if e.is_completed]
+        
+        teacher_data = {
+            'teacher': teacher,
+            'completed_count': len(completed_evals),
+            'planning_avg': 0,
+            'class_avg': 0,
+            'overall_avg': 0,
+            'last_evaluation': None,
+            'has_evaluations': len(completed_evals) > 0
+        }
+        
+        if completed_evals:
+            # Calculate planning average
+            planning_sum = sum(eval.calculate_planning_percentage() for eval in completed_evals)
+            teacher_data['planning_avg'] = planning_sum / len(completed_evals)
+            
+            # Calculate class average  
+            class_sum = sum(eval.calculate_class_percentage() for eval in completed_evals)
+            teacher_data['class_avg'] = class_sum / len(completed_evals)
+            
+            # Calculate overall average
+            teacher_data['overall_avg'] = (teacher_data['planning_avg'] + teacher_data['class_avg']) / 2
+            
+            # Find latest evaluation
+            teacher_data['last_evaluation'] = max(completed_evals, key=lambda e: e.evaluation_date)
+            
+            # Add to totals for global statistics
+            total_completed_evaluations += len(completed_evals)
+            total_planning_sum += planning_sum
+            total_class_sum += class_sum
+            total_evaluations_for_avg += len(completed_evals)
+        
+        teachers_data.append(teacher_data)
+    
+    # Calculate global statistics
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+    
+    this_month_evaluations = Evaluation.query.filter(
+        Evaluation.is_completed == True,
+        Evaluation.evaluation_date >= datetime(current_year, current_month, 1),
+        Evaluation.evaluation_date < datetime(current_year, current_month + 1, 1) if current_month < 12 else datetime(current_year + 1, 1, 1)
+    ).count()
+    
+    global_avg = 0
+    if total_evaluations_for_avg > 0:
+        planning_global_avg = total_planning_sum / total_evaluations_for_avg
+        class_global_avg = total_class_sum / total_evaluations_for_avg
+        global_avg = (planning_global_avg + class_global_avg) / 2
+    
+    teachers_without_eval_this_month = 0
+    for teacher_data in teachers_data:
+        teacher = teacher_data['teacher']
+        has_eval_this_month = False
+        for eval in teacher.evaluations:
+            if (eval.is_completed and 
+                eval.evaluation_date.month == current_month and 
+                eval.evaluation_date.year == current_year):
+                has_eval_this_month = True
+                break
+        if not has_eval_this_month:
+            teachers_without_eval_this_month += 1
+    
+    stats = {
+        'total_teachers': len(teachers),
+        'total_evaluations': total_completed_evaluations,
+        'completed_evaluations': total_completed_evaluations,
+        'this_month_evaluations': this_month_evaluations,
+        'global_average': global_avg,
+        'teachers_without_eval_this_month': teachers_without_eval_this_month
+    }
+    
+    return render_template('reports.html', teachers_data=teachers_data, stats=stats)
 
 @app.route('/reports/evaluation/<int:id>')
 @login_required
