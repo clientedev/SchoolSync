@@ -1,4 +1,4 @@
-modules = ["python-3.11", "web", "nodejs-20", "bash"]
+modules = ["web", "python-3.11", "nodejs-20"]
 
 [nix]
 channel = "stable-25_05"
@@ -6,7 +6,7 @@ packages = ["freetype", "glibcLocales", "openssl", "postgresql"]
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
+run = ["gunicorn", "--bind", "0.0.0.0:5000", "production_app:app"]
 
 [workflows]
 runButton = "Project"
@@ -29,7 +29,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "uv run gunicorn --bind 0.0.0.0:5000 --reuse-port --reload production_app:app"
+args = "gunicorn --bind 0.0.0.0:5000 --reuse-port --reload production_app:app"
 waitForPort = 5000
 
 [[ports]]
