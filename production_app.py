@@ -47,6 +47,7 @@ app.config.update({
         "connect_args": {
             "application_name": "senai_evaluation_system",
             "connect_timeout": 10,
+            "client_encoding": "utf8",
         }
     },
     "SQLALCHEMY_TRACK_MODIFICATIONS": False,

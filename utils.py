@@ -550,7 +550,11 @@ def process_teachers_excel_import(file_path):
         sys.stdout.reconfigure(encoding='utf-8')
     
     try:
-        # Read Excel file with explicit encoding
+        # Ensure the file is read with proper encoding
+        import locale
+        locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+        
+        # Read Excel file with explicit engine
         df = pd.read_excel(file_path, sheet_name='Docentes', engine='openpyxl')
         
         # Clean column names
@@ -630,11 +634,17 @@ def process_teachers_excel_import(file_path):
                 results['success'] += 1
                 
             except Exception as e:
+                db.session.rollback()  # Rollback the failed transaction
                 results['errors'].append(f'Linha {index + 2}: Erro ao processar - {str(e)}')
         
         # Commit all changes
         if results['success'] > 0:
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                results['errors'].append(f'Erro ao salvar dados: {str(e)}')
+                results['success'] = 0
         
         return results
         
@@ -758,7 +768,11 @@ def process_courses_excel_import(file_path):
         sys.stdout.reconfigure(encoding='utf-8')
     
     try:
-        # Read Excel file with explicit encoding
+        # Ensure the file is read with proper encoding
+        import locale
+        locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+        
+        # Read Excel file with explicit engine
         df = pd.read_excel(file_path, sheet_name='Cursos', engine='openpyxl')
         
         # Clean column names
@@ -842,11 +856,17 @@ def process_courses_excel_import(file_path):
                     results['warnings'].append(f'Linha {index + 2}: {units_added} unidades curriculares adicionadas ao curso "{course_name}"')
                 
             except Exception as e:
+                db.session.rollback()  # Rollback the failed transaction
                 results['errors'].append(f'Linha {index + 2}: Erro ao processar - {str(e)}')
         
         # Commit all changes
         if results['success'] > 0 or any('unidades curriculares adicionadas' in w for w in results['warnings']):
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                results['errors'].append(f'Erro ao salvar dados: {str(e)}')
+                results['success'] = 0
         
         return results
         
@@ -914,7 +934,11 @@ def process_curricular_units_excel_import(file_path):
         sys.stdout.reconfigure(encoding='utf-8')
     
     try:
-        # Read Excel file with explicit encoding
+        # Ensure the file is read with proper encoding
+        import locale
+        locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+        
+        # Read Excel file with explicit engine  
         df = pd.read_excel(file_path, sheet_name="Unidades Curriculares", engine='openpyxl')
         
         results = {
@@ -968,11 +992,17 @@ def process_curricular_units_excel_import(file_path):
                 results["success"] += 1
                 
             except Exception as e:
+                db.session.rollback()  # Rollback the failed transaction
                 results["errors"].append(f"Linha {index + 2}: Erro ao processar - {str(e)}")
         
         # Commit all changes
         if results["success"] > 0:
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                results["errors"].append(f"Erro ao salvar dados: {str(e)}")
+                results["success"] = 0
         
         return results
         
