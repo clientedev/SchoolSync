@@ -70,10 +70,7 @@ def health():
     except Exception as e:
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
 
-@app.route('/')
-def home():
-    """Simple home page"""
-    return jsonify({"message": "SENAI System - Railway Version", "status": "running"})
+# Home route will be loaded from routes.py - SENAI login system
 
 # Initialize everything inside app context
 with app.app_context():
@@ -114,25 +111,52 @@ with app.app_context():
         except Exception as e:
             logging.error(f"❌ Admin user creation failed: {e}")
         
-        # Load routes LAST
+# Configure Flask extensions
         try:
             from flask_login import LoginManager
+            from flask_mail import Mail
+            
+            # Initialize Flask-Login
             login_manager = LoginManager()
             login_manager.init_app(app)
             login_manager.login_view = 'login'
+            login_manager.login_message = 'Faça login para acessar esta página.'
             
             @login_manager.user_loader
             def load_user(user_id):
-                return User.query.get(int(user_id))
+                try:
+                    return User.query.get(int(user_id))
+                except:
+                    return None
             
             logging.info("✅ Login manager configured")
             
-            # Import routes
+            # Initialize Flask-Mail  
+            app.config.update({
+                "MAIL_SERVER": os.environ.get('MAIL_SERVER', 'localhost'),
+                "MAIL_PORT": int(os.environ.get('MAIL_PORT', '587')),
+                "MAIL_USE_TLS": os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1'],
+                "MAIL_USERNAME": os.environ.get('MAIL_USERNAME', ''),
+                "MAIL_PASSWORD": os.environ.get('MAIL_PASSWORD', ''),
+                "MAIL_DEFAULT_SENDER": os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br'),
+                "UPLOAD_FOLDER": "/tmp/uploads",
+                "MAX_CONTENT_LENGTH": 16 * 1024 * 1024,  # 16MB
+            })
+            
+            mail = Mail()
+            mail.init_app(app)
+            logging.info("✅ Mail configured")
+            
+            # Create upload directory
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            logging.info("✅ Upload folder created")
+            
+            # Import ALL routes from the SENAI system
             import routes
-            logging.info("✅ Routes imported successfully")
+            logging.info("✅ SENAI routes imported successfully")
             
         except Exception as e:
-            logging.error(f"❌ Routes/Login setup failed: {e}")
+            logging.error(f"❌ Extensions setup failed: {e}")
             import traceback
             logging.error(traceback.format_exc())
         
