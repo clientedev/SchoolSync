@@ -116,6 +116,46 @@ function initializeEvaluationForm() {
     
     // Initialize form navigation
     initializeFormNavigation();
+    
+    // Initialize course filter for curricular units
+    initializeCourseFilter();
+}
+
+/**
+ * Initialize course filter to dynamically load curricular units
+ */
+function initializeCourseFilter() {
+    const courseSelect = document.getElementById('course_id');
+    const unitSelect = document.getElementById('curricular_unit_id');
+    
+    if (courseSelect && unitSelect) {
+        courseSelect.addEventListener('change', function() {
+            const courseId = this.value;
+            
+            // Clear current options
+            unitSelect.innerHTML = '<option value="">Carregando...</option>';
+            
+            if (courseId) {
+                fetch(`/api/curricular-units/${courseId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        unitSelect.innerHTML = '';
+                        data.forEach(unit => {
+                            const option = document.createElement('option');
+                            option.value = unit.id;
+                            option.textContent = unit.name;
+                            unitSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar unidades curriculares:', error);
+                        unitSelect.innerHTML = '<option value="0">Erro ao carregar unidades</option>';
+                    });
+            } else {
+                unitSelect.innerHTML = '<option value="0">Selecione um curso primeiro</option>';
+            }
+        });
+    }
 }
 
 /**

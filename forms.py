@@ -27,7 +27,8 @@ class EvaluationForm(FlaskForm):
     period = SelectField('Período', choices=[
         ('Manhã', 'Manhã'),
         ('Tarde', 'Tarde'),
-        ('Noite', 'Noite')
+        ('Noite', 'Noite'),
+        ('Integral', 'Integral')
     ], validators=[DataRequired()])
     
     class_time = StringField('Horário da Aula', validators=[Optional()])

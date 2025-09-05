@@ -11,6 +11,11 @@
     justify-content: center;
     background-color: var(--bs-light);
     transition: all 0.3s ease;
+    color: #000000 !important;
+}
+
+.signature-box * {
+    color: #000000 !important;
 }
 
 .signature-box:hover {

@@ -1040,12 +1040,40 @@ def new_evaluation():
                 attachment.mime_type = file_info['mime_type']
                 db.session.add(attachment)
         
+        # Verificar se há agendamento correspondente e marcar como concluído
+        scheduled_evaluation = ScheduledEvaluation.query.filter_by(
+            teacher_id=evaluation.teacher_id,
+            scheduled_month=evaluation.evaluation_date.month,
+            scheduled_year=evaluation.evaluation_date.year,
+            is_completed=False
+        ).first()
+        
+        if scheduled_evaluation:
+            scheduled_evaluation.is_completed = True
+            scheduled_evaluation.completed_at = datetime.utcnow()
+            scheduled_evaluation.evaluation = evaluation
+        
+        # Marcar avaliação como completa por padrão
+        evaluation.is_completed = True
+        
         db.session.commit()
         
         flash('Avaliação criada com sucesso!', 'success')
         return redirect(url_for('view_evaluation', id=evaluation.id))
     
     return render_template('evaluation_form.html', form=form)
+
+@app.route('/api/curricular-units/<int:course_id>')
+@login_required
+def get_curricular_units_by_course(course_id):
+    """API endpoint to get curricular units by course"""
+    try:
+        units = CurricularUnit.query.filter_by(course_id=course_id, is_active=True).all()
+        units_data = [{'id': 0, 'name': 'Nenhuma unidade curricular específica'}]
+        units_data.extend([{'id': unit.id, 'name': unit.name} for unit in units])
+        return jsonify(units_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/evaluations/view/<int:id>')
 def view_evaluation(id):
@@ -1363,6 +1391,100 @@ def scheduling():
                          monthly_schedule=monthly_schedule,
                          teachers=teachers,
                          curricular_units=curricular_units)
+
+@app.route('/evaluations/new-from-schedule/<int:schedule_id>')
+@login_required
+def new_evaluation_from_schedule(schedule_id):
+    """Create evaluation directly from scheduled evaluation"""
+    scheduled = ScheduledEvaluation.query.get_or_404(schedule_id)
+    
+    if scheduled.is_completed:
+        flash('Esta avaliação já foi realizada.', 'warning')
+        return redirect(url_for('scheduling'))
+    
+    form = EvaluationForm()
+    
+    # Pre-populate form with scheduled data
+    form.teacher_id.choices = [(t.id, t.name) for t in Teacher.query.all()]
+    form.course_id.choices = [(c.id, f"{c.name} - {c.period}") for c in Course.query.all()]
+    form.curricular_unit_id.choices = [(0, 'Nenhuma unidade curricular específica')] + [(u.id, f"{u.name} ({u.course.name})") for u in CurricularUnit.query.join(Course).all()]
+    
+    # Set default values
+    form.teacher_id.data = scheduled.teacher_id
+    form.curricular_unit_id.data = scheduled.curricular_unit_id
+    
+    if form.validate_on_submit():
+        evaluation = Evaluation()
+        evaluation.teacher_id = form.teacher_id.data
+        evaluation.course_id = form.course_id.data
+        evaluation.curricular_unit_id = form.curricular_unit_id.data if form.curricular_unit_id.data and form.curricular_unit_id.data != 0 else None
+        evaluation.scheduled_evaluation_id = scheduled.id
+        
+        # Set other fields
+        current_evaluator = Evaluator.query.filter_by(name=current_user.name).first()
+        if not current_evaluator:
+            current_evaluator = Evaluator()
+            current_evaluator.name = current_user.name
+            current_evaluator.role = current_user.role if current_user.role == 'admin' else 'Coordenador'
+            current_evaluator.email = current_user.email if hasattr(current_user, 'email') else f"{current_user.name.lower().replace(' ', '.')}@senai.br"
+            db.session.add(current_evaluator)
+            db.session.flush()
+        
+        evaluation.evaluator_id = current_evaluator.id
+        evaluation.period = form.period.data
+        evaluation.class_time = form.class_time.data
+        
+        # Planning fields
+        evaluation.planning_schedule = form.planning_schedule.data
+        evaluation.planning_lesson_plan = form.planning_lesson_plan.data
+        evaluation.planning_evaluation = form.planning_evaluation.data
+        evaluation.planning_documents = form.planning_documents.data
+        evaluation.planning_diversified = form.planning_diversified.data
+        evaluation.planning_local_work = form.planning_local_work.data
+        evaluation.planning_tools = form.planning_tools.data
+        evaluation.planning_educational_portal = form.planning_educational_portal.data
+        
+        # Class fields
+        evaluation.class_presentation = form.class_presentation.data
+        evaluation.class_knowledge = form.class_knowledge.data
+        evaluation.class_student_performance = form.class_student_performance.data
+        evaluation.class_attendance = form.class_attendance.data
+        evaluation.class_difficulties = form.class_difficulties.data
+        evaluation.class_theoretical_practical = form.class_theoretical_practical.data
+        evaluation.class_previous_lesson = form.class_previous_lesson.data
+        evaluation.class_objectives = form.class_objectives.data
+        evaluation.class_questions = form.class_questions.data
+        evaluation.class_content_assimilation = form.class_content_assimilation.data
+        evaluation.class_student_participation = form.class_student_participation.data
+        evaluation.class_recovery_process = form.class_recovery_process.data
+        evaluation.class_school_pedagogy = form.class_school_pedagogy.data
+        evaluation.class_learning_exercises = form.class_learning_exercises.data
+        evaluation.class_discipline = form.class_discipline.data
+        evaluation.class_educational_orientation = form.class_educational_orientation.data
+        evaluation.class_teaching_strategies = form.class_teaching_strategies.data
+        evaluation.class_machines_equipment = form.class_machines_equipment.data
+        evaluation.class_safety_procedures = form.class_safety_procedures.data
+        
+        # Observations
+        evaluation.planning_observations = form.planning_observations.data
+        evaluation.class_observations = form.class_observations.data
+        evaluation.general_observations = form.general_observations.data
+        
+        # Mark as completed
+        evaluation.is_completed = True
+        
+        # Mark scheduled evaluation as completed
+        scheduled.is_completed = True
+        scheduled.completed_at = datetime.utcnow()
+        scheduled.evaluation = evaluation
+        
+        db.session.add(evaluation)
+        db.session.commit()
+        
+        flash('Avaliação criada com sucesso a partir do agendamento!', 'success')
+        return redirect(url_for('view_evaluation', id=evaluation.id))
+    
+    return render_template('evaluation_form.html', form=form, scheduled=scheduled, title="Nova Avaliação - Agendamento")
 
 @app.route('/scheduling/add', methods=['POST'])
 @login_required
