@@ -2,7 +2,8 @@ import os
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime, timedelta
-from app import app, db
+from production_app import app
+from models import db
 from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment, User, Semester, CurricularUnit, ScheduledEvaluation, DigitalSignature
 from forms import TeacherForm, CourseForm, EvaluatorForm, EvaluationForm, LoginForm, UserForm, UserEditForm, ChangePasswordForm
 from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import, generate_courses_excel_template, process_courses_excel_import, generate_curricular_units_excel_template, process_curricular_units_excel_import, get_or_create_current_semester

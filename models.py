@@ -1,4 +1,10 @@
-from production_app import db
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
 from datetime import datetime
 from sqlalchemy import Text, Integer, String, DateTime, Boolean, ForeignKey, Float
 from sqlalchemy.orm import relationship

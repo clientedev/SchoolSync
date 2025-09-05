@@ -3,7 +3,7 @@ import uuid
 from werkzeug.utils import secure_filename
 from flask import current_app
 from flask_mail import Message
-from app import mail
+from production_app import mail
 from io import BytesIO
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -16,7 +16,7 @@ import pandas as pd
 def get_or_create_current_semester():
     """Get or create current semester based on current date"""
     from models import Semester
-    from app import db
+    from models import db
     
     current_date = datetime.now()
     current_year = current_date.year
@@ -542,7 +542,7 @@ def generate_teachers_excel_template():
 def process_teachers_excel_import(file_path):
     """Process Excel file and import teachers"""
     from models import Teacher, Course
-    from app import db
+    from models import db
     import sys
     
     # Ensure UTF-8 encoding
@@ -758,7 +758,7 @@ def generate_courses_excel_template():
 def process_courses_excel_import(file_path):
     """Process Excel file and import courses with curricular units"""
     from models import Course, CurricularUnit
-    from app import db
+    from models import db
     import sys
     
     # Ensure UTF-8 encoding
@@ -923,7 +923,7 @@ def process_curricular_units_excel_import(file_path):
     """Process Excel file and import curricular units"""
     import pandas as pd
     from models import CurricularUnit, Course
-    from app import db
+    from models import db
     import sys
     
     # Ensure UTF-8 encoding
