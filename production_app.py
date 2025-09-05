@@ -26,10 +26,11 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET") or "fallback-production-key-2024"
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Enhanced PostgreSQL configuration for Railway
+# Enhanced PostgreSQL configuration for Railway (with SQLite fallback)
 database_url = os.environ.get("DATABASE_URL")
 if not database_url:
-    raise ValueError("DATABASE_URL environment variable is required for production")
+    database_url = "sqlite:///teacher_evaluation.db"
+    logging.warning("Using SQLite fallback - set DATABASE_URL for production")
 
 # Fix PostgreSQL URL format if needed
 if database_url.startswith("postgres://"):

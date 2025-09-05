@@ -2,7 +2,7 @@ import os
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime, timedelta
-from railway_simple_app import app
+from production_app import app
 from models import db
 from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment, User, Semester, CurricularUnit, ScheduledEvaluation, DigitalSignature
 from forms import TeacherForm, CourseForm, EvaluatorForm, EvaluationForm, LoginForm, UserForm, UserEditForm, ChangePasswordForm

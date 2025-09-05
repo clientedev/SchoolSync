@@ -1,58 +1,72 @@
-# Overview
+# Sistema de Ação Docente SENAI Morvan Figueiredo
 
-The SENAI Teacher Evaluation System is a web-based platform designed to digitize and streamline the process of teacher evaluation and monitoring in educational institutions. The system replaces paper-based forms with a comprehensive digital solution that allows coordinators to register teacher evaluations, generate automated reports, and track teaching performance over time. Built with Flask and SQLAlchemy, the application provides role-based functionality for managing teachers, courses, evaluators, and detailed evaluation criteria with file attachments and automated email notifications.
+## Overview
 
-# User Preferences
+This is a web-based teacher evaluation and monitoring system designed for SENAI Morvan Figueiredo educational institution. The system digitizes the traditional paper-based teacher evaluation process, providing a comprehensive platform for coordinators to register, track, and analyze teaching performance. The application supports teacher evaluation workflows, automatic report generation, user management with role-based access control, and digital signature capabilities for evaluation approvals.
+
+## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-# System Architecture
+## System Architecture
 
-## Web Framework Architecture
-The application follows the Flask MVC pattern with clear separation of concerns. The main application is configured in `app.py` with extensions for database (SQLAlchemy), email (Flask-Mail), and file uploads. The routing logic is separated into `routes.py`, while business logic utilities are contained in `utils.py`. This modular approach allows for easy maintenance and feature extension.
+### Frontend Architecture
+The application uses a server-side rendered architecture built with Flask and Jinja2 templates. The frontend follows a Bootstrap 5 dark theme design system with Font Awesome icons for consistent UI elements. The template structure includes a base template hierarchy with specialized templates for different user roles (admin/evaluator vs teacher). Custom CSS and JavaScript enhance the user experience with features like signature capture, form validation, and responsive design optimized for tablets and mobile devices.
 
-## Database Design
-The system uses SQLAlchemy ORM with a relational database structure supporting four main entities: Teachers (storing personal and professional information), Courses (curriculum components and class details), Evaluators (coordinators and supervisors), and Evaluations (detailed assessment records with foreign key relationships). The database supports both SQLite for development and PostgreSQL for production through environment configuration.
+### Backend Architecture  
+The system is built using Flask as the web framework with SQLAlchemy ORM for database operations. The architecture follows a traditional MVC pattern with clear separation of concerns:
+- **Models**: Define database entities for users, teachers, courses, evaluations, etc.
+- **Routes**: Handle HTTP requests and business logic
+- **Forms**: WTForms for form validation and rendering
+- **Utils**: Utility functions for file handling, report generation, and email services
 
-## Form Handling and Validation
-Flask-WTF forms provide server-side validation for all user inputs, including teacher registration, course management, evaluator setup, and comprehensive evaluation forms. The forms support file uploads with size restrictions and type validation, ensuring data integrity and security throughout the application.
+The application supports both development and production configurations, with the production setup optimized for Railway deployment using Gunicorn as the WSGI server.
 
-## File Management System
-The application implements secure file upload functionality for evaluation attachments, using UUID-based naming conventions to prevent conflicts and ensure security. Files are stored in a dedicated uploads directory with configurable size limits and type restrictions.
+### Data Storage Solutions
+The system uses PostgreSQL as the primary database in production with SQLite fallback for development. Database schema includes entities for:
+- User management (User model with role-based access)
+- Teacher profiles (Teacher model with NIF identification)
+- Course and curricular unit management
+- Evaluation records with comprehensive criteria tracking
+- Digital signatures and file attachments
+- Semester management for academic periods
 
-## Report Generation System
-The system generates PDF reports using ReportLab, providing both individual teacher evaluations and consolidated institutional reports. Reports include statistical analysis, visual formatting, and can be automatically emailed to relevant stakeholders.
+Connection pooling and proper database optimization are implemented for production environments.
 
-## Frontend Architecture
-The user interface is built with Bootstrap 5 and custom CSS for responsive design across devices. JavaScript enhancements provide interactive features like signature capture, auto-save functionality, and dynamic form elements. The template system uses Jinja2 inheritance for consistent layout and maintainable code.
+### Authentication and Authorization
+Flask-Login handles user session management with role-based access control implemented through three user roles:
+- **Admin**: Full system access including user management
+- **Evaluator**: Can create and manage evaluations, generate reports
+- **Teacher**: Read-only access to their own evaluation records
 
-# External Dependencies
+Password hashing uses Werkzeug's security utilities, and sessions are managed with secure secret keys. Teachers can be linked to user accounts for portal access.
 
-## Core Framework Dependencies
-- **Flask**: Web framework providing routing, templating, and request handling
-- **SQLAlchemy/Flask-SQLAlchemy**: ORM for database operations and model definitions
-- **Flask-WTF/WTForms**: Form handling, validation, and CSRF protection
-- **Flask-Mail**: Email functionality for automated notifications
+## External Dependencies
 
-## Frontend Libraries
-- **Bootstrap 5**: CSS framework for responsive design and UI components
-- **Font Awesome**: Icon library for consistent visual elements
-- **Custom CSS/JavaScript**: Application-specific styling and interactive features
+### Core Framework Dependencies
+- **Flask**: Web framework with extensions for SQLAlchemy, Mail, Login, and WTF forms
+- **PostgreSQL/SQLite**: Database systems with psycopg2 for PostgreSQL connectivity
+- **Gunicorn**: Production WSGI server for Railway deployment
 
-## Report Generation
-- **ReportLab**: PDF generation library for creating formatted evaluation reports
-- **Python standard libraries**: DateTime, OS, UUID for utility functions
+### UI and Frontend Libraries
+- **Bootstrap 5**: CSS framework with dark theme implementation
+- **Font Awesome**: Icon library for consistent UI elements
+- **Jinja2**: Template engine for server-side rendering
 
-## File Processing
-- **Werkzeug**: Secure filename handling and file upload utilities
-- **Python standard libraries**: File system operations and MIME type detection
+### Document Generation and Processing
+- **ReportLab**: PDF generation for evaluation reports and consolidated analytics
+- **Pandas**: Excel file processing for bulk data imports/exports
+- **Openpyxl**: Excel file manipulation for template downloads
 
-## Development and Deployment
-- **Python 3.x**: Core runtime environment
-- **Environment variables**: Configuration management for database URLs, email settings, and security keys
-- **WSGI compatibility**: Production deployment support with proxy middleware
+### Email and Communication
+- **Flask-Mail**: Email service integration for sending evaluation notifications and reports to teachers
 
-## Database Support
-- **SQLite**: Development database (default)
-- **PostgreSQL**: Production database (configurable via DATABASE_URL)
-- **Connection pooling**: Configured for production reliability and performance
+### File Handling
+- **Werkzeug**: Secure filename handling and file upload processing
+- File upload system supports evaluation attachments with 16MB size limits
+
+### Deployment Platform
+- **Railway**: Cloud hosting platform with automated deployment via railway.json configuration
+- ProxyFix middleware for proper header handling behind Railway's proxy
+
+The system is designed to reduce paper usage, increase evaluation efficiency, and provide comprehensive analytics for educational quality improvement at SENAI Morvan Figueiredo.
