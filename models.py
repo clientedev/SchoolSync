@@ -34,6 +34,10 @@ class User(db.Model, UserMixin):
     def is_teacher(self):
         return self.role == 'teacher'
     
+    def get_id(self):
+        """Required method for Flask-Login"""
+        return str(self.id)
+    
     def __repr__(self):
         return f'<User {self.username}>'
 
