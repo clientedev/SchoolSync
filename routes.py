@@ -945,6 +945,7 @@ def evaluations():
                          end_date=end_date)
 
 @app.route('/evaluations/new', methods=['GET', 'POST'])
+@login_required
 def new_evaluation():
     """Create new evaluation"""
     form = EvaluationForm()
@@ -1076,12 +1077,14 @@ def get_curricular_units_by_course(course_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/evaluations/view/<int:id>')
+@login_required
 def view_evaluation(id):
     """View single evaluation"""
     evaluation = Evaluation.query.get_or_404(id)
     return render_template('evaluation_form.html', evaluation=evaluation, view_only=True)
 
 @app.route('/evaluations/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_evaluation(id):
     """Edit evaluation"""
     evaluation = Evaluation.query.get_or_404(id)
@@ -1117,6 +1120,7 @@ def edit_evaluation(id):
     return render_template('evaluation_form.html', form=form, evaluation=evaluation, edit_mode=True)
 
 @app.route('/evaluations/complete/<int:id>')
+@login_required
 def complete_evaluation(id):
     """Complete and finalize evaluation"""
     evaluation = Evaluation.query.get_or_404(id)
