@@ -3,8 +3,6 @@ import logging
 import sys
 
 # Set UTF-8 encoding for the application
-if sys.stdout.encoding != 'utf-8':
-    sys.stdout.reconfigure(encoding='utf-8')
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 
 from flask import Flask
@@ -34,7 +32,6 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:/
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
-    "connect_args": {"options": "-c client_encoding=utf8"}
 }
 
 # configure file uploads
@@ -70,20 +67,26 @@ with app.app_context():
         from models import User
         return User.query.get(int(user_id))
     
-    db.create_all()
-    
-    # Create admin user if it doesn't exist
-    from models import User
-    admin_user = User.query.filter_by(username='edson.lemes').first()
-    if not admin_user:
-        admin_user = User()  # type: ignore
-        admin_user.username = 'edson.lemes'
-        admin_user.name = 'Edson Lemes'
-        admin_user.role = 'admin'
-        admin_user.email = 'edson.lemes@senai.br'
-        admin_user.set_password('senai103103')
-        db.session.add(admin_user)
-        db.session.commit()
+    try:
+        db.create_all()
+        
+        # Create admin user if it doesn't exist
+        from models import User
+        admin_user = User.query.filter_by(username='edson.lemes').first()
+        if not admin_user:
+            admin_user = User()  # type: ignore
+            admin_user.username = 'edson.lemes'
+            admin_user.name = 'Edson Lemes'
+            admin_user.role = 'admin'
+            admin_user.email = 'edson.lemes@senai.br'
+            admin_user.set_password('senai103103')
+            db.session.add(admin_user)
+            db.session.commit()
+            print("✅ Admin user created successfully")
+    except Exception as e:
+        print(f"❌ Database initialization error: {e}")
+        # Don't fail completely, let the app start and show the error
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
