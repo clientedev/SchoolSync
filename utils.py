@@ -568,16 +568,10 @@ def process_teachers_excel_import(file_path):
                 if pd.isna(row.get('NIF', '')) or str(row.get('NIF', '')).strip() == '':
                     continue
                 
-                # Extract data with defaults - ensure UTF-8 handling
+                # Extract data with defaults - proper string handling
                 nif = str(row['NIF']).strip().upper() if not pd.isna(row['NIF']) else ''
                 name = str(row.get('Nome', '')).strip() if not pd.isna(row.get('Nome', '')) else ''
                 area = str(row.get('Área', '')).strip() if not pd.isna(row.get('Área', '')) else ''
-                
-                # Ensure UTF-8 encoding for text fields
-                if isinstance(name, str):
-                    name = name.encode('utf-8', errors='ignore').decode('utf-8')
-                if isinstance(area, str):
-                    area = area.encode('utf-8', errors='ignore').decode('utf-8')
                 
                 # Validate required fields
                 if not nif:
@@ -603,11 +597,10 @@ def process_teachers_excel_import(file_path):
                     continue
                 
                 # Create new teacher
-                teacher = Teacher(
-                    nif=nif,
-                    name=name,
-                    area=area
-                )
+                teacher = Teacher()  # type: ignore
+                teacher.nif = nif
+                teacher.name = name
+                teacher.area = area
                 
                 db.session.add(teacher)
                 db.session.flush()  # Get teacher ID before commit
@@ -620,11 +613,10 @@ def process_teachers_excel_import(file_path):
                 # Generate random password
                 password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
                 
-                user = User(
-                    username=nif.lower(),
-                    name=name,
-                    role='teacher'
-                )
+                user = User()  # type: ignore
+                user.username = nif.lower()
+                user.name = name
+                user.role = 'teacher'
                 user.set_password(password)
                 
                 db.session.add(user)
@@ -784,12 +776,8 @@ def process_courses_excel_import(file_path):
                 if pd.isna(row.get('Nome do Curso', '')) or str(row.get('Nome do Curso', '')).strip() == '':
                     continue
                 
-                # Extract course name - ensure UTF-8 handling
+                # Extract course name - proper string handling
                 course_name = str(row['Nome do Curso']).strip() if not pd.isna(row['Nome do Curso']) else ''
-                
-                # Ensure UTF-8 encoding for text fields
-                if isinstance(course_name, str):
-                    course_name = course_name.encode('utf-8', errors='ignore').decode('utf-8')
                 
                 # Validate required fields
                 if not course_name:
@@ -802,9 +790,6 @@ def process_courses_excel_import(file_path):
                     unit_column = f'Unidade Curricular {i}'
                     if unit_column in row and not pd.isna(row.get(unit_column)):
                         unit_name = str(row[unit_column]).strip()
-                        # Ensure UTF-8 encoding for unit names
-                        if isinstance(unit_name, str):
-                            unit_name = unit_name.encode('utf-8', errors='ignore').decode('utf-8')
                         if unit_name:
                             curricular_units.append(unit_name)
                 
@@ -822,12 +807,11 @@ def process_courses_excel_import(file_path):
                     # Create new course
                     from datetime import datetime
                     current_year = datetime.now().year
-                    course = Course(
-                        name=course_name,
-                        period=f"1° Sem/{current_year}",  # Default period based on current year
-                        curriculum_component="Múltiplas Unidades Curriculares",
-                        class_code=None
-                    )
+                    course = Course()  # type: ignore
+                    course.name = course_name
+                    course.period = f"1° Sem/{current_year}"  # Default period based on current year
+                    course.curriculum_component = "Múltiplas Unidades Curriculares"
+                    course.class_code = None
                     db.session.add(course)
                     db.session.flush()  # Get course ID
                 
@@ -841,14 +825,13 @@ def process_courses_excel_import(file_path):
                     ).first()
                     
                     if not existing_unit:
-                        unit = CurricularUnit(
-                            name=unit_name,
-                            course_id=course.id,
-                            code=None,
-                            workload=None,
-                            description=f"Unidade curricular do curso {course_name}",
-                            is_active=True
-                        )
+                        unit = CurricularUnit()  # type: ignore
+                        unit.name = unit_name
+                        unit.course_id = course.id
+                        unit.code = None
+                        unit.workload = None
+                        unit.description = f"Unidade curricular do curso {course_name}"
+                        unit.is_active = True
                         db.session.add(unit)
                         units_added += 1
                 
@@ -946,25 +929,11 @@ def process_curricular_units_excel_import(file_path):
                 if pd.isna(row.get("Nome", "")) or str(row.get("Nome", "")).strip() == "":
                     continue
                 
-                # Extract data - ensure UTF-8 handling
+                # Extract data - proper string handling
                 name = str(row["Nome"]).strip() if not pd.isna(row["Nome"]) else ""
                 code = str(row.get("Código", "")).strip() if not pd.isna(row.get("Código")) else ""
                 course_name = str(row.get("Curso", "")).strip() if not pd.isna(row.get("Curso")) else ""
                 description = str(row.get("Descrição", "")).strip() if not pd.isna(row.get("Descrição")) else ""
-                
-                # Ensure UTF-8 encoding for text fields
-                for field in [name, code, course_name, description]:
-                    if isinstance(field, str):
-                        field = field.encode('utf-8', errors='ignore').decode('utf-8')
-                # Reassign the cleaned values
-                if isinstance(name, str):
-                    name = name.encode('utf-8', errors='ignore').decode('utf-8')
-                if isinstance(code, str):
-                    code = code.encode('utf-8', errors='ignore').decode('utf-8')
-                if isinstance(course_name, str):
-                    course_name = course_name.encode('utf-8', errors='ignore').decode('utf-8')
-                if isinstance(description, str):
-                    description = description.encode('utf-8', errors='ignore').decode('utf-8')
                 
                 # Validate required fields
                 if not name:
@@ -988,13 +957,12 @@ def process_curricular_units_excel_import(file_path):
                     continue
                 
                 # Create new curricular unit
-                unit = CurricularUnit(
-                    name=name,
-                    code=code if code else None,
-                    course_id=course.id,
-                    description=description if description else None,
-                    is_active=True
-                )
+                unit = CurricularUnit()  # type: ignore
+                unit.name = name
+                unit.code = code if code else None
+                unit.course_id = course.id
+                unit.description = description if description else None
+                unit.is_active = True
                 
                 db.session.add(unit)
                 results["success"] += 1

@@ -721,7 +721,7 @@ def add_course():
             # Form validation failed
             for field, errors in form.errors.items():
                 for error in errors:
-                    field_obj = getattr(form, field, None)
+                    field_obj = getattr(form, field, None) if field else None
                     label_text = field_obj.label.text if field_obj and hasattr(field_obj, 'label') else field
                     flash(f'{label_text}: {error}', 'error')
     
