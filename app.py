@@ -28,10 +28,15 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-prod
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # configure the database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///teacher_evaluation.db")
+database_url = os.environ.get("DATABASE_URL")
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url or "sqlite:///teacher_evaluation.db"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
+    "pool_size": 5,
+    "max_overflow": 10
 }
 
 # configure file uploads
@@ -68,7 +73,12 @@ with app.app_context():
         return User.query.get(int(user_id))
     
     try:
+        # Test database connection first
+        db.engine.connect()
+        print("✅ Database connection successful")
+        
         db.create_all()
+        print("✅ Database tables created/verified")
         
         # Create admin user if it doesn't exist
         from models import User
@@ -85,6 +95,7 @@ with app.app_context():
             print("✅ Admin user created successfully")
     except Exception as e:
         print(f"❌ Database initialization error: {e}")
+        print(f"Database URL: {app.config['SQLALCHEMY_DATABASE_URI'][:50]}...")
         # Don't fail completely, let the app start and show the error
 
 if __name__ == '__main__':

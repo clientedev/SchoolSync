@@ -40,6 +40,16 @@ def logout():
     flash('Você foi desconectado com sucesso.', 'info')
     return redirect(url_for('login'))
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Railway"""
+    try:
+        # Test database connection
+        db.engine.connect()
+        return jsonify({"status": "healthy", "database": "connected"}), 200
+    except Exception as e:
+        return jsonify({"status": "unhealthy", "error": str(e)}), 500
+
 @app.route('/')
 @login_required
 def index():
