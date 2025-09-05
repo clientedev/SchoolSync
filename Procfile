@@ -1,1 +1,1 @@
-web: gunicorn --bind 0.0.0.0:$PORT corrected_railway_app:app --timeout 120 --workers 1 --max-requests 1000 --log-level info
+web: gunicorn --bind 0.0.0.0:$PORT production_app:app --timeout 120 --workers 1 --max-requests 1000 --log-level info

@@ -14,4 +14,4 @@ echo "✅ DATABASE_URL configurada"
 
 # Start the application
 echo "🏗️ Iniciando aplicação Flask..."
-exec python app.py
+exec python production_app.py
