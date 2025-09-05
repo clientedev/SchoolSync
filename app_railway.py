@@ -111,6 +111,8 @@ def login():
         return redirect(url_for('dashboard'))
     
     form = LoginForm()
+    error_message = ""
+    
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data) and user.is_active:
@@ -118,9 +120,12 @@ def login():
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('dashboard'))
         else:
-            flash('Usuário ou senha inválidos.', 'error')
+            error_message = "Usuário ou senha inválidos."
     
-    return '''
+    # Get CSRF token
+    csrf_token = form.csrf_token._value() if hasattr(form.csrf_token, '_value') else ""
+    
+    return f'''
     <!DOCTYPE html>
     <html>
     <head>
@@ -136,18 +141,23 @@ def login():
                             <h3 class="text-center">Sistema SENAI - Login</h3>
                         </div>
                         <div class="card-body">
+                            {f'<div class="alert alert-danger">{error_message}</div>' if error_message else ''}
+                            
                             <form method="POST">
-                                ''' + form.hidden_tag() + '''
+                                <input type="hidden" name="csrf_token" value="{csrf_token}">
+                                
                                 <div class="mb-3">
-                                    ''' + form.username.label(class_="form-label") + '''
-                                    ''' + form.username(class_="form-control") + '''
+                                    <label for="username" class="form-label">Usuário</label>
+                                    <input type="text" class="form-control" id="username" name="username" required>
                                 </div>
+                                
                                 <div class="mb-3">
-                                    ''' + form.password.label(class_="form-label") + '''
-                                    ''' + form.password(class_="form-control") + '''
+                                    <label for="password" class="form-label">Senha</label>
+                                    <input type="password" class="form-control" id="password" name="password" required>
                                 </div>
+                                
                                 <div class="d-grid">
-                                    ''' + form.submit(class_="btn btn-primary") + '''
+                                    <button type="submit" class="btn btn-primary">Entrar</button>
                                 </div>
                             </form>
                             
