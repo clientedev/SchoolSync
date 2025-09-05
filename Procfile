@@ -1,1 +1,1 @@
-web: gunicorn --bind 0.0.0.0:$PORT railway_simple_app:app --timeout 60 --workers 1 --max-requests 1000 --log-level debug
+web: gunicorn --bind 0.0.0.0:$PORT railway_simple_app:app --timeout 120 --workers 1 --max-requests 1000 --log-level info --preload
