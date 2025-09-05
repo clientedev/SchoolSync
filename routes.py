@@ -371,13 +371,13 @@ def add_teacher():
             return render_template('teachers.html', form=form, teachers=Teacher.query.all())
         
         teacher = Teacher()  # type: ignore
-        teacher.nif = form.nif.data.upper()
+        teacher.nif = form.nif.data.upper() if form.nif.data else ''
         teacher.name = form.name.data
         teacher.area = form.area.data
         
         # Create user account automatically for teacher
         teacher_user = User()  # type: ignore
-        teacher_user.username = form.nif.data.lower()  # Use NIF as username
+        teacher_user.username = form.nif.data.lower() if form.nif.data else ''  # Use NIF as username
         teacher_user.name = form.name.data
         teacher_user.role = 'teacher'
         teacher_user.created_by = current_user.id
@@ -561,7 +561,7 @@ def edit_teacher(id):
             flash(f'Já existe outro docente com NIF {form.nif.data}.', 'error')
             return render_template('teachers.html', form=form, teacher=teacher, teachers=Teacher.query.all())
         
-        teacher.nif = form.nif.data.upper()
+        teacher.nif = form.nif.data.upper() if form.nif.data else ''
         teacher.name = form.name.data
         teacher.area = form.area.data
         db.session.commit()
@@ -720,7 +720,9 @@ def add_course():
             # Form validation failed
             for field, errors in form.errors.items():
                 for error in errors:
-                    flash(f'{getattr(form, field).label.text}: {error}', 'error')
+                    field_obj = getattr(form, field, None)
+                    label_text = field_obj.label.text if field_obj and hasattr(field_obj, 'label') else field
+                    flash(f'{label_text}: {error}', 'error')
     
     return render_template('courses.html', form=form, courses=Course.query.all())
 

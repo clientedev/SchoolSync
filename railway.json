@@ -4,6 +4,8 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "python app.py"
+    "startCommand": "gunicorn --bind 0.0.0.0:$PORT production_app:app --timeout 120 --workers 1 --max-requests 1000 --log-level info",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 300
   }
 }
