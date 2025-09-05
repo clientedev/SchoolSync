@@ -139,6 +139,8 @@ with app.app_context():
             logging.info("✅ Routes loaded successfully")
         except Exception as e:
             logging.error(f"❌ Routes loading failed: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
         
         logging.info("✅ Application initialized successfully")
         
@@ -148,16 +150,7 @@ with app.app_context():
         logging.error(traceback.format_exc())
         # Allow app to start for debugging
 
-# Health check endpoint for Railway
-@app.route('/health')
-def health_check():
-    """Health check endpoint for Railway"""
-    try:
-        # Test database connection
-        db.engine.connect()
-        return {"status": "healthy", "database": "connected"}, 200
-    except Exception as e:
-        return {"status": "unhealthy", "error": str(e)}, 500
+# Health check endpoint will be loaded from routes.py
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
