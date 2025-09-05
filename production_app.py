@@ -83,8 +83,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Initialize database and routes
 with app.app_context():
     try:
-        # Import models first
-        import models
+        # Import models first to avoid circular imports
+        from models import User
         
         # Test database connection
         connection = db.engine.connect()
@@ -94,7 +94,6 @@ with app.app_context():
         # Configure user loader
         @login_manager.user_loader
         def load_user(user_id):
-            from models import User
             return User.query.get(int(user_id))
         
         # Create tables if needed
@@ -102,7 +101,6 @@ with app.app_context():
         logging.info("✅ Database tables verified")
         
         # Create admin user if it doesn't exist
-        from models import User
         admin_user = User.query.filter_by(username='edson.lemes').first()
         if not admin_user:
             admin_user = User()
