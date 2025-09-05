@@ -250,11 +250,23 @@
                     </h6>
                     <ul class="list-unstyled mb-0">
                         {% for alert in overdue_alerts[:3] %}
-                        <li class="mb-1">
+                        <li class="mb-2 d-flex justify-content-between align-items-center">
                             <small class="text-danger">
                                 {{ alert.teacher.name }} - 
                                 {{ ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][alert.scheduled_month] }}/{{ alert.scheduled_year }}
                             </small>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('new_evaluation_from_schedule', schedule_id=alert.id) }}" 
+                                   class="btn btn-sm btn-outline-danger" 
+                                   title="Avaliar Agora">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                                <a href="{{ url_for('new_evaluation') }}?teacher_id={{ alert.teacher_id }}" 
+                                   class="btn btn-sm btn-outline-warning" 
+                                   title="Nova Avaliação">
+                                    <i class="fas fa-plus"></i>
+                                </a>
+                            </div>
                         </li>
                         {% endfor %}
                         {% if overdue_alerts|length > 3 %}
@@ -275,8 +287,20 @@
                     </h6>
                     <ul class="list-unstyled mb-0">
                         {% for alert in pending_alerts[:3] %}
-                        <li class="mb-1">
+                        <li class="mb-2 d-flex justify-content-between align-items-center">
                             <small class="text-warning">{{ alert.teacher.name }}</small>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('new_evaluation_from_schedule', schedule_id=alert.id) }}" 
+                                   class="btn btn-sm btn-outline-warning" 
+                                   title="Avaliar Agora">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                                <a href="{{ url_for('new_evaluation') }}?teacher_id={{ alert.teacher_id }}" 
+                                   class="btn btn-sm btn-outline-primary" 
+                                   title="Nova Avaliação">
+                                    <i class="fas fa-plus"></i>
+                                </a>
+                            </div>
                         </li>
                         {% endfor %}
                         {% if pending_alerts|length > 3 %}
@@ -297,8 +321,13 @@
                     </h6>
                     <ul class="list-unstyled mb-0">
                         {% for teacher in teachers_without_evaluation[:3] %}
-                        <li class="mb-1">
+                        <li class="mb-2 d-flex justify-content-between align-items-center">
                             <small class="text-info">{{ teacher.name }}</small>
+                            <a href="{{ url_for('new_evaluation') }}?teacher_id={{ teacher.id }}" 
+                               class="btn btn-sm btn-outline-info" 
+                               title="Criar Avaliação">
+                                <i class="fas fa-plus"></i>
+                            </a>
                         </li>
                         {% endfor %}
                         {% if teachers_without_evaluation|length > 3 %}
