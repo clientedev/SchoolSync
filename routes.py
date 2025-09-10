@@ -394,8 +394,11 @@ def teacher_profile(id):
     teacher_password = None
     if recent_credentials and recent_credentials.get('nif') == teacher.nif:
         teacher_password = recent_credentials.get('password')
-        # Clear credentials from session after first use for security
-        session.pop('new_teacher_credentials', None)
+        # DON'T clear credentials yet - keep for email sending
+    
+    # Also check if teacher_user has temporary password stored
+    if teacher_user and hasattr(teacher_user, '_temp_password'):
+        teacher_password = teacher_user._temp_password
     
     return render_template('teacher_profile.html', 
                          teacher=teacher, 
@@ -441,8 +444,9 @@ def add_teacher():
         password = ''.join(secrets.choice(password_chars) for _ in range(8))
         teacher_user.set_password(password)
         
-        # Store plain password temporarily for email sending
+        # Store plain password temporarily for email sending and display
         teacher_user._password_plain = password
+        teacher_user._temp_password = password
         
         db.session.add(teacher_user)
         db.session.flush()  # Get user ID
@@ -1614,8 +1618,8 @@ def evaluator_sign_evaluation(id):
 @login_required
 def scheduling():
     """Scheduling dashboard"""
-    if not current_user.is_admin():
-        flash('Acesso negado. Apenas administradores podem gerenciar agendamentos.', 'error')
+    if not (current_user.is_admin() or current_user.role == 'evaluator'):
+        flash('Acesso negado. Apenas administradores e avaliadores podem gerenciar agendamentos.', 'error')
         return redirect_by_role()
     
     try:
@@ -1752,7 +1756,7 @@ def new_evaluation_from_schedule(schedule_id):
 @login_required
 def add_scheduled_evaluation():
     """Add new scheduled evaluation"""
-    if not current_user.is_admin():
+    if not (current_user.is_admin() or current_user.role == 'evaluator'):
         return jsonify({'error': 'Acesso negado'}), 403
     
     current_semester = get_or_create_current_semester()
