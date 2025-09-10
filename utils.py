@@ -78,20 +78,6 @@ def send_credentials_email(teacher_email, teacher_data, password):
     """Send credentials email to newly created teacher"""
     if not teacher_email:
         return False
-    
-    # Check if email is properly configured
-    mail_server = current_app.config.get('MAIL_SERVER', 'localhost')
-    mail_username = current_app.config.get('MAIL_USERNAME', '')
-    
-    # Skip email if not properly configured (avoid hanging on localhost)
-    if mail_server == 'localhost' and not mail_username:
-        current_app.logger.warning("Email not configured properly - skipping credentials email")
-        return False
-    
-    # Additional check for valid email server
-    if not mail_server or mail_server.strip() == '':
-        current_app.logger.warning("No email server configured - skipping credentials email")
-        return False
         
     try:
         msg = Message(
@@ -135,28 +121,13 @@ SENAI Morvan Figueiredo
 Este é um email automático. Por favor, não responda.
 """
         
-        # Try SendGrid first (works on Railway), fallback to SMTP
-        email_content = msg.body
-        
-        # Try SendGrid API first
-        sendgrid_success = send_email_via_sendgrid(
-            to_email=teacher_email,
-            subject=msg.subject,
-            content_text=email_content,
-            sender_email=current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br')
-        )
-        
-        if sendgrid_success:
-            current_app.logger.info(f"Credentials email sent successfully via SendGrid to {teacher_email}")
-            return True
-        
-        # Fallback to SMTP if SendGrid fails or not configured
+        # Send email via SMTP (working on paid Railway)
         try:
             mail.send(msg)
             current_app.logger.info(f"Credentials email sent successfully via SMTP to {teacher_email}")
             return True
         except Exception as smtp_error:
-            current_app.logger.error(f"Both SendGrid and SMTP failed for credentials to {teacher_email}. SMTP error: {str(smtp_error)}")
+            current_app.logger.error(f"SMTP failed for credentials to {teacher_email}. Error: {str(smtp_error)}")
             return False
         
     except Exception as e:
@@ -322,19 +293,6 @@ def send_simple_evaluation_email(teacher_email, email_data):
     """Send evaluation notification email with primitive data (thread-safe)"""
     if not teacher_email:
         return False
-    
-    # Check if email is properly configured
-    mail_server = current_app.config.get('MAIL_SERVER', 'localhost')
-    mail_username = current_app.config.get('MAIL_USERNAME', '')
-    
-    # Skip email if not properly configured
-    if mail_server == 'localhost' and not mail_username:
-        current_app.logger.warning("Email not configured properly - skipping email sending")
-        return False
-    
-    if not mail_server or mail_server.strip() == '':
-        current_app.logger.warning("No email server configured - skipping email sending")
-        return False
         
     try:
         # Build credentials section
@@ -398,28 +356,13 @@ SENAI Morvan Figueiredo
 Este é um email automático. Por favor, não responda.
 """
         
-        # Try SendGrid first (works on Railway), fallback to SMTP
-        email_content = msg.body
-        
-        # Try SendGrid API first
-        sendgrid_success = send_email_via_sendgrid(
-            to_email=teacher_email,
-            subject=msg.subject,
-            content_text=email_content,
-            sender_email=current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br')
-        )
-        
-        if sendgrid_success:
-            current_app.logger.info(f"Evaluation email sent successfully via SendGrid to {teacher_email}")
-            return True
-        
-        # Fallback to SMTP if SendGrid fails or not configured
+        # Send email via SMTP (working on paid Railway)
         try:
             mail.send(msg)
             current_app.logger.info(f"Evaluation email sent successfully via SMTP to {teacher_email}")
             return True
         except Exception as smtp_error:
-            current_app.logger.error(f"Both SendGrid and SMTP failed for {teacher_email}. SMTP error: {str(smtp_error)}")
+            current_app.logger.error(f"SMTP failed for evaluation to {teacher_email}. Error: {str(smtp_error)}")
             return False
             
     except Exception as e:
