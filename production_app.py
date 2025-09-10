@@ -58,7 +58,7 @@ app.config.update({
     "UPLOAD_FOLDER": "/tmp/uploads",
     "MAX_CONTENT_LENGTH": 16 * 1024 * 1024,  # 16MB
     
-    # Mail configuration - fixed values for Railway deployment
+    # Mail configuration - fixed values for Railway deployment  
     "MAIL_SERVER": 'smtp.gmail.com',
     "MAIL_PORT": 587,
     "MAIL_USE_TLS": True,
@@ -66,6 +66,7 @@ app.config.update({
     "MAIL_USERNAME": 'escolasenaimorvanfigueiredo@gmail.com',
     "MAIL_PASSWORD": 'bhsnhtnqroscpnxa',
     "MAIL_DEFAULT_SENDER": 'escolasenaimorvanfigueiredo@gmail.com',
+    "MAIL_TIMEOUT": 10,  # Add timeout for Railway
     
     # SendGrid API key (works on Railway free plan)
     "SENDGRID_API_KEY": os.environ.get('SENDGRID_API_KEY'),

@@ -123,11 +123,27 @@ Este é um email automático. Por favor, não responda.
         
         # Send email via SMTP (working on paid Railway)
         try:
+            # Force immediate send and log everything
+            current_app.logger.info(f"🔄 Iniciando envio de credenciais para {teacher_email}")
+            current_app.logger.info(f"🔧 SMTP Server: {current_app.config.get('MAIL_SERVER')}:{current_app.config.get('MAIL_PORT')}")
+            
             mail.send(msg)
-            current_app.logger.info(f"Credentials email sent successfully via SMTP to {teacher_email}")
+            
+            current_app.logger.info(f"✅ Credentials email sent successfully via SMTP to {teacher_email}")
             return True
         except Exception as smtp_error:
-            current_app.logger.error(f"SMTP failed for credentials to {teacher_email}. Error: {str(smtp_error)}")
+            current_app.logger.error(f"❌ SMTP failed for credentials to {teacher_email}. Detailed error: {str(smtp_error)}")
+            current_app.logger.error(f"🔍 Error type: {type(smtp_error).__name__}")
+            
+            # Log specific Gmail errors
+            error_str = str(smtp_error).lower()
+            if '534' in error_str or 'password' in error_str:
+                current_app.logger.error("🚨 Gmail authentication error - App password needed")
+            elif '535' in error_str:
+                current_app.logger.error("🚨 Gmail credentials invalid")
+            elif 'connection' in error_str and 'refused' in error_str:
+                current_app.logger.error("🚨 SMTP connection refused - possible Railway blocking")
+            
             return False
         
     except Exception as e:
@@ -358,11 +374,27 @@ Este é um email automático. Por favor, não responda.
         
         # Send email via SMTP (working on paid Railway)
         try:
+            # Force immediate send and log everything
+            current_app.logger.info(f"🔄 Iniciando envio de avaliação para {teacher_email}")
+            current_app.logger.info(f"🔧 SMTP Server: {current_app.config.get('MAIL_SERVER')}:{current_app.config.get('MAIL_PORT')}")
+            
             mail.send(msg)
-            current_app.logger.info(f"Evaluation email sent successfully via SMTP to {teacher_email}")
+            
+            current_app.logger.info(f"✅ Evaluation email sent successfully via SMTP to {teacher_email}")
             return True
         except Exception as smtp_error:
-            current_app.logger.error(f"SMTP failed for evaluation to {teacher_email}. Error: {str(smtp_error)}")
+            current_app.logger.error(f"❌ SMTP failed for evaluation to {teacher_email}. Detailed error: {str(smtp_error)}")
+            current_app.logger.error(f"🔍 Error type: {type(smtp_error).__name__}")
+            
+            # Log specific Gmail errors
+            error_str = str(smtp_error).lower()
+            if '534' in error_str or 'password' in error_str:
+                current_app.logger.error("🚨 Gmail authentication error - App password needed")
+            elif '535' in error_str:
+                current_app.logger.error("🚨 Gmail credentials invalid") 
+            elif 'connection' in error_str and 'refused' in error_str:
+                current_app.logger.error("🚨 SMTP connection refused - possible Railway blocking")
+                
             return False
             
     except Exception as e:
