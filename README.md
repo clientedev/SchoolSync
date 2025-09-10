@@ -426,8 +426,8 @@ gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 production_app:app
 ### 🔑 Usuário Inicial
 
 O sistema cria automaticamente um usuário administrador:
-- **Usuário:** `edson.lemes`
-- **Senha:** `senai103103`
+- **Usuário:** `******`
+- **Senha:** `*********`
 - **Função:** Administrador
 
 **⚠️ IMPORTANTE:** Altere esta senha padrão imediatamente após o primeiro login!
