@@ -432,6 +432,9 @@ def add_teacher():
         password = ''.join(secrets.choice(password_chars) for _ in range(8))
         teacher_user.set_password(password)
         
+        # Store plain password temporarily for email sending
+        teacher_user._password_plain = password
+        
         db.session.add(teacher_user)
         db.session.flush()  # Get user ID
         

@@ -78,9 +78,20 @@ def send_evaluation_email(teacher_email, evaluation, teacher_user=None, report_p
         return False
         
     try:
-        # Get teacher user credentials if linked
+        # Get teacher user credentials if linked  
         teacher_credentials = ""
-        if teacher_user:
+        if teacher_user and hasattr(teacher_user, '_password_plain'):
+            # Show actual password if available (from recent registration)
+            teacher_credentials = f"""
+ACESSO AO SISTEMA:
+Para acessar o sistema e assinar sua avaliação, utilize:
+- Usuário: {teacher_user.username}
+- Senha: {teacher_user._password_plain}
+
+IMPORTANTE: Altere sua senha no primeiro acesso por motivos de segurança.
+Guarde essas credenciais em local seguro.
+"""
+        elif teacher_user:
             # Include username, password will be shown generically for security
             teacher_credentials = f"""
 ACESSO AO SISTEMA:
