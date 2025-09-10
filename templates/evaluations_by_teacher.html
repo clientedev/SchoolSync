@@ -150,10 +150,14 @@ function deleteEvaluation(evaluationId, teacherName) {
         return;
     }
     
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
     fetch(`/evaluations/delete/${evaluationId}`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
         }
     })
     .then(response => response.json())
