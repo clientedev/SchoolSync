@@ -1120,6 +1120,33 @@ def edit_evaluation(id):
     
     return render_template('evaluation_form.html', form=form, evaluation=evaluation, edit_mode=True)
 
+@app.route('/evaluations/delete/<int:id>', methods=['DELETE'])
+@login_required
+def delete_evaluation(id):
+    """Delete evaluation - only admin can delete"""
+    if not current_user.is_admin():
+        return jsonify({'error': 'Acesso negado. Apenas administradores podem excluir avaliações.'}), 403
+    
+    evaluation = Evaluation.query.get_or_404(id)
+    
+    try:
+        # Delete related attachments first
+        for attachment in evaluation.attachments:
+            # Remove file from filesystem
+            if os.path.exists(attachment.file_path):
+                os.remove(attachment.file_path)
+            db.session.delete(attachment)
+        
+        # Delete the evaluation
+        teacher_name = evaluation.teacher.name
+        db.session.delete(evaluation)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': f'Avaliação do docente {teacher_name} excluída com sucesso!'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Erro ao excluir avaliação. Tente novamente.'}), 500
+
 @app.route('/evaluations/complete/<int:id>')
 @login_required
 def complete_evaluation(id):
