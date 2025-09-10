@@ -10,7 +10,7 @@
                 <i class="fas fa-user-tie me-2"></i>Docentes
             </h1>
             <div class="btn-group">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#teacherModal">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#teacherModal" onclick="resetToAddMode()">
                     <i class="fas fa-plus me-1"></i>Novo Docente
                 </button>
                 <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
@@ -230,6 +230,16 @@
 
 {% block extra_scripts %}
 <script>
+// Function to reset modal to "Add Teacher" mode
+function resetToAddMode() {
+    console.log('🔧 DEBUG: Resetting modal to ADD mode');
+    document.getElementById('modalTitle').textContent = 'Novo Docente';
+    document.getElementById('teacherForm').action = "{{ url_for('add_teacher') }}";
+    document.getElementById('teacherForm').method = 'POST';
+    document.getElementById('teacherForm').reset();
+    console.log('🔧 DEBUG: Form action set to:', document.getElementById('teacherForm').action);
+}
+
 function editTeacher(id, nif, name, area) {
     document.getElementById('modalTitle').textContent = 'Editar Docente';
     document.getElementById('teacherForm').action = `/teachers/edit/${id}`;
@@ -249,11 +259,18 @@ function confirmDelete(itemName, deleteUrl) {
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
 
-// Reset form when modal is closed
+// Reset form when modal is closed - use the same resetToAddMode function
 document.getElementById('teacherModal').addEventListener('hidden.bs.modal', function () {
-    document.getElementById('modalTitle').textContent = 'Novo Docente';
-    document.getElementById('teacherForm').action = "{{ url_for('add_teacher') }}";
-    document.getElementById('teacherForm').reset();
+    resetToAddMode();
+});
+
+// Also reset when modal is shown for new teacher (double safety)
+document.getElementById('teacherModal').addEventListener('show.bs.modal', function (event) {
+    const triggerButton = event.relatedTarget;
+    // If triggered by the "Novo Docente" button, ensure it's in add mode
+    if (triggerButton && triggerButton.textContent.includes('Novo Docente')) {
+        resetToAddMode();
+    }
 });
 
 // Excel file validation

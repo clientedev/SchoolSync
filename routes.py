@@ -347,13 +347,26 @@ def change_user_password(id):
     
     return render_template('change_password.html', form=form, user=user)
 
-@app.route('/teachers')
+@app.route('/teachers', methods=['GET'])
 @login_required
 def teachers():
     """List all teachers"""
+    # DEBUG: Log requests to help diagnose 405 errors
+    logging.info(f"🔍 DEBUG teachers() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
+    
     teachers_list = Teacher.query.all()
     form = TeacherForm()  # Always provide form for modal
     return render_template('teachers.html', teachers=teachers_list, form=form)
+
+# DEBUG: Defensive route to catch POST requests to /teachers
+@app.route('/teachers', methods=['POST'])
+@login_required 
+def teachers_post_redirect():
+    """DEBUG: Catch POST requests that should go to /teachers/add"""
+    logging.warning(f"🚨 DEBUG: POST request to /teachers (should be /teachers/add) - Method: {request.method}, Path: {request.path}")
+    logging.warning(f"🚨 Form data: {dict(request.form)}")
+    flash('Redirecionando cadastro para URL correta...', 'info')
+    return redirect(url_for('add_teacher'), code=307)  # 307 preserves POST method
 
 @app.route('/teachers/<int:id>/profile')
 @login_required
@@ -384,10 +397,13 @@ def teacher_profile(id):
                          avg_planning=avg_planning,
                          avg_class=avg_class)
 
-@app.route('/teachers/add', methods=['GET', 'POST'])
+@app.route('/teachers/add', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def add_teacher():
     """Add new teacher"""
+    # DEBUG: Log requests to help diagnose 405 errors
+    logging.info(f"🔍 DEBUG add_teacher() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
+    
     form = TeacherForm()
     
     if form.validate_on_submit():
