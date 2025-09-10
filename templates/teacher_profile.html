@@ -2,6 +2,10 @@
 
 {% block title %}Perfil - {{ teacher.name }}{% endblock %}
 
+{% block extra_head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="row">
@@ -15,14 +19,25 @@
                         <i class="fas fa-arrow-left"></i> Voltar
                     </a>
                     {% if current_user.is_admin() and teacher_user %}
+                    {% if teacher_password and teacher_password != "***SENHA_GERADA***" %}
                     <button class="btn btn-info me-2" 
                             data-teacher-name="{{ teacher.name }}" 
                             data-teacher-username="{{ teacher_user.username }}" 
                             data-teacher-nif="{{ teacher.nif }}"
-                            data-teacher-password="{{ teacher_password if teacher_password else 'Definida pela coordenação' }}"
+                            data-teacher-password="{{ teacher_password }}"
                             onclick="printCredentialsFromButton(this)">
                         <i class="fas fa-print"></i> Imprimir Credencial
                     </button>
+                    {% elif teacher_password == "***SENHA_GERADA***" %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> Credenciais geradas e enviadas por email!
+                        <small class="d-block">A senha foi enviada para o email do docente.</small>
+                    </div>
+                    {% else %}
+                    <button class="btn btn-success me-2" onclick="generateCredentials({{ teacher.id }})">
+                        <i class="fas fa-key"></i> Gerar Credenciais
+                    </button>
+                    {% endif %}
                     <a href="{{ url_for('change_user_password', id=teacher_user.id) }}" class="btn btn-warning">
                         <i class="fas fa-key"></i> Alterar Senha
                     </a>
@@ -206,11 +221,54 @@
 </div>
 
 <script>
+function generateCredentials(teacherId) {
+    if (!confirm('Isto irá gerar uma nova senha para o docente e enviar por email (se houver email cadastrado). Continuar?')) {
+        return;
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    fetch(`/teachers/${teacherId}/generate_credentials`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message with option to print credentials
+            if (confirm(`Credenciais geradas com sucesso!\nNova senha: ${data.new_password}\nEmail: ${data.email_status}\n\nDeseja imprimir as credenciais agora?`)) {
+                // Create temporary print dialog with real credentials
+                printCredentialsImmediate(data.teacher_name, data.username, data.teacher_nif, data.new_password);
+            }
+            // Reload page to show updated status
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            alert('Erro: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao gerar credenciais. Tente novamente.');
+    });
+}
+
+function printCredentialsImmediate(teacherName, username, nif, password) {
+    // Print credentials immediately after generation
+    createAndPrintCredentials(teacherName, username, nif, password);
+}
+
 function printCredentialsFromButton(button) {
     const teacherName = button.getAttribute('data-teacher-name');
     const username = button.getAttribute('data-teacher-username');
     const nif = button.getAttribute('data-teacher-nif');
     const password = button.getAttribute('data-teacher-password');
+    createAndPrintCredentials(teacherName, username, nif, password);
+}
+
+function createAndPrintCredentials(teacherName, username, nif, password) {
     // Create a new window for printing
     const printWindow = window.open('', '_blank');
     

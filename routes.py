@@ -400,6 +400,20 @@ def teacher_profile(id):
     if teacher_user and hasattr(teacher_user, '_temp_password'):
         teacher_password = teacher_user._temp_password
     
+    # Check if there's a flag indicating credentials were just generated
+    session_key = 'teacher_credentials_generated_' + str(teacher.id)
+    if session_key in session:
+        generated_info = session[session_key]
+        # Only show flag if generated recently (within last 5 minutes for immediate display)
+        if generated_info and 'generated_at' in generated_info:
+            generated_at = datetime.fromisoformat(generated_info['generated_at'])
+            if (datetime.now() - generated_at).total_seconds() < 300:  # 5 minutes
+                # Don't store password, just indicate credentials were generated
+                teacher_password = "***SENHA_GERADA***"
+            else:
+                # Clean up expired flags
+                session.pop(session_key, None)
+    
     return render_template('teacher_profile.html', 
                          teacher=teacher, 
                          teacher_user=teacher_user,
@@ -532,10 +546,68 @@ def reset_teacher_password(user_id):
     user.set_password(new_password)
     db.session.commit()
     
+    # Find the teacher by user_id for logging
+    teacher = Teacher.query.filter_by(user_id=user_id).first()
+    if teacher:
+        # Log the password reset action
+        current_app.logger.info(f"Password reset for teacher {teacher.name} (NIF: {teacher.nif}) by admin {current_user.username}")
+    
     return jsonify({
         'success': True, 
         'message': 'Senha redefinida com sucesso',
         'new_password': new_password
+    })
+
+@app.route('/teachers/<int:teacher_id>/generate_credentials', methods=['POST'])
+@login_required
+def generate_teacher_credentials(teacher_id):
+    """Generate new credentials for printing/email - admin only"""
+    if not current_user.is_admin():
+        return jsonify({'success': False, 'message': 'Acesso negado'}), 403
+    
+    teacher = Teacher.query.get_or_404(teacher_id)
+    teacher_user = User.query.get(teacher.user_id) if teacher.user_id else None
+    
+    if not teacher_user:
+        return jsonify({'success': False, 'message': 'Usuário não encontrado'}), 404
+    
+    # Generate new password
+    import secrets
+    import string
+    password_chars = string.ascii_letters + string.digits
+    new_password = ''.join(secrets.choice(password_chars) for _ in range(10))
+    
+    teacher_user.set_password(new_password)
+    db.session.commit()
+    
+    # Store only a flag that credentials were generated (no password)
+    session['teacher_credentials_generated_' + str(teacher.id)] = {
+        'generated_at': datetime.now().isoformat()
+    }
+    
+    # Log the credential generation
+    current_app.logger.info(f"New credentials generated for teacher {teacher.name} (NIF: {teacher.nif}) by admin {current_user.username}")
+    
+    # Send email with new credentials if teacher has email
+    email_status = "Professor sem email cadastrado"
+    if teacher_user.email:
+        try:
+            from utils import send_credentials_email
+            send_credentials_email(teacher_user.email, teacher, teacher_user, new_password)
+            email_status = "Email enviado com sucesso"
+        except Exception as e:
+            current_app.logger.error(f"Erro ao enviar email de credenciais: {str(e)}")
+            email_status = "Erro no envio do email"
+    
+    return jsonify({
+        'success': True, 
+        'message': 'Credenciais geradas com sucesso',
+        'new_password': new_password,
+        'email_status': email_status,
+        'show_credentials': True,
+        'teacher_name': teacher.name,
+        'teacher_nif': teacher.nif,
+        'username': teacher_user.username
     })
 
 @app.route('/toggle_teacher_account/<int:user_id>', methods=['POST'])
