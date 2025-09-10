@@ -22,14 +22,9 @@
                     </a>
                     {% if current_user.is_admin() and teacher_user %}
                     {% if teacher_password and teacher_password != "***SENHA_GERADA***" %}
-                    <button class="btn btn-info me-2" 
-                            data-teacher-name="{{ teacher.name }}" 
-                            data-teacher-username="{{ teacher_user.username }}" 
-                            data-teacher-nif="{{ teacher.nif }}"
-                            data-teacher-password="{{ teacher_password }}"
-                            onclick="printCredentialsFromButton(this)">
-                        <i class="fas fa-print"></i> Imprimir Credencial
-                    </button>
+                    <a href="{{ url_for('download_teacher_credentials_pdf', teacher_id=teacher.id) }}" class="btn btn-info me-2">
+                        <i class="fas fa-download"></i> Baixar PDF Credencial
+                    </a>
                     {% elif teacher_password == "***SENHA_GERADA***" %}
                     <div class="alert alert-success">
                         <i class="fas fa-check-circle"></i> Credenciais geradas e enviadas por email!
@@ -62,14 +57,13 @@
                     <div class="row">
                         <div class="col-md-6">
                             <p><strong>Nome Completo:</strong><br>{{ teacher.name }}</p>
-                            <p><strong>NIF:</strong><br><code>{{ teacher.nif }}</code></p>
+                            <p><strong>NIF:</strong><br>{{ teacher.nif }}</p>
                             <p><strong>Área de Atuação:</strong><br>{{ teacher.area }}</p>
                         </div>
                         <div class="col-md-6">
-                            {% if teacher.subjects %}
-                            <p><strong>Disciplinas:</strong><br>{{ teacher.subjects }}</p>
-                            {% endif %}
+                            <p><strong>Data de Cadastro:</strong><br>{{ teacher.created_at.strftime('%d/%m/%Y') if teacher.created_at else 'Não informado' }}</p>
                             {% if teacher_user %}
+                            <p><strong>Email:</strong><br>{{ teacher_user.email or 'Não informado' }}</p>
                             <p><strong>Status da Conta:</strong><br>
                                 {% if teacher_user.is_active %}
                                     <span class="badge bg-success">Ativa</span>
@@ -77,126 +71,103 @@
                                     <span class="badge bg-danger">Inativa</span>
                                 {% endif %}
                             </p>
-                            <p><strong>Usuário:</strong><br><code>{{ teacher_user.username }}</code></p>
-                            {% else %}
-                            <p><strong>Conta:</strong><br><span class="text-warning">Conta não encontrada</span></p>
                             {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Account Status Card -->
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-pie me-2"></i>Estatísticas
-                    </h5>
-                </div>
-                <div class="card-body text-center">
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            <h3 class="text-primary">{{ total_evaluations }}</h3>
-                            <p class="text-muted mb-0">Total de Avaliações</p>
-                        </div>
-                        <div class="col-6">
-                            <h4 class="text-info">{{ "%.1f"|format(avg_planning) }}%</h4>
-                            <p class="text-muted small mb-0">Planejamento</p>
-                        </div>
-                        <div class="col-6">
-                            <h4 class="text-success">{{ "%.1f"|format(avg_class) }}%</h4>
-                            <p class="text-muted small mb-0">Condução</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Password Section (Admin Only) -->
-    {% if current_user.is_admin() and teacher_user %}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-warning">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-lock me-2"></i>Informações de Acesso (Administrador)
+                        <i class="fas fa-user-check me-2"></i>Status da Conta
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Usuário:</strong> <code>{{ teacher_user.username }}</code></p>
-                            <p><strong>Senha:</strong> <span class="text-muted">Última alteração em {{ teacher_user.created_at.strftime('%d/%m/%Y') if teacher_user.created_at else 'N/A' }}</span></p>
+                    {% if teacher_user %}
+                        <p><strong>Usuário:</strong><br>{{ teacher_user.username }}</p>
+                        <p><strong>Função:</strong><br>{{ teacher_user.role|title }}</p>
+                        <p><strong>Conta Criada em:</strong><br>{{ teacher_user.created_at.strftime('%d/%m/%Y') if teacher_user.created_at else 'Não informado' }}</p>
+                        
+                        {% if current_user.is_admin() %}
+                        <div class="mt-3">
+                            <button onclick="toggleAccount({{ teacher_user.id }})" 
+                                    class="btn btn-sm {% if teacher_user.is_active %}btn-danger{% else %}btn-success{% endif %}">
+                                <i class="fas {% if teacher_user.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                                {% if teacher_user.is_active %}Desativar{% else %}Ativar{% endif %} Conta
+                            </button>
                         </div>
-                        <div class="col-md-6">
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-1"></i>
-                                <small>O docente pode alterar sua própria senha na área restrita.</small>
-                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Sem conta de usuário</strong><br>
+                            Este docente não possui uma conta de acesso ao sistema.
                         </div>
-                    </div>
+                        {% if current_user.is_admin() %}
+                        <button onclick="createAccount({{ teacher.id }})" class="btn btn-primary btn-sm">
+                            <i class="fas fa-user-plus"></i> Criar Conta
+                        </button>
+                        {% endif %}
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-    {% endif %}
 
-    <!-- Evaluations History -->
+    <!-- Evaluations List -->
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-history me-2"></i>Histórico de Avaliações
+                        <i class="fas fa-clipboard-list me-2"></i>Avaliações Realizadas
                     </h5>
+                    {% if current_user.is_admin() %}
+                    <a href="{{ url_for('add_evaluation', teacher_id=teacher.id) }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Nova Avaliação
+                    </a>
+                    {% endif %}
                 </div>
                 <div class="card-body">
-                    {% if evaluations %}
+                    {% if teacher.evaluations %}
                     <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
                                 <tr>
                                     <th>Data</th>
                                     <th>Curso</th>
-                                    <th>Unidade Curricular</th>
+                                    <th>Período</th>
                                     <th>Avaliador</th>
-                                    <th>Planejamento</th>
-                                    <th>Condução</th>
                                     <th>Status</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for eval in evaluations %}
+                                {% for evaluation in teacher.evaluations %}
                                 <tr>
-                                    <td>{{ eval.evaluation_date.strftime('%d/%m/%Y') }}</td>
-                                    <td>{{ eval.course.name }}</td>
-                                    <td>{{ eval.curricular_unit.name if eval.curricular_unit else eval.course.curriculum_component }}</td>
-                                    <td>{{ eval.evaluator.name if eval.evaluator else 'N/A' }}</td>
+                                    <td>{{ evaluation.evaluation_date.strftime('%d/%m/%Y') if evaluation.evaluation_date else 'Não informado' }}</td>
+                                    <td>{{ evaluation.course.name if evaluation.course else 'Não informado' }}</td>
+                                    <td>{{ evaluation.period or 'Não informado' }}</td>
+                                    <td>{{ evaluation.evaluator.name if evaluation.evaluator else 'Não informado' }}</td>
                                     <td>
-                                        <span class="badge bg-info">{{ eval.calculate_planning_percentage() }}%</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-success">{{ eval.calculate_class_percentage() }}%</span>
-                                    </td>
-                                    <td>
-                                        {% if eval.is_completed %}
+                                        {% if evaluation.is_completed %}
                                             <span class="badge bg-success">Concluída</span>
-                                        {% elif eval.teacher_signed %}
-                                            <span class="badge bg-info">Assinada</span>
                                         {% else %}
-                                            <span class="badge bg-warning">Pendente</span>
+                                            <span class="badge bg-warning">Em andamento</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ url_for('view_evaluation', id=eval.id) }}" class="btn btn-outline-primary btn-sm">
+                                        <div class="btn-group" role="group" aria-label="Ações da avaliação">
+                                            <a href="{{ url_for('view_evaluation', id=evaluation.id) }}" class="btn btn-outline-primary btn-sm" title="Visualizar">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            {% if eval.is_completed %}
-                                            <a href="{{ url_for('download_evaluation_report', id=eval.id) }}" class="btn btn-outline-success btn-sm">
-                                                <i class="fas fa-download"></i>
+                                            {% if current_user.is_admin() %}
+                                            <a href="{{ url_for('edit_evaluation', id=evaluation.id) }}" class="btn btn-outline-warning btn-sm" title="Editar">
+                                                <i class="fas fa-edit"></i>
                                             </a>
                                             {% endif %}
                                         </div>
@@ -207,13 +178,14 @@
                         </table>
                     </div>
                     {% else %}
-                    <div class="text-center py-5">
+                    <div class="text-center py-4">
                         <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">Nenhuma avaliação encontrada</h5>
-                        <p class="text-muted">Este docente ainda não possui avaliações registradas.</p>
-                        <a href="{{ url_for('new_evaluation') }}" class="btn btn-primary">
-                            <i class="fas fa-plus me-1"></i>Criar Nova Avaliação
+                        <p class="text-muted">Nenhuma avaliação registrada para este docente.</p>
+                        {% if current_user.is_admin() %}
+                        <a href="{{ url_for('add_evaluation', teacher_id=teacher.id) }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Primeira Avaliação
                         </a>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -241,10 +213,10 @@ function generateCredentials(teacherId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Show success message with option to print credentials
-            if (confirm(`Credenciais geradas com sucesso!\nNova senha: ${data.new_password}\nEmail: ${data.email_status}\n\nDeseja imprimir as credenciais agora?`)) {
-                // Create temporary print dialog with real credentials
-                printCredentialsImmediate(data.teacher_name, data.username, data.teacher_nif, data.new_password);
+            // Show success message with option to download credentials PDF
+            if (confirm(`Credenciais geradas com sucesso!\nNova senha: ${data.new_password}\nEmail: ${data.email_status}\n\nDeseja baixar o PDF das credenciais agora?`)) {
+                // Download credentials PDF
+                window.location.href = `/teachers/${teacherId}/credentials/download`;
             }
             // Reload page to show updated status
             setTimeout(() => window.location.reload(), 1000);
@@ -258,157 +230,56 @@ function generateCredentials(teacherId) {
     });
 }
 
-function printCredentialsImmediate(teacherName, username, nif, password) {
-    // Print credentials immediately after generation
-    createAndPrintCredentials(teacherName, username, nif, password);
+function toggleAccount(userId) {
+    if (!confirm('Tem certeza que deseja alterar o status desta conta?')) {
+        return;
+    }
+    
+    fetch(`/toggle_teacher_account/${userId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao alterar status da conta.');
+    });
 }
 
-function printCredentialsFromButton(button) {
-    const teacherName = button.getAttribute('data-teacher-name');
-    const username = button.getAttribute('data-teacher-username');
-    const nif = button.getAttribute('data-teacher-nif');
-    const password = button.getAttribute('data-teacher-password');
-    createAndPrintCredentials(teacherName, username, nif, password);
-}
-
-function createAndPrintCredentials(teacherName, username, nif, password) {
-    // Create a new window for printing
-    const printWindow = window.open('', '_blank');
+function createAccount(teacherId) {
+    if (!confirm('Criar conta de usuário para este docente? Uma senha será gerada automaticamente.')) {
+        return;
+    }
     
-    const printContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Credenciais de Acesso - ${teacherName}</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                max-width: 800px;
-                margin: 20px auto;
-                padding: 20px;
-                line-height: 1.6;
-            }
-            .header {
-                text-align: center;
-                border-bottom: 2px solid #000;
-                padding-bottom: 20px;
-                margin-bottom: 30px;
-            }
-            .logo {
-                font-weight: bold;
-                font-size: 18px;
-                margin-bottom: 10px;
-            }
-            .title {
-                font-size: 16px;
-                color: #666;
-            }
-            .credentials-box {
-                border: 2px solid #000;
-                padding: 20px;
-                margin: 20px 0;
-                background-color: #f9f9f9;
-            }
-            .credential-item {
-                margin: 15px 0;
-                font-size: 14px;
-            }
-            .credential-label {
-                font-weight: bold;
-                display: inline-block;
-                width: 120px;
-            }
-            .credential-value {
-                background-color: #fff;
-                border: 1px solid #ccc;
-                padding: 5px 10px;
-                font-family: 'Courier New', monospace;
-                display: inline-block;
-                min-width: 200px;
-            }
-            .instructions {
-                margin-top: 30px;
-                border-top: 1px solid #ccc;
-                padding-top: 20px;
-            }
-            .instructions h3 {
-                margin-bottom: 15px;
-            }
-            .instructions ol {
-                margin-left: 20px;
-            }
-            .footer {
-                margin-top: 40px;
-                text-align: center;
-                font-size: 12px;
-                color: #666;
-                border-top: 1px solid #ccc;
-                padding-top: 15px;
-            }
-            @media print {
-                body { margin: 0; }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <div class="logo">SISTEMA DE AVALIAÇÃO DOCENTE</div>
-            <div class="title">SENAI Morvan Figueiredo</div>
-        </div>
-        
-        <h2 style="text-align: center; margin-bottom: 30px;">CREDENCIAIS DE ACESSO</h2>
-        
-        <div class="credentials-box">
-            <h3 style="margin-top: 0;">Dados do Docente</h3>
-            
-            <div class="credential-item">
-                <span class="credential-label">Nome:</span>
-                <span class="credential-value">${teacherName}</span>
-            </div>
-            
-            <div class="credential-item">
-                <span class="credential-label">NIF:</span>
-                <span class="credential-value">${nif}</span>
-            </div>
-            
-            <div class="credential-item">
-                <span class="credential-label">Usuário (Login):</span>
-                <span class="credential-value">${username}</span>
-            </div>
-            
-            <div class="credential-item">
-                <span class="credential-label">Senha:</span>
-                <span class="credential-value">${password}</span>
-            </div>
-        </div>
-        
-        <div class="instructions">
-            <h3>Instruções para Primeiro Acesso:</h3>
-            <ol>
-                <li>Acesse o sistema usando o usuário e senha fornecidos pela coordenação</li>
-                <li>Após o login, clique no seu nome no canto superior direito</li>
-                <li>Selecione "Alterar Senha" para definir uma nova senha</li>
-                <li>Guarde suas credenciais em local seguro</li>
-                <li>Em caso de dúvidas, entre em contato com a coordenação</li>
-            </ol>
-        </div>
-        
-        <div class="footer">
-            <p><strong>IMPORTANTE:</strong> Mantenha suas credenciais em sigilo e altere a senha no primeiro acesso.</p>
-            <p>Documento gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
-        </div>
-    </body>
-    </html>
-    `;
-    
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    
-    // Wait for content to load, then print
-    printWindow.onload = function() {
-        printWindow.print();
-        printWindow.close();
-    };
+    fetch(`/create_account_for_teacher/${teacherId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao criar conta.');
+    });
 }
 </script>
 {% endblock %}

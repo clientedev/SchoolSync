@@ -58,18 +58,17 @@ app.config.update({
     "UPLOAD_FOLDER": "/tmp/uploads",
     "MAX_CONTENT_LENGTH": 16 * 1024 * 1024,  # 16MB
     
-    # Mail configuration - using environment variables for Railway
+    # Mail configuration - optimized for Railway deployment
     "MAIL_SERVER": os.environ.get('MAIL_SERVER', 'smtp.gmail.com'),
     "MAIL_PORT": int(os.environ.get('MAIL_PORT', 587)),
-    "MAIL_USE_TLS": os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true',
-    "MAIL_USE_SSL": os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true',
-    "MAIL_USERNAME": os.environ.get('MAIL_USERNAME', 'escolasenaimorvanfigueiredo@gmail.com'),
-    "MAIL_PASSWORD": os.environ.get('MAIL_PASSWORD', 'bhsnhtnqroscpnxa'),
-    "MAIL_DEFAULT_SENDER": os.environ.get('MAIL_DEFAULT_SENDER') or os.environ.get('MAIL_USERNAME', 'escolasenaimorvanfigueiredo@gmail.com'),
-    "MAIL_TIMEOUT": int(os.environ.get('MAIL_TIMEOUT', 30)),  # Increased timeout for Railway
-    
-    # SendGrid API key (works on Railway free plan)
-    "SENDGRID_API_KEY": os.environ.get('SENDGRID_API_KEY'),
+    "MAIL_USE_TLS": True,  # Always True for modern SMTP
+    "MAIL_USE_SSL": False,  # SSL and TLS are mutually exclusive
+    "MAIL_USERNAME": os.environ.get('MAIL_USERNAME'),
+    "MAIL_PASSWORD": os.environ.get('MAIL_PASSWORD'),
+    "MAIL_DEFAULT_SENDER": os.environ.get('MAIL_DEFAULT_SENDER') or os.environ.get('MAIL_USERNAME'),
+    "MAIL_TIMEOUT": 120,  # Extended timeout for Railway cloud infrastructure
+    "MAIL_ASCII_ATTACHMENTS": True,  # Better Railway compatibility
+    "MAIL_MAX_EMAILS": None,  # No limit for Railway
 })
 
 # Import database instance from models
@@ -123,34 +122,7 @@ def test_email():
             body='Este é um email de teste para verificar se o SMTP está funcionando no Railway.'
         )
         
-        # Try SMTP first, fallback to SendGrid if fails
-        try:
-            mail.send(msg)
-        except Exception as smtp_error:
-            # Fallback to SendGrid API
-            sendgrid_key = app.config.get('SENDGRID_API_KEY')
-            if sendgrid_key:
-                import sendgrid
-                from sendgrid.helpers.mail import Mail
-                
-                sg_msg = Mail(
-                    from_email=app.config.get('MAIL_DEFAULT_SENDER'),
-                    to_emails='edson.lemes@senai.br',
-                    subject='Test Email from Railway (SendGrid)',
-                    html_content='Este email foi enviado via SendGrid API como fallback.'
-                )
-                
-                sg = sendgrid.SendGridAPIClient(api_key=sendgrid_key)
-                sg.send(sg_msg)
-                
-                return {
-                    'status': 'success',
-                    'message': 'Email enviado via SendGrid API (fallback)!',
-                    'method': 'sendgrid',
-                    'smtp_error': str(smtp_error)
-                }, 200
-            else:
-                raise smtp_error
+        mail.send(msg)
         
         return {
             'status': 'success',

@@ -475,7 +475,8 @@ def add_teacher():
                 'name': teacher.name,
                 'nif': teacher.nif,
                 'username': teacher.nif.lower(),
-                'password': password
+                'password': password,
+                'teacher_id': teacher.id
             }
             
             # Send welcome email with credentials if teacher has email
@@ -654,6 +655,62 @@ def generate_teacher_credentials(teacher_id):
         'teacher_nif': teacher.nif,
         'username': teacher_user.username
     })
+
+@app.route('/teachers/<int:teacher_id>/credentials/download')
+@login_required
+def download_teacher_credentials_pdf(teacher_id):
+    """Download PDF with teacher credentials - Admin only"""
+    if not current_user.is_admin():
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('teachers'))
+    
+    teacher = Teacher.query.get_or_404(teacher_id)
+    teacher_user = User.query.get(teacher.user_id) if teacher.user_id else None
+    
+    if not teacher_user:
+        flash('Professor não possui conta de usuário.', 'error')
+        return redirect(url_for('teachers'))
+    
+    # Check if there are recent credentials in session or just generated
+    recent_credentials = session.get('new_teacher_credentials')
+    session_key = 'teacher_credentials_generated_' + str(teacher.id)
+    recent_generation = session.get(session_key)
+    
+    password = None
+    if recent_credentials and recent_credentials.get('nif') == teacher.nif:
+        password = recent_credentials.get('password')
+    elif recent_generation:
+        # Password was generated but not stored for security
+        flash('Credenciais temporárias expiraram. Gere novas credenciais para baixar o PDF.', 'warning')
+        return redirect(url_for('teacher_profile', id=teacher.id))
+    else:
+        flash('Nenhuma credencial recente encontrada. Gere novas credenciais primeiro.', 'warning')
+        return redirect(url_for('teacher_profile', id=teacher.id))
+    
+    try:
+        from utils import generate_teacher_credentials_pdf
+        
+        # Generate PDF with teacher credentials
+        pdf_buffer = generate_teacher_credentials_pdf(
+            teacher_name=teacher.name,
+            teacher_nif=teacher.nif,
+            username=teacher_user.username,
+            password=password
+        )
+        
+        filename = f"credenciais_{teacher.name.replace(' ', '_')}_{teacher.nif}.pdf"
+        
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Erro ao gerar PDF de credenciais para professor {teacher.name}: {str(e)}")
+        flash('Erro ao gerar PDF de credenciais. Tente novamente.', 'error')
+        return redirect(url_for('teacher_profile', id=teacher.id))
 
 @app.route('/toggle_teacher_account/<int:user_id>', methods=['POST'])
 @login_required
