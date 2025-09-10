@@ -102,7 +102,7 @@
 <div class="modal fade" id="teacherModal" tabindex="-1" aria-labelledby="teacherModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form id="teacherForm" method="POST">
+            <form id="teacherForm" method="POST" action="{{ url_for('add_teacher') }}">
                 {{ form.hidden_tag() if form }}
                 <div class="modal-header">
                     <h5 class="modal-title" id="teacherModalLabel">
@@ -252,7 +252,7 @@ function confirmDelete(itemName, deleteUrl) {
 // Reset form when modal is closed
 document.getElementById('teacherModal').addEventListener('hidden.bs.modal', function () {
     document.getElementById('modalTitle').textContent = 'Novo Docente';
-    document.getElementById('teacherForm').action = '/teachers/add';
+    document.getElementById('teacherForm').action = "{{ url_for('add_teacher') }}";
     document.getElementById('teacherForm').reset();
 });
 
