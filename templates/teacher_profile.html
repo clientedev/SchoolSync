@@ -14,7 +14,10 @@
                     <a href="{{ url_for('teachers') }}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-arrow-left"></i> Voltar
                     </a>
-                    {% if current_user.is_admin() %}
+                    {% if current_user.is_admin() and teacher_user %}
+                    <button class="btn btn-info me-2" onclick="printCredentials('{{ teacher.name }}', '{{ teacher_user.username }}', '{{ teacher.nif }}')">
+                        <i class="fas fa-print"></i> Imprimir Credencial
+                    </button>
                     <a href="{{ url_for('change_user_password', id=teacher_user.id) }}" class="btn btn-warning">
                         <i class="fas fa-key"></i> Alterar Senha
                     </a>
@@ -196,4 +199,146 @@
         </div>
     </div>
 </div>
+
+<script>
+function printCredentials(teacherName, username, nif) {
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    
+    const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Credenciais de Acesso - ${teacherName}</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 20px auto;
+                padding: 20px;
+                line-height: 1.6;
+            }
+            .header {
+                text-align: center;
+                border-bottom: 2px solid #000;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+            }
+            .logo {
+                font-weight: bold;
+                font-size: 18px;
+                margin-bottom: 10px;
+            }
+            .title {
+                font-size: 16px;
+                color: #666;
+            }
+            .credentials-box {
+                border: 2px solid #000;
+                padding: 20px;
+                margin: 20px 0;
+                background-color: #f9f9f9;
+            }
+            .credential-item {
+                margin: 15px 0;
+                font-size: 14px;
+            }
+            .credential-label {
+                font-weight: bold;
+                display: inline-block;
+                width: 120px;
+            }
+            .credential-value {
+                background-color: #fff;
+                border: 1px solid #ccc;
+                padding: 5px 10px;
+                font-family: 'Courier New', monospace;
+                display: inline-block;
+                min-width: 200px;
+            }
+            .instructions {
+                margin-top: 30px;
+                border-top: 1px solid #ccc;
+                padding-top: 20px;
+            }
+            .instructions h3 {
+                margin-bottom: 15px;
+            }
+            .instructions ol {
+                margin-left: 20px;
+            }
+            .footer {
+                margin-top: 40px;
+                text-align: center;
+                font-size: 12px;
+                color: #666;
+                border-top: 1px solid #ccc;
+                padding-top: 15px;
+            }
+            @media print {
+                body { margin: 0; }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <div class="logo">SISTEMA DE AVALIAÇÃO DOCENTE</div>
+            <div class="title">SENAI Morvan Figueiredo</div>
+        </div>
+        
+        <h2 style="text-align: center; margin-bottom: 30px;">CREDENCIAIS DE ACESSO</h2>
+        
+        <div class="credentials-box">
+            <h3 style="margin-top: 0;">Dados do Docente</h3>
+            
+            <div class="credential-item">
+                <span class="credential-label">Nome:</span>
+                <span class="credential-value">${teacherName}</span>
+            </div>
+            
+            <div class="credential-item">
+                <span class="credential-label">NIF:</span>
+                <span class="credential-value">${nif}</span>
+            </div>
+            
+            <div class="credential-item">
+                <span class="credential-label">Usuário (Login):</span>
+                <span class="credential-value">${username}</span>
+            </div>
+            
+            <div class="credential-item">
+                <span class="credential-label">Senha:</span>
+                <span class="credential-value">Definida pela coordenação</span>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>Instruções para Primeiro Acesso:</h3>
+            <ol>
+                <li>Acesse o sistema usando o usuário e senha fornecidos pela coordenação</li>
+                <li>Após o login, clique no seu nome no canto superior direito</li>
+                <li>Selecione "Alterar Senha" para definir uma nova senha</li>
+                <li>Guarde suas credenciais em local seguro</li>
+                <li>Em caso de dúvidas, entre em contato com a coordenação</li>
+            </ol>
+        </div>
+        
+        <div class="footer">
+            <p><strong>IMPORTANTE:</strong> Mantenha suas credenciais em sigilo e altere a senha no primeiro acesso.</p>
+            <p>Documento gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+        </div>
+    </body>
+    </html>
+    `;
+    
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Wait for content to load, then print
+    printWindow.onload = function() {
+        printWindow.print();
+        printWindow.close();
+    };
+}
+</script>
 {% endblock %}
