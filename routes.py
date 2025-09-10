@@ -439,93 +439,93 @@ def add_teacher():
             if existing_teacher:
                 flash(f'Já existe um docente com NIF {form.nif.data}.', 'error')
                 return render_template('teachers.html', form=form, teachers=Teacher.query.all())
-        
-        teacher = Teacher()  # type: ignore
-        teacher.nif = form.nif.data.upper() if form.nif.data else ''
-        teacher.name = form.name.data
-        teacher.area = form.area.data
-        
-        # Create user account automatically for teacher
-        teacher_user = User()  # type: ignore
-        teacher_user.username = form.nif.data.lower() if form.nif.data else ''  # Use NIF as username
-        teacher_user.name = form.name.data
-        teacher_user.role = 'teacher'
-        teacher_user.created_by = current_user.id
-        
-        # Generate secure password (teacher can change later)
-        import secrets
-        import string
-        password_chars = string.ascii_letters + string.digits
-        password = ''.join(secrets.choice(password_chars) for _ in range(8))
-        teacher_user.set_password(password)
-        
-        # Store plain password temporarily for email sending and display
-        teacher_user._password_plain = password
-        teacher_user._temp_password = password
-        
-        db.session.add(teacher_user)
-        db.session.flush()  # Get user ID
-        
-        teacher.user_id = teacher_user.id
-        db.session.add(teacher)
-        db.session.commit()
-        
-        # Store password for display (in a real system, you might want to email this)
-        session['new_teacher_credentials'] = {
-            'name': teacher.name,
-            'nif': teacher.nif,
-            'username': teacher.nif.lower(),
-            'password': password
-        }
-        
-        # Send welcome email with credentials if teacher has email
-        if teacher_user.email:
-            try:
-                from utils import send_credentials_email
-                import threading
-                
-                # Extract data needed for credentials email (avoid ORM in thread)
-                email_data = {
-                    'teacher_name': teacher.name,
-                    'teacher_nif': teacher.nif,
-                    'teacher_area': teacher.area,
-                    'username': teacher_user.username,
-                    'password': password,
-                    'teacher_email': teacher_user.email
-                }
-                
-                # Capture app instance for thread context
-                flask_app = current_app._get_current_object()
-                
-                def send_credentials_async():
-                    # Use proper Flask app context for background thread
-                    with flask_app.app_context():
-                        try:
-                            email_sent = send_credentials_email(
-                                email_data['teacher_email'], 
-                                email_data,  # Pass dictionary instead of ORM objects
-                                email_data['password']
-                            )
-                            if email_sent:
-                                flask_app.logger.info(f"Email de credenciais enviado para {email_data['teacher_email']}")
-                            else:
-                                flask_app.logger.warning(f"Falha ao enviar email de credenciais para {email_data['teacher_email']}")
-                        except Exception as e:
-                            flask_app.logger.error(f"Erro assíncrono no envio de credenciais: {str(e)}")
-                
-                # Start credentials email sending in background thread
-                email_thread = threading.Thread(target=send_credentials_async, daemon=True)
-                email_thread.start()
-                
-                flash(f'Docente {teacher.name} cadastrado com sucesso! Credenciais sendo enviadas por email.', 'success')
-                app.logger.info(f"Email de credenciais iniciado em segundo plano para {teacher_user.email}")
-                
-            except Exception as e:
-                app.logger.error(f"Erro ao iniciar envio de credenciais: {str(e)}")
-                flash(f'Docente {teacher.name} cadastrado com sucesso! Erro no envio do email.', 'warning')
-        else:
-            flash(f'Docente {teacher.name} cadastrado com sucesso! Conta criada.', 'success')
             
+            teacher = Teacher()  # type: ignore
+            teacher.nif = form.nif.data.upper() if form.nif.data else ''
+            teacher.name = form.name.data
+            teacher.area = form.area.data
+            
+            # Create user account automatically for teacher
+            teacher_user = User()  # type: ignore
+            teacher_user.username = form.nif.data.lower() if form.nif.data else ''  # Use NIF as username
+            teacher_user.name = form.name.data
+            teacher_user.role = 'teacher'
+            teacher_user.created_by = current_user.id
+            
+            # Generate secure password (teacher can change later)
+            import secrets
+            import string
+            password_chars = string.ascii_letters + string.digits
+            password = ''.join(secrets.choice(password_chars) for _ in range(8))
+            teacher_user.set_password(password)
+            
+            # Store plain password temporarily for email sending and display
+            teacher_user._password_plain = password
+            teacher_user._temp_password = password
+            
+            db.session.add(teacher_user)
+            db.session.flush()  # Get user ID
+            
+            teacher.user_id = teacher_user.id
+            db.session.add(teacher)
+            db.session.commit()
+            
+            # Store password for display (in a real system, you might want to email this)
+            session['new_teacher_credentials'] = {
+                'name': teacher.name,
+                'nif': teacher.nif,
+                'username': teacher.nif.lower(),
+                'password': password
+            }
+            
+            # Send welcome email with credentials if teacher has email
+            if teacher_user.email:
+                try:
+                    from utils import send_credentials_email
+                    import threading
+                    
+                    # Extract data needed for credentials email (avoid ORM in thread)
+                    email_data = {
+                        'teacher_name': teacher.name,
+                        'teacher_nif': teacher.nif,
+                        'teacher_area': teacher.area,
+                        'username': teacher_user.username,
+                        'password': password,
+                        'teacher_email': teacher_user.email
+                    }
+                    
+                    # Capture app instance for thread context
+                    flask_app = current_app._get_current_object()
+                    
+                    def send_credentials_async():
+                        # Use proper Flask app context for background thread
+                        with flask_app.app_context():
+                            try:
+                                email_sent = send_credentials_email(
+                                    email_data['teacher_email'], 
+                                    email_data,  # Pass dictionary instead of ORM objects
+                                    email_data['password']
+                                )
+                                if email_sent:
+                                    flask_app.logger.info(f"Email de credenciais enviado para {email_data['teacher_email']}")
+                                else:
+                                    flask_app.logger.warning(f"Falha ao enviar email de credenciais para {email_data['teacher_email']}")
+                            except Exception as e:
+                                flask_app.logger.error(f"Erro assíncrono no envio de credenciais: {str(e)}")
+                    
+                    # Start credentials email sending in background thread
+                    email_thread = threading.Thread(target=send_credentials_async, daemon=True)
+                    email_thread.start()
+                    
+                    flash(f'Docente {teacher.name} cadastrado com sucesso! Credenciais sendo enviadas por email.', 'success')
+                    app.logger.info(f"Email de credenciais iniciado em segundo plano para {teacher_user.email}")
+                    
+                except Exception as e:
+                    app.logger.error(f"Erro ao iniciar envio de credenciais: {str(e)}")
+                    flash(f'Docente {teacher.name} cadastrado com sucesso! Erro no envio do email.', 'warning')
+            else:
+                flash(f'Docente {teacher.name} cadastrado com sucesso! Conta criada.', 'success')
+                
             return redirect(url_for('show_teacher_credentials'))
         
         except Exception as e:
