@@ -1137,6 +1137,13 @@ def delete_evaluation(id):
                 os.remove(attachment.file_path)
             db.session.delete(attachment)
         
+        # If evaluation is linked to a scheduled evaluation, reset its status
+        if evaluation.scheduled_evaluation_id:
+            scheduled = ScheduledEvaluation.query.get(evaluation.scheduled_evaluation_id)
+            if scheduled:
+                scheduled.is_completed = False
+                scheduled.completed_at = None
+        
         # Delete the evaluation
         teacher_name = evaluation.teacher.name
         db.session.delete(evaluation)
@@ -1145,6 +1152,10 @@ def delete_evaluation(id):
         return jsonify({'success': True, 'message': f'Avaliação do docente {teacher_name} excluída com sucesso!'})
     except Exception as e:
         db.session.rollback()
+        # Log the actual error for debugging
+        import traceback
+        logging.error(f"Error deleting evaluation: {e}")
+        logging.error(traceback.format_exc())
         return jsonify({'error': 'Erro ao excluir avaliação. Tente novamente.'}), 500
 
 @app.route('/evaluations/complete/<int:id>')
@@ -1480,31 +1491,38 @@ def scheduling():
         flash('Acesso negado. Apenas administradores podem gerenciar agendamentos.', 'error')
         return redirect_by_role()
     
-    # Get or create current semester based on current date
-    current_semester = get_or_create_current_semester()
-    
-    # Get scheduled evaluations for current semester
-    scheduled_evaluations = ScheduledEvaluation.query.filter_by(
-        semester_id=current_semester.id
-    ).order_by(ScheduledEvaluation.scheduled_month, ScheduledEvaluation.teacher_id).all()
-    
-    # Get all teachers and curricular units for the form
-    teachers = Teacher.query.all()
-    curricular_units = CurricularUnit.query.filter_by(is_active=True).all()
-    
-    # Organize by month
-    monthly_schedule = {}
-    for i in range(1, 13):
-        monthly_schedule[i] = []
-    
-    for scheduled in scheduled_evaluations:
-        monthly_schedule[scheduled.scheduled_month].append(scheduled)
-    
-    return render_template('scheduling.html',
-                         current_semester=current_semester,
-                         monthly_schedule=monthly_schedule,
-                         teachers=teachers,
-                         curricular_units=curricular_units)
+    try:
+        # Get or create current semester based on current date
+        current_semester = get_or_create_current_semester()
+        
+        # Get scheduled evaluations for current semester
+        scheduled_evaluations = ScheduledEvaluation.query.filter_by(
+            semester_id=current_semester.id
+        ).order_by(ScheduledEvaluation.scheduled_month, ScheduledEvaluation.teacher_id).all()
+        
+        # Get all teachers and curricular units for the form
+        teachers = Teacher.query.all()
+        curricular_units = CurricularUnit.query.filter_by(is_active=True).all()
+        
+        # Organize by month
+        monthly_schedule = {}
+        for i in range(1, 13):
+            monthly_schedule[i] = []
+        
+        for scheduled in scheduled_evaluations:
+            monthly_schedule[scheduled.scheduled_month].append(scheduled)
+        
+        return render_template('scheduling.html',
+                             current_semester=current_semester,
+                             monthly_schedule=monthly_schedule,
+                             teachers=teachers,
+                             curricular_units=curricular_units)
+    except Exception as e:
+        logging.error(f"Error in scheduling route: {e}")
+        import traceback
+        logging.error(traceback.format_exc())
+        flash('Erro ao carregar agendamentos. Tente novamente.', 'error')
+        return redirect(url_for('index'))
 
 @app.route('/evaluations/new-from-schedule/<int:schedule_id>')
 @login_required

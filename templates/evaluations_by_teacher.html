@@ -122,7 +122,7 @@
                                         {% endif %}
                                         {% if current_user.is_admin() %}
                                         <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                onclick="deleteEvaluation({{ evaluation.id }}, '{{ evaluation.teacher.name }}')">
+                                                onclick="deleteEvaluation({{ evaluation.id }}, {{ evaluation.teacher.name|tojson }})">
                                             <i class="fas fa-trash"></i> Excluir
                                         </button>
                                         {% endif %}
@@ -171,8 +171,10 @@ function deleteEvaluation(evaluationId, teacherName) {
             const container = document.querySelector('.container-fluid');
             container.insertBefore(alertDiv, container.firstChild);
             
-            // Remove the evaluation row from the table
-            location.reload();
+            // Reload the page to refresh all data (dashboard, scheduling, etc.)
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
         } else {
             // Show error message
             const alertDiv = document.createElement('div');
