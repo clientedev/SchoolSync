@@ -121,8 +121,9 @@
                                         </a>
                                         {% endif %}
                                         {% if current_user.is_admin() %}
-                                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                onclick="deleteEvaluation({{ evaluation.id }}, {{ evaluation.teacher.name|tojson }})">
+                                        <button type="button" class="btn btn-sm btn-outline-danger delete-evaluation-btn" 
+                                                data-evaluation-id="{{ evaluation.id }}" 
+                                                data-teacher-name="{{ evaluation.teacher.name }}">
                                             <i class="fas fa-trash"></i> Excluir
                                         </button>
                                         {% endif %}
@@ -145,66 +146,76 @@
 </div>
 
 <script>
-function deleteEvaluation(evaluationId, teacherName) {
-    if (!confirm(`Tem certeza que deseja excluir a avaliação do docente ${teacherName}? Esta ação não pode ser desfeita.`)) {
-        return;
-    }
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete evaluation buttons
+    const deleteButtons = document.querySelectorAll('.delete-evaluation-btn');
     
-    // Get CSRF token from meta tag
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
-    fetch(`/evaluations/delete/${evaluationId}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success message
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-success alert-dismissible fade show';
-            alertDiv.innerHTML = `
-                <i class="fas fa-check-circle me-2"></i>${data.message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const evaluationId = this.getAttribute('data-evaluation-id');
+            const teacherName = this.getAttribute('data-teacher-name');
             
-            // Insert alert at the top of the container
-            const container = document.querySelector('.container-fluid');
-            container.insertBefore(alertDiv, container.firstChild);
+            if (!confirm(`Tem certeza que deseja excluir a avaliação do docente ${teacherName}? Esta ação não pode ser desfeita.`)) {
+                return;
+            }
             
-            // Reload the page to refresh all data (dashboard, scheduling, etc.)
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
-        } else {
-            // Show error message
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-            alertDiv.innerHTML = `
-                <i class="fas fa-exclamation-circle me-2"></i>${data.error}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             
-            // Insert alert at the top of the container
-            const container = document.querySelector('.container-fluid');
-            container.insertBefore(alertDiv, container.firstChild);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-        alertDiv.innerHTML = `
-            <i class="fas fa-exclamation-circle me-2"></i>Erro ao excluir avaliação. Tente novamente.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        const container = document.querySelector('.container-fluid');
-        container.insertBefore(alertDiv, container.firstChild);
+            fetch(`/evaluations/delete/${evaluationId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    
+                    // Insert alert at the top of the container
+                    const container = document.querySelector('.container-fluid');
+                    container.insertBefore(alertDiv, container.firstChild);
+                    
+                    // Reload the page to refresh all data (dashboard, scheduling, etc.)
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    // Show error message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-exclamation-circle me-2"></i>${data.error}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    
+                    // Insert alert at the top of the container
+                    const container = document.querySelector('.container-fluid');
+                    container.insertBefore(alertDiv, container.firstChild);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    <i class="fas fa-exclamation-circle me-2"></i>Erro ao excluir avaliação. Tente novamente.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                const container = document.querySelector('.container-fluid');
+                container.insertBefore(alertDiv, container.firstChild);
+            });
+        });
     });
-}
+});
 </script>
 {% endblock %}
