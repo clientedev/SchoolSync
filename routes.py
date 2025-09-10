@@ -1147,21 +1147,28 @@ def edit_evaluation(id):
 @login_required
 def delete_evaluation(id):
     """Delete evaluation - only admin can delete"""
+    logging.info(f"Delete evaluation request for ID: {id} by user: {current_user.id}")
+    
     if not current_user.is_admin():
+        logging.warning(f"Non-admin user {current_user.id} tried to delete evaluation {id}")
         return jsonify({'error': 'Acesso negado. Apenas administradores podem excluir avaliações.'}), 403
     
     evaluation = Evaluation.query.get_or_404(id)
+    logging.info(f"Found evaluation: {evaluation.id} for teacher: {evaluation.teacher.name}")
     
     try:
         # Delete related attachments first
+        logging.info(f"Deleting {len(evaluation.attachments)} attachments")
         for attachment in evaluation.attachments:
             # Remove file from filesystem
             if os.path.exists(attachment.file_path):
                 os.remove(attachment.file_path)
+                logging.info(f"Deleted file: {attachment.file_path}")
             db.session.delete(attachment)
         
         # If evaluation is linked to a scheduled evaluation, reset its status
         if evaluation.scheduled_evaluation_id:
+            logging.info(f"Resetting scheduled evaluation: {evaluation.scheduled_evaluation_id}")
             scheduled = ScheduledEvaluation.query.get(evaluation.scheduled_evaluation_id)
             if scheduled:
                 scheduled.is_completed = False
@@ -1169,8 +1176,10 @@ def delete_evaluation(id):
         
         # Delete the evaluation
         teacher_name = evaluation.teacher.name
+        logging.info(f"Deleting evaluation for teacher: {teacher_name}")
         db.session.delete(evaluation)
         db.session.commit()
+        logging.info(f"Successfully deleted evaluation {id}")
         
         return jsonify({'success': True, 'message': f'Avaliação do docente {teacher_name} excluída com sucesso!'})
     except Exception as e:
