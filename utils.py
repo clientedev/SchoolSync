@@ -72,6 +72,61 @@ def save_uploaded_file(file):
         }
     return None
 
+def send_credentials_email(teacher_email, teacher, teacher_user, password):
+    """Send credentials email to newly created teacher"""
+    if not teacher_email:
+        return False
+        
+    try:
+        msg = Message(
+            subject=f'Credenciais de Acesso - Sistema de Avaliação Docente SENAI',
+            recipients=[teacher_email],
+            sender=current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br')
+        )
+        
+        msg.body = f"""
+Prezado(a) {teacher.name},
+
+Bem-vindo(a) ao Sistema de Avaliação Docente do SENAI Morvan Figueiredo!
+
+Suas credenciais de acesso foram criadas com sucesso:
+
+DADOS PESSOAIS:
+Nome: {teacher.name}
+NIF: {teacher.nif}
+Área: {teacher.area}
+
+CREDENCIAIS DE ACESSO:
+Usuário (Login): {teacher_user.username}
+Senha: {password}
+
+INSTRUÇÕES PARA PRIMEIRO ACESSO:
+1. Acesse o sistema usando o usuário e senha fornecidos acima
+2. Após o login, clique no seu nome no canto superior direito
+3. Selecione "Alterar Senha" para definir uma nova senha segura
+4. Guarde suas novas credenciais em local seguro
+
+IMPORTANTE:
+- Altere sua senha no primeiro acesso por motivos de segurança
+- Mantenha suas credenciais em sigilo
+- Em caso de dúvidas, entre em contato com a coordenação
+
+Atenciosamente,
+Coordenação Pedagógica
+SENAI Morvan Figueiredo
+
+---
+Este é um email automático. Por favor, não responda.
+"""
+        
+        mail.send(msg)
+        current_app.logger.info(f"Email de credenciais enviado para {teacher_email}")
+        return True
+        
+    except Exception as e:
+        current_app.logger.error(f"Erro ao enviar email de credenciais: {str(e)}")
+        return False
+
 def send_evaluation_email(teacher_email, evaluation, teacher_user=None, report_path=None):
     """Send evaluation notification email"""
     if not teacher_email:

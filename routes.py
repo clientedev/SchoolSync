@@ -394,6 +394,8 @@ def teacher_profile(id):
     teacher_password = None
     if recent_credentials and recent_credentials.get('nif') == teacher.nif:
         teacher_password = recent_credentials.get('password')
+        # Clear credentials from session after first use for security
+        session.pop('new_teacher_credentials', None)
     
     return render_template('teacher_profile.html', 
                          teacher=teacher, 
@@ -457,7 +459,18 @@ def add_teacher():
             'password': password
         }
         
-        flash(f'Docente {teacher.name} cadastrado com sucesso! Conta criada.', 'success')
+        # Send welcome email with credentials if teacher has email
+        if teacher_user.email:
+            try:
+                from utils import send_credentials_email
+                send_credentials_email(teacher_user.email, teacher, teacher_user, password)
+                flash(f'Docente {teacher.name} cadastrado com sucesso! Credenciais enviadas por email.', 'success')
+            except Exception as e:
+                app.logger.error(f"Erro ao enviar email de credenciais: {str(e)}")
+                flash(f'Docente {teacher.name} cadastrado com sucesso! Erro no envio do email.', 'warning')
+        else:
+            flash(f'Docente {teacher.name} cadastrado com sucesso! Conta criada.', 'success')
+            
         return redirect(url_for('show_teacher_credentials'))
     
     return render_template('teachers.html', form=form, teachers=Teacher.query.all())
