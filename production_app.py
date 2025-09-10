@@ -58,15 +58,15 @@ app.config.update({
     "UPLOAD_FOLDER": "/tmp/uploads",
     "MAX_CONTENT_LENGTH": 16 * 1024 * 1024,  # 16MB
     
-    # Mail configuration - fixed values for Railway deployment  
-    "MAIL_SERVER": 'smtp.gmail.com',
-    "MAIL_PORT": 587,
-    "MAIL_USE_TLS": True,
-    "MAIL_USE_SSL": False,
-    "MAIL_USERNAME": 'escolasenaimorvanfigueiredo@gmail.com',
-    "MAIL_PASSWORD": 'bhsnhtnqroscpnxa',
-    "MAIL_DEFAULT_SENDER": 'escolasenaimorvanfigueiredo@gmail.com',
-    "MAIL_TIMEOUT": 10,  # Add timeout for Railway
+    # Mail configuration - using environment variables for Railway
+    "MAIL_SERVER": os.environ.get('MAIL_SERVER', 'smtp.gmail.com'),
+    "MAIL_PORT": int(os.environ.get('MAIL_PORT', 587)),
+    "MAIL_USE_TLS": os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true',
+    "MAIL_USE_SSL": os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true',
+    "MAIL_USERNAME": os.environ.get('MAIL_USERNAME', 'escolasenaimorvanfigueiredo@gmail.com'),
+    "MAIL_PASSWORD": os.environ.get('MAIL_PASSWORD', 'bhsnhtnqroscpnxa'),
+    "MAIL_DEFAULT_SENDER": os.environ.get('MAIL_DEFAULT_SENDER') or os.environ.get('MAIL_USERNAME', 'escolasenaimorvanfigueiredo@gmail.com'),
+    "MAIL_TIMEOUT": int(os.environ.get('MAIL_TIMEOUT', 30)),  # Increased timeout for Railway
     
     # SendGrid API key (works on Railway free plan)
     "SENDGRID_API_KEY": os.environ.get('SENDGRID_API_KEY'),
@@ -98,6 +98,80 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def ping():
     """Ultra simple endpoint for Railway debugging"""
     return "PONG - System is alive!", 200
+
+@app.route('/test-email')
+def test_email():
+    """Test email functionality for Railway debugging"""
+    try:
+        from flask_mail import Message
+        
+        # Debug email configuration
+        config_debug = {
+            'MAIL_SERVER': app.config.get('MAIL_SERVER'),
+            'MAIL_PORT': app.config.get('MAIL_PORT'),
+            'MAIL_USE_TLS': app.config.get('MAIL_USE_TLS'),
+            'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
+            'Has_Password': bool(app.config.get('MAIL_PASSWORD')),
+            'MAIL_DEFAULT_SENDER': app.config.get('MAIL_DEFAULT_SENDER'),
+            'MAIL_TIMEOUT': app.config.get('MAIL_TIMEOUT'),
+        }
+        
+        # Try to send a test email
+        msg = Message(
+            'Test Email from Railway',
+            recipients=['edson.lemes@senai.br'],  # Send to admin
+            body='Este é um email de teste para verificar se o SMTP está funcionando no Railway.'
+        )
+        
+        # Try SMTP first, fallback to SendGrid if fails
+        try:
+            mail.send(msg)
+        except Exception as smtp_error:
+            # Fallback to SendGrid API
+            sendgrid_key = app.config.get('SENDGRID_API_KEY')
+            if sendgrid_key:
+                import sendgrid
+                from sendgrid.helpers.mail import Mail
+                
+                sg_msg = Mail(
+                    from_email=app.config.get('MAIL_DEFAULT_SENDER'),
+                    to_emails='edson.lemes@senai.br',
+                    subject='Test Email from Railway (SendGrid)',
+                    html_content='Este email foi enviado via SendGrid API como fallback.'
+                )
+                
+                sg = sendgrid.SendGridAPIClient(api_key=sendgrid_key)
+                sg.send(sg_msg)
+                
+                return {
+                    'status': 'success',
+                    'message': 'Email enviado via SendGrid API (fallback)!',
+                    'method': 'sendgrid',
+                    'smtp_error': str(smtp_error)
+                }, 200
+            else:
+                raise smtp_error
+        
+        return {
+            'status': 'success',
+            'message': 'Email enviado com sucesso!',
+            'config': config_debug
+        }, 200
+        
+    except Exception as e:
+        import traceback
+        return {
+            'status': 'error',
+            'message': f'Erro ao enviar email: {str(e)}',
+            'traceback': traceback.format_exc(),
+            'config': {
+                'MAIL_SERVER': app.config.get('MAIL_SERVER'),
+                'MAIL_PORT': app.config.get('MAIL_PORT'),
+                'MAIL_USE_TLS': app.config.get('MAIL_USE_TLS'),
+                'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
+                'Has_Password': bool(app.config.get('MAIL_PASSWORD')),
+            }
+        }, 500
 
 # Configure user loader early
 @login_manager.user_loader
