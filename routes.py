@@ -433,11 +433,12 @@ def add_teacher():
     form = TeacherForm()
     
     if form.validate_on_submit():
-        # Check if NIF already exists
-        existing_teacher = Teacher.query.filter_by(nif=form.nif.data).first()
-        if existing_teacher:
-            flash(f'Já existe um docente com NIF {form.nif.data}.', 'error')
-            return render_template('teachers.html', form=form, teachers=Teacher.query.all())
+        try:
+            # Check if NIF already exists
+            existing_teacher = Teacher.query.filter_by(nif=form.nif.data).first()
+            if existing_teacher:
+                flash(f'Já existe um docente com NIF {form.nif.data}.', 'error')
+                return render_template('teachers.html', form=form, teachers=Teacher.query.all())
         
         teacher = Teacher()  # type: ignore
         teacher.nif = form.nif.data.upper() if form.nif.data else ''
@@ -525,7 +526,15 @@ def add_teacher():
         else:
             flash(f'Docente {teacher.name} cadastrado com sucesso! Conta criada.', 'success')
             
-        return redirect(url_for('show_teacher_credentials'))
+            return redirect(url_for('show_teacher_credentials'))
+        
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"❌ Erro ao criar professor: {str(e)}")
+            import traceback
+            app.logger.error(f"🔍 Traceback completo: {traceback.format_exc()}")
+            flash(f'Erro ao criar docente: {str(e)}', 'error')
+            return render_template('teachers.html', form=form, teachers=Teacher.query.all())
     
     return render_template('teachers.html', form=form, teachers=Teacher.query.all())
 
