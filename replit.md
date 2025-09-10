@@ -66,7 +66,25 @@ Password hashing uses Werkzeug's security utilities, and sessions are managed wi
 - File upload system supports evaluation attachments with 16MB size limits
 
 ### Deployment Platform
-- **Railway**: Cloud hosting platform with automated deployment via railway.json configuration
-- ProxyFix middleware for proper header handling behind Railway's proxy
+- **Replit**: Cloud hosting platform with automated deployment
+- **Railway**: Alternative cloud hosting platform with automated deployment via railway.json configuration
+- ProxyFix middleware for proper header handling behind cloud proxy
+
+## Recent Changes (September 10, 2025)
+
+### Replit Environment Setup
+- Successfully imported GitHub repository to Replit environment
+- Configured PostgreSQL database connection using Replit's built-in database service
+- Set up SESSION_SECRET environment variable for secure session management
+- Configured workflow to run on port 5000 with webview output for frontend access
+- Verified all database tables are created and admin user is automatically provisioned
+- Application is running successfully with full Flask functionality
+
+### Current Status
+- **Database**: PostgreSQL (Replit-managed) with automatic table creation
+- **Admin User**: edson.lemes / senai103103 (default credentials - should be changed)
+- **Port**: 5000 (required for Replit frontend)
+- **Server**: Gunicorn with auto-reload for development
+- **Dependencies**: All Python packages installed via uv package manager
 
 The system is designed to reduce paper usage, increase evaluation efficiency, and provide comprehensive analytics for educational quality improvement at SENAI Morvan Figueiredo.
