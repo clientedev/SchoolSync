@@ -72,34 +72,80 @@ def save_uploaded_file(file):
         }
     return None
 
-def send_evaluation_email(teacher_email, evaluation, report_path=None):
+def send_evaluation_email(teacher_email, evaluation, teacher_user=None, report_path=None):
     """Send evaluation notification email"""
     if not teacher_email:
         return False
         
     try:
+        # Get teacher user credentials if linked
+        teacher_credentials = ""
+        if teacher_user:
+            # For security, we'll show a generic password message
+            teacher_credentials = f"""
+ACESSO AO SISTEMA:
+Para acessar o sistema e assinar sua avaliação, utilize:
+- Usuário: {teacher_user.username}
+- Senha: Utilize a senha fornecida pela coordenação
+
+Se você esqueceu sua senha, entre em contato com a coordenação.
+"""
+        elif evaluation.teacher.user:
+            teacher_credentials = f"""
+ACESSO AO SISTEMA:
+Para acessar o sistema e assinar sua avaliação, utilize:
+- Usuário: {evaluation.teacher.user.username}
+- Senha: Utilize a senha fornecida pela coordenação
+
+Se você esqueceu sua senha, entre em contato com a coordenação.
+"""
+        else:
+            teacher_credentials = """
+ACESSO AO SISTEMA:
+Entre em contato com a coordenação para obter suas credenciais de acesso ao sistema.
+"""
+        
         msg = Message(
-            subject=f'Relatório de Acompanhamento Docente - {evaluation.evaluation_date.strftime("%d/%m/%Y")}',
-            recipients=[teacher_email]
+            subject=f'Nova Avaliação Docente - Assinatura Necessária - {evaluation.evaluation_date.strftime("%d/%m/%Y")}',
+            recipients=[teacher_email],
+            sender=current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br')
         )
         
         msg.body = f"""
 Prezado(a) {evaluation.teacher.name},
 
-Seu acompanhamento docente foi finalizado com as seguintes informações:
+Você recebeu uma nova avaliação docente que precisa ser assinada no sistema.
 
+DETALHES DA AVALIAÇÃO:
 Curso: {evaluation.course.name}
 Data: {evaluation.evaluation_date.strftime("%d/%m/%Y")}
 Período: {evaluation.period}
+Avaliador: {evaluation.evaluator.name if evaluation.evaluator else 'Coordenação'}
 
+RESULTADOS:
 Planejamento: {evaluation.calculate_planning_percentage()}% atendido
 Condução da aula: {evaluation.calculate_class_percentage()}% atendido
 
+{teacher_credentials}
+
+PRÓXIMOS PASSOS:
+1. Acesse o sistema usando suas credenciais
+2. Vá até a seção "Avaliações"
+3. Localize sua avaliação do dia {evaluation.evaluation_date.strftime("%d/%m/%Y")}
+4. Revise os dados e assine digitalmente
+
 Observações gerais:
-{evaluation.general_observations or 'Nenhuma observação adicional.'}
+{evaluation.general_observations or 'Nenhuma observação adicional registrada.'}
+
+IMPORTANTE: Esta avaliação precisa ser assinada no sistema para ser finalizada.
 
 Atenciosamente,
 Coordenação Pedagógica
+SENAI Morvan Figueiredo
+
+---
+Este é um e-mail automático do Sistema de Avaliação Docente.
+Para dúvidas, entre em contato com a coordenação.
 """
         
         if report_path and os.path.exists(report_path):

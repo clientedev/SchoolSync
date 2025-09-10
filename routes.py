@@ -1085,6 +1085,39 @@ def new_evaluation():
         
         db.session.commit()
         
+        # Enviar email de notificação para o docente
+        try:
+            teacher_email = None
+            teacher_user = None
+            
+            # Buscar email do docente
+            if evaluation.teacher.user and evaluation.teacher.user.email:
+                teacher_email = evaluation.teacher.user.email
+                teacher_user = evaluation.teacher.user
+            
+            # Se não tem usuário vinculado ou email, tentar buscar usuario pelo NIF
+            if not teacher_email:
+                # Buscar usuário com username igual ao NIF do professor
+                potential_user = User.query.filter_by(username=evaluation.teacher.nif).first()
+                if potential_user and potential_user.email:
+                    teacher_email = potential_user.email
+                    teacher_user = potential_user
+            
+            # Enviar email se tiver endereço
+            if teacher_email:
+                from utils import send_evaluation_email
+                email_sent = send_evaluation_email(teacher_email, evaluation, teacher_user)
+                if email_sent:
+                    app.logger.info(f"Email de notificação enviado para {teacher_email}")
+                else:
+                    app.logger.warning(f"Falha ao enviar email para {teacher_email}")
+            else:
+                app.logger.warning(f"Email não enviado: docente {evaluation.teacher.name} não possui email cadastrado")
+                
+        except Exception as e:
+            app.logger.error(f"Erro ao enviar email de notificação: {str(e)}")
+            # Não falhar a criação da avaliação por causa do email
+        
         flash('Avaliação criada com sucesso!', 'success')
         return redirect(url_for('view_evaluation', id=evaluation.id))
     
