@@ -6,7 +6,7 @@ packages = ["freetype", "glibcLocales", "openssl", "postgresql"]
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["gunicorn", "--bind", "0.0.0.0:5000", "--reuse-port", "production_app:app"]
+run = ["gunicorn", "--bind", "0.0.0.0:5000", "--reuse-port", "main:app"]
 
 [workflows]
 runButton = "Project"
@@ -26,7 +26,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "uv run gunicorn --bind 0.0.0.0:5000 --reuse-port --reload production_app:app"
+args = "uv run gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -37,8 +37,8 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 40291
-externalPort = 3000
+localPort = 40415
+externalPort = 3001
 
 [[ports]]
 localPort = 41751
