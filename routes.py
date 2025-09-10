@@ -1234,14 +1234,49 @@ def new_evaluation():
                     teacher_email = potential_user.email
                     teacher_user = potential_user
             
-            # Enviar email se tiver endereço
+            # Enviar email se tiver endereço (não-bloqueante)
             if teacher_email:
-                from utils import send_evaluation_email
-                email_sent = send_evaluation_email(teacher_email, evaluation, teacher_user)
-                if email_sent:
-                    app.logger.info(f"Email de notificação enviado para {teacher_email}")
-                else:
-                    app.logger.warning(f"Falha ao enviar email para {teacher_email}")
+                try:
+                    from utils import send_evaluation_email
+                    # Execute email sending in a separate thread to avoid blocking
+                    import threading
+                    
+                    # Extract data needed for email before thread to avoid ORM detachment
+                    email_data = {
+                        'teacher_name': evaluation.teacher.name,
+                        'course_name': evaluation.course.name,
+                        'evaluation_date': evaluation.evaluation_date.strftime("%d/%m/%Y"),
+                        'period': evaluation.period,
+                        'evaluator_name': evaluation.evaluator.name if evaluation.evaluator else 'Coordenação',
+                        'planning_percentage': evaluation.calculate_planning_percentage(),
+                        'class_percentage': evaluation.calculate_class_percentage(),
+                        'teacher_username': teacher_user.username if teacher_user else None
+                    }
+                    
+                    # Capture app instance for thread context
+                    flask_app = current_app._get_current_object()
+                    
+                    def send_email_async():
+                        # Use proper Flask app context for background thread
+                        with flask_app.app_context():
+                            try:
+                                # Simple email function that doesn't require ORM objects
+                                email_sent = send_simple_evaluation_email(teacher_email, email_data)
+                                if email_sent:
+                                    flask_app.logger.info(f"Email de notificação enviado para {teacher_email}")
+                                else:
+                                    flask_app.logger.warning(f"Falha ao enviar email para {teacher_email}")
+                            except Exception as e:
+                                flask_app.logger.error(f"Erro assíncrono no envio de email: {str(e)}")
+                    
+                    # Start email sending in background thread with proper app context
+                    email_thread = threading.Thread(target=send_email_async, daemon=True)
+                    email_thread.start()
+                    
+                    app.logger.info(f"Email de avaliação iniciado em segundo plano para {teacher_email}")
+                    
+                except Exception as e:
+                    app.logger.error(f"Erro ao iniciar envio de email: {str(e)}")
             else:
                 app.logger.warning(f"Email não enviado: docente {evaluation.teacher.name} não possui email cadastrado")
                 

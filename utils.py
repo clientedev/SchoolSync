@@ -76,6 +76,20 @@ def send_credentials_email(teacher_email, teacher, teacher_user, password):
     """Send credentials email to newly created teacher"""
     if not teacher_email:
         return False
+    
+    # Check if email is properly configured
+    mail_server = current_app.config.get('MAIL_SERVER', 'localhost')
+    mail_username = current_app.config.get('MAIL_USERNAME', '')
+    
+    # Skip email if not properly configured (avoid hanging on localhost)
+    if mail_server == 'localhost' and not mail_username:
+        current_app.logger.warning("Email not configured properly - skipping credentials email")
+        return False
+    
+    # Additional check for valid email server
+    if not mail_server or mail_server.strip() == '':
+        current_app.logger.warning("No email server configured - skipping credentials email")
+        return False
         
     try:
         msg = Message(
@@ -130,6 +144,20 @@ Este é um email automático. Por favor, não responda.
 def send_evaluation_email(teacher_email, evaluation, teacher_user=None, report_path=None):
     """Send evaluation notification email"""
     if not teacher_email:
+        return False
+    
+    # Check if email is properly configured
+    mail_server = current_app.config.get('MAIL_SERVER', 'localhost')
+    mail_username = current_app.config.get('MAIL_USERNAME', '')
+    
+    # Skip email if not properly configured (avoid hanging on localhost)
+    if mail_server == 'localhost' and not mail_username:
+        current_app.logger.warning("Email not configured properly - skipping email sending")
+        return False
+    
+    # Additional check for valid email server
+    if not mail_server or mail_server.strip() == '':
+        current_app.logger.warning("No email server configured - skipping email sending")
         return False
         
     try:
@@ -222,10 +250,110 @@ Para dúvidas, entre em contato com a coordenação.
                 msg.attach(f"relatorio_{evaluation.teacher.name.replace(' ', '_')}.pdf", 
                           "application/pdf", f.read())
         
-        mail.send(msg)
-        return True
+        # Send email with SMTP timeout (safer than signals)
+        try:
+            mail.send(msg)
+            current_app.logger.info(f"Email successfully sent to {teacher_email}")
+            return True
+        except Exception as smtp_error:
+            current_app.logger.error(f"SMTP error sending email to {teacher_email}: {str(smtp_error)}")
+            return False
+            
     except Exception as e:
-        current_app.logger.error(f"Error sending email: {str(e)}")
+        current_app.logger.error(f"Error sending email to {teacher_email}: {str(e)}")
+        return False
+
+def send_simple_evaluation_email(teacher_email, email_data):
+    """Send evaluation notification email with primitive data (thread-safe)"""
+    if not teacher_email:
+        return False
+    
+    # Check if email is properly configured
+    mail_server = current_app.config.get('MAIL_SERVER', 'localhost')
+    mail_username = current_app.config.get('MAIL_USERNAME', '')
+    
+    # Skip email if not properly configured
+    if mail_server == 'localhost' and not mail_username:
+        current_app.logger.warning("Email not configured properly - skipping email sending")
+        return False
+    
+    if not mail_server or mail_server.strip() == '':
+        current_app.logger.warning("No email server configured - skipping email sending")
+        return False
+        
+    try:
+        # Build credentials section
+        teacher_credentials = ""
+        if email_data.get('teacher_username'):
+            teacher_credentials = f"""
+ACESSO AO SISTEMA:
+Para acessar o sistema e assinar sua avaliação, utilize:
+- Usuário: {email_data['teacher_username']}
+- Senha: Sua senha é a mesma fornecida pela coordenação
+
+IMPORTANTE: Altere sua senha no primeiro acesso por motivos de segurança.
+Se você não lembra da senha, entre em contato com a coordenação.
+"""
+        else:
+            teacher_credentials = """
+ACESSO AO SISTEMA:
+Entre em contato com a coordenação para obter suas credenciais de acesso ao sistema.
+Seu usuário será seu número SN (NIF) e a senha será fornecida pela coordenação.
+"""
+        
+        msg = Message(
+            subject=f'Nova Avaliação Docente - Assinatura Necessária - {email_data["evaluation_date"]}',
+            recipients=[teacher_email],
+            sender=current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br')
+        )
+        
+        msg.body = f"""
+Prezado(a) {email_data['teacher_name']},
+
+Você recebeu uma nova avaliação docente que precisa ser assinada no sistema.
+
+DETALHES DA AVALIAÇÃO:
+Curso: {email_data['course_name']}
+Data: {email_data['evaluation_date']}
+Período: {email_data['period']}
+Avaliador: {email_data['evaluator_name']}
+
+RESULTADOS:
+Planejamento de Aula: {email_data['planning_percentage']:.1f}%
+Condução da Aula: {email_data['class_percentage']:.1f}%
+
+{teacher_credentials}
+
+PRÓXIMOS PASSOS:
+1. Acesse o sistema de avaliação docente
+2. Localize sua avaliação na área "Minhas Avaliações"
+3. Revise os dados da avaliação
+4. Assine digitalmente para confirmar ciência
+
+IMPORTANTE:
+- Você tem 7 dias para assinar esta avaliação
+- Após a assinatura, você receberá uma cópia em PDF por email
+- Em caso de dúvidas, entre em contato com a coordenação
+
+Atenciosamente,
+Coordenação Pedagógica
+SENAI Morvan Figueiredo
+
+---
+Este é um email automático. Por favor, não responda.
+"""
+        
+        # Send email with simpler error handling
+        try:
+            mail.send(msg)
+            current_app.logger.info(f"Email successfully sent to {teacher_email}")
+            return True
+        except Exception as smtp_error:
+            current_app.logger.error(f"SMTP error sending email to {teacher_email}: {str(smtp_error)}")
+            return False
+            
+    except Exception as e:
+        current_app.logger.error(f"Error sending simple evaluation email to {teacher_email}: {str(e)}")
         return False
 
 def generate_evaluation_report(evaluation):

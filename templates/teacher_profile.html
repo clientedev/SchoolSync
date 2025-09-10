@@ -3,7 +3,9 @@
 {% block title %}Perfil - {{ teacher.name }}{% endblock %}
 
 {% block extra_head %}
+{% if csrf_token %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -226,7 +228,8 @@ function generateCredentials(teacherId) {
         return;
     }
     
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
     
     fetch(`/teachers/${teacherId}/generate_credentials`, {
         method: 'POST',
