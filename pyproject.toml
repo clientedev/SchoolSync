@@ -21,4 +21,5 @@ dependencies = [
     "flask-login>=0.6.3",
     "oauthlib>=3.3.1",
     "pyjwt>=2.10.1",
+    "sendgrid>=6.12.4",
 ]

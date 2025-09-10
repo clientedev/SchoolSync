@@ -12,6 +12,8 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib import colors
 from datetime import datetime
 import pandas as pd
+import sendgrid
+from sendgrid.helpers.mail import Mail, Email, To, Content
 
 def get_or_create_current_semester():
     """Get or create current semester based on current date"""
@@ -133,12 +135,32 @@ SENAI Morvan Figueiredo
 Este é um email automático. Por favor, não responda.
 """
         
-        mail.send(msg)
-        current_app.logger.info(f"Email de credenciais enviado para {teacher_email}")
-        return True
+        # Try SendGrid first (works on Railway), fallback to SMTP
+        email_content = msg.body
+        
+        # Try SendGrid API first
+        sendgrid_success = send_email_via_sendgrid(
+            to_email=teacher_email,
+            subject=msg.subject,
+            content_text=email_content,
+            sender_email=current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br')
+        )
+        
+        if sendgrid_success:
+            current_app.logger.info(f"Credentials email sent successfully via SendGrid to {teacher_email}")
+            return True
+        
+        # Fallback to SMTP if SendGrid fails or not configured
+        try:
+            mail.send(msg)
+            current_app.logger.info(f"Credentials email sent successfully via SMTP to {teacher_email}")
+            return True
+        except Exception as smtp_error:
+            current_app.logger.error(f"Both SendGrid and SMTP failed for credentials to {teacher_email}. SMTP error: {str(smtp_error)}")
+            return False
         
     except Exception as e:
-        current_app.logger.error(f"Erro ao enviar email de credenciais: {str(e)}")
+        current_app.logger.error(f"Error sending credentials email to {teacher_email}: {str(e)}")
         return False
 
 def send_evaluation_email(teacher_email, evaluation, teacher_user=None, report_path=None):
@@ -263,6 +285,39 @@ Para dúvidas, entre em contato com a coordenação.
         current_app.logger.error(f"Error sending email to {teacher_email}: {str(e)}")
         return False
 
+def send_email_via_sendgrid(to_email, subject, content_text, sender_email=None):
+    """Send email using SendGrid API (works on Railway free plan)"""
+    sendgrid_api_key = current_app.config.get('SENDGRID_API_KEY')
+    
+    if not sendgrid_api_key:
+        current_app.logger.warning("SendGrid API key not configured - skipping email")
+        return False
+        
+    if not sender_email:
+        sender_email = current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br')
+    
+    try:
+        sg = sendgrid.SendGridAPIClient(api_key=sendgrid_api_key)
+        
+        from_email = Email(sender_email)
+        to_email_obj = To(to_email)
+        content = Content("text/plain", content_text)
+        
+        mail = Mail(from_email, to_email_obj, subject, content)
+        
+        response = sg.send(mail)
+        
+        if response.status_code in [200, 201, 202]:
+            current_app.logger.info(f"Email sent successfully via SendGrid to {to_email} (status: {response.status_code})")
+            return True
+        else:
+            current_app.logger.error(f"SendGrid error: Status {response.status_code}, Body: {response.body}")
+            return False
+            
+    except Exception as e:
+        current_app.logger.error(f"SendGrid error sending email to {to_email}: {str(e)}")
+        return False
+
 def send_simple_evaluation_email(teacher_email, email_data):
     """Send evaluation notification email with primitive data (thread-safe)"""
     if not teacher_email:
@@ -343,13 +398,28 @@ SENAI Morvan Figueiredo
 Este é um email automático. Por favor, não responda.
 """
         
-        # Send email with simpler error handling
+        # Try SendGrid first (works on Railway), fallback to SMTP
+        email_content = msg.body
+        
+        # Try SendGrid API first
+        sendgrid_success = send_email_via_sendgrid(
+            to_email=teacher_email,
+            subject=msg.subject,
+            content_text=email_content,
+            sender_email=current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br')
+        )
+        
+        if sendgrid_success:
+            current_app.logger.info(f"Evaluation email sent successfully via SendGrid to {teacher_email}")
+            return True
+        
+        # Fallback to SMTP if SendGrid fails or not configured
         try:
             mail.send(msg)
-            current_app.logger.info(f"Email successfully sent to {teacher_email}")
+            current_app.logger.info(f"Evaluation email sent successfully via SMTP to {teacher_email}")
             return True
         except Exception as smtp_error:
-            current_app.logger.error(f"SMTP error sending email to {teacher_email}: {str(smtp_error)}")
+            current_app.logger.error(f"Both SendGrid and SMTP failed for {teacher_email}. SMTP error: {str(smtp_error)}")
             return False
             
     except Exception as e:
