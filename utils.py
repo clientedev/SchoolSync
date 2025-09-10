@@ -72,7 +72,7 @@ def save_uploaded_file(file):
         }
     return None
 
-def send_credentials_email(teacher_email, teacher, teacher_user, password):
+def send_credentials_email(teacher_email, teacher_data, password):
     """Send credentials email to newly created teacher"""
     if not teacher_email:
         return False
@@ -99,19 +99,19 @@ def send_credentials_email(teacher_email, teacher, teacher_user, password):
         )
         
         msg.body = f"""
-Prezado(a) {teacher.name},
+Prezado(a) {teacher_data['teacher_name']},
 
 Bem-vindo(a) ao Sistema de Avaliação Docente do SENAI Morvan Figueiredo!
 
 Suas credenciais de acesso foram criadas com sucesso:
 
 DADOS PESSOAIS:
-Nome: {teacher.name}
-NIF: {teacher.nif}
-Área: {teacher.area}
+Nome: {teacher_data['teacher_name']}
+NIF: {teacher_data['teacher_nif']}
+Área: {teacher_data['teacher_area']}
 
 CREDENCIAIS DE ACESSO:
-Usuário (Login): {teacher_user.username}
+Usuário (Login): {teacher_data['username']}
 Senha: {password}
 
 INSTRUÇÕES PARA PRIMEIRO ACESSO:
