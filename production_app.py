@@ -8,6 +8,7 @@ os.environ['PYTHONIOENCODING'] = 'utf-8'
 from flask import Flask
 from flask_mail import Mail
 from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Production logging configuration
@@ -18,6 +19,7 @@ logging.basicConfig(
 )
 mail = Mail()
 login_manager = LoginManager()
+csrf = CSRFProtect()
 
 # Create the app
 app = Flask(__name__)
@@ -72,8 +74,14 @@ from models import db
 db.init_app(app)
 mail.init_app(app)
 login_manager.init_app(app)
+csrf.init_app(app)
 login_manager.login_view = 'login'  # type: ignore
 login_manager.login_message = 'Faça login para acessar esta página.'
+
+# Make csrf_token available in all templates
+@app.context_processor
+def inject_csrf_token():
+    return dict(csrf_token=generate_csrf)
 
 # Create upload directory
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
