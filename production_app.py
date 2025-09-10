@@ -78,6 +78,9 @@ csrf.init_app(app)
 login_manager.login_view = 'login'  # type: ignore
 login_manager.login_message = 'Faça login para acessar esta página.'
 
+# Configure CSRF to accept tokens from X-CSRFToken header
+app.config['WTF_CSRF_HEADERS'] = ['X-CSRFToken', 'X-CSRF-Token']
+
 # Make csrf_token available in all templates
 @app.context_processor
 def inject_csrf_token():

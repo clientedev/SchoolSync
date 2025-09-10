@@ -1,6 +1,7 @@
 import os
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
+from production_app import csrf
 from datetime import datetime, timedelta
 from production_app import app
 from models import db
@@ -1145,6 +1146,7 @@ def edit_evaluation(id):
 
 @app.route('/evaluations/delete/<int:id>', methods=['DELETE'])
 @login_required
+@csrf.exempt
 def delete_evaluation(id):
     """Delete evaluation - only admin can delete"""
     logging.info(f"Delete evaluation request for ID: {id} by user: {current_user.id}")
