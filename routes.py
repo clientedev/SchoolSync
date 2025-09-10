@@ -58,128 +58,151 @@ def index():
     # Redirect teachers to their restricted dashboard
     if current_user.is_teacher():
         return redirect(url_for('teacher_dashboard'))
-    # Get or create current semester based on current date
-    current_semester = get_or_create_current_semester()
     
-    # Get statistics
-    total_teachers = Teacher.query.count()
-    total_evaluations = Evaluation.query.count()
-    total_courses = Course.query.count()
-    
-    # Semester-based statistics
-    semester_scheduled = 0
-    semester_completed = 0
-    semester_pending = 0
-    pending_alerts = []
-    overdue_alerts = []
-    
-    if current_semester:
-        # Scheduled evaluations for the semester
-        scheduled_evaluations = ScheduledEvaluation.query.filter_by(
-            semester_id=current_semester.id
-        ).all()
+    try:
+        # Get or create current semester based on current date
+        current_semester = get_or_create_current_semester()
         
-        semester_scheduled = len(scheduled_evaluations)
-        semester_completed = len([se for se in scheduled_evaluations if se.is_completed])
-        semester_pending = semester_scheduled - semester_completed
+        # Get statistics - force fresh data from database
+        total_teachers = Teacher.query.count()
+        total_evaluations = Evaluation.query.count()
+        total_courses = Course.query.count()
         
-        # Alerts: scheduled evaluations for current and past months that are not completed
-        current_month = datetime.now().month
-        current_year = datetime.now().year
+        # Semester-based statistics
+        semester_scheduled = 0
+        semester_completed = 0
+        semester_pending = 0
+        pending_alerts = []
+        overdue_alerts = []
         
-        for scheduled in scheduled_evaluations:
-            if not scheduled.is_completed:
-                # Check if it's for current/past months
-                if (scheduled.scheduled_year < current_year or 
-                    (scheduled.scheduled_year == current_year and scheduled.scheduled_month <= current_month)):
-                    
-                    if scheduled.scheduled_month == current_month:
-                        pending_alerts.append(scheduled)
-                    else:
-                        overdue_alerts.append(scheduled)
-    
-    # Recent evaluations (completed)
-    recent_evaluations = Evaluation.query.filter_by(is_completed=True).order_by(
-        Evaluation.evaluation_date.desc()
-    ).limit(5).all()
-    
-    # Teachers without evaluations (not scheduled or no completed evaluations this semester)
-    teachers_without_evaluation = []
-    if current_semester:
-        all_teachers = Teacher.query.all()
-        for teacher in all_teachers:
-            # Check if teacher has any scheduled evaluation for this semester
-            has_scheduled = ScheduledEvaluation.query.filter_by(
-                teacher_id=teacher.id,
+        if current_semester:
+            # Scheduled evaluations for the semester
+            scheduled_evaluations = ScheduledEvaluation.query.filter_by(
                 semester_id=current_semester.id
-            ).first()
+            ).all()
             
-            if not has_scheduled:
-                teachers_without_evaluation.append(teacher)
-    
-    # Average scores (only completed evaluations)
-    completed_evaluations = Evaluation.query.filter_by(is_completed=True).all()
-    avg_planning = 0
-    avg_class = 0
-    
-    if completed_evaluations:
-        avg_planning = sum(eval.calculate_planning_percentage() for eval in completed_evaluations) / len(completed_evaluations)
-        avg_class = sum(eval.calculate_class_percentage() for eval in completed_evaluations) / len(completed_evaluations)
-    
-    # Create monthly scheduling dashboard data
-    monthly_schedule_summary = {}
-    current_year = datetime.now().year
-    month_names = [
-        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ]
-    
-    # Initialize all months
-    for i in range(1, 13):
-        monthly_schedule_summary[i] = {
-            'name': month_names[i-1],
-            'scheduled': 0,
-            'completed': 0,
-            'teachers': []
-        }
-    
-    # Get scheduled evaluations for current semester
-    if current_semester:
-        scheduled_evaluations = ScheduledEvaluation.query.filter_by(
-            semester_id=current_semester.id
-        ).all()
+            semester_scheduled = len(scheduled_evaluations)
+            semester_completed = len([se for se in scheduled_evaluations if se.is_completed])
+            semester_pending = semester_scheduled - semester_completed
+            
+            # Alerts: scheduled evaluations for current and past months that are not completed
+            current_month = datetime.now().month
+            current_year = datetime.now().year
+            
+            for scheduled in scheduled_evaluations:
+                if not scheduled.is_completed:
+                    # Check if it's for current/past months
+                    if (scheduled.scheduled_year < current_year or 
+                        (scheduled.scheduled_year == current_year and scheduled.scheduled_month <= current_month)):
+                        
+                        if scheduled.scheduled_month == current_month:
+                            pending_alerts.append(scheduled)
+                        else:
+                            overdue_alerts.append(scheduled)
         
-        for scheduled in scheduled_evaluations:
-            month = scheduled.scheduled_month
-            if month in monthly_schedule_summary:
-                monthly_schedule_summary[month]['scheduled'] += 1
-                if scheduled.is_completed:
-                    monthly_schedule_summary[month]['completed'] += 1
+        # Recent evaluations (completed)
+        recent_evaluations = Evaluation.query.filter_by(is_completed=True).order_by(
+            Evaluation.evaluation_date.desc()
+        ).limit(5).all()
+        
+        # Teachers without evaluations (not scheduled or no completed evaluations this semester)
+        teachers_without_evaluation = []
+        if current_semester:
+            all_teachers = Teacher.query.all()
+            for teacher in all_teachers:
+                # Check if teacher has any scheduled evaluation for this semester
+                has_scheduled = ScheduledEvaluation.query.filter_by(
+                    teacher_id=teacher.id,
+                    semester_id=current_semester.id
+                ).first()
                 
-                # Add teacher info
-                teacher_info = {
-                    'name': scheduled.teacher.name,
-                    'curricular_unit': scheduled.curricular_unit.name,
-                    'is_completed': scheduled.is_completed,
-                    'scheduled_date': scheduled.scheduled_date.strftime('%d/%m') if scheduled.scheduled_date else None
-                }
-                monthly_schedule_summary[month]['teachers'].append(teacher_info)
+                if not has_scheduled:
+                    teachers_without_evaluation.append(teacher)
+        
+        # Average scores (only completed evaluations)
+        completed_evaluations = Evaluation.query.filter_by(is_completed=True).all()
+        avg_planning = 0
+        avg_class = 0
+        
+        if completed_evaluations:
+            avg_planning = sum(eval.calculate_planning_percentage() for eval in completed_evaluations) / len(completed_evaluations)
+            avg_class = sum(eval.calculate_class_percentage() for eval in completed_evaluations) / len(completed_evaluations)
+        
+        # Create monthly scheduling dashboard data
+        monthly_schedule_summary = {}
+        current_year = datetime.now().year
+        month_names = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ]
+        
+        # Initialize all months
+        for i in range(1, 13):
+            monthly_schedule_summary[i] = {
+                'name': month_names[i-1],
+                'scheduled': 0,
+                'completed': 0,
+                'teachers': []
+            }
+        
+        # Get scheduled evaluations for current semester
+        if current_semester:
+            scheduled_evaluations = ScheduledEvaluation.query.filter_by(
+                semester_id=current_semester.id
+            ).all()
+            
+            for scheduled in scheduled_evaluations:
+                month = scheduled.scheduled_month
+                if month in monthly_schedule_summary:
+                    monthly_schedule_summary[month]['scheduled'] += 1
+                    if scheduled.is_completed:
+                        monthly_schedule_summary[month]['completed'] += 1
+                    
+                    # Add teacher info
+                    teacher_info = {
+                        'name': scheduled.teacher.name,
+                        'curricular_unit': scheduled.curricular_unit.name,
+                        'is_completed': scheduled.is_completed,
+                        'scheduled_date': scheduled.scheduled_date.strftime('%d/%m') if scheduled.scheduled_date else None
+                    }
+                    monthly_schedule_summary[month]['teachers'].append(teacher_info)
     
-    return render_template('index.html',
-                         total_teachers=total_teachers,
-                         total_evaluations=total_evaluations,
-                         total_courses=total_courses,
-                         current_semester=current_semester,
-                         semester_scheduled=semester_scheduled,
-                         semester_completed=semester_completed,
-                         semester_pending=semester_pending,
-                         recent_evaluations=recent_evaluations,
-                         teachers_without_evaluation=teachers_without_evaluation,
-                         pending_alerts=pending_alerts,
-                         overdue_alerts=overdue_alerts,
-                         avg_planning=round(avg_planning, 1),
-                         avg_class=round(avg_class, 1),
-                         monthly_schedule_summary=monthly_schedule_summary)
+        return render_template('index.html',
+                             total_teachers=total_teachers,
+                             total_evaluations=total_evaluations,
+                             total_courses=total_courses,
+                             current_semester=current_semester,
+                             semester_scheduled=semester_scheduled,
+                             semester_completed=semester_completed,
+                             semester_pending=semester_pending,
+                             recent_evaluations=recent_evaluations,
+                             teachers_without_evaluation=teachers_without_evaluation,
+                             pending_alerts=pending_alerts,
+                             overdue_alerts=overdue_alerts,
+                             avg_planning=round(avg_planning, 1),
+                             avg_class=round(avg_class, 1),
+                             monthly_schedule_summary=monthly_schedule_summary)
+    except Exception as e:
+        logging.error(f"Error in dashboard route: {e}")
+        import traceback
+        logging.error(traceback.format_exc())
+        flash('Erro ao carregar dashboard. Dados podem estar desatualizados.', 'warning')
+        # Return minimal dashboard with basic stats
+        return render_template('index.html',
+                             current_semester=None,
+                             total_teachers=0,
+                             total_evaluations=0,
+                             total_courses=0,
+                             semester_scheduled=0,
+                             semester_completed=0,
+                             semester_pending=0,
+                             recent_evaluations=[],
+                             teachers_without_evaluation=[],
+                             pending_alerts=[],
+                             overdue_alerts=[],
+                             avg_planning=0,
+                             avg_class=0,
+                             monthly_schedule_summary={})
 
 @app.route('/api/monthly-schedule/<int:month>')
 @login_required
@@ -1502,7 +1525,10 @@ def scheduling():
         
         # Get all teachers and curricular units for the form
         teachers = Teacher.query.all()
-        curricular_units = CurricularUnit.query.filter_by(is_active=True).all()
+        # Fix for curricular units - handle cases where is_active might be None
+        curricular_units = CurricularUnit.query.filter(
+            (CurricularUnit.is_active == True) | (CurricularUnit.is_active.is_(None))
+        ).all()
         
         # Organize by month
         monthly_schedule = {}
