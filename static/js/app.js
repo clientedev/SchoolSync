@@ -76,7 +76,10 @@ function initializeFormEnhancements() {
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) {
                 submitBtn.classList.add('loading');
-                submitBtn.disabled = true;
+                // Don't disable the button - let the form submit normally
+                setTimeout(() => {
+                    submitBtn.disabled = true;
+                }, 100); // Small delay to allow form submission
             }
         });
     });
@@ -617,7 +620,10 @@ window.SenaiApp.utils = {
 document.addEventListener('submit', function(e) {
     const form = e.target;
     if (form.tagName === 'FORM') {
-        showLoading(form);
+        // Add a small delay to show loading after form starts submitting
+        setTimeout(() => {
+            showLoading(form);
+        }, 50);
     }
 });
 
