@@ -73,13 +73,11 @@ function initializeFormEnhancements() {
     const forms = document.querySelectorAll('form');
     forms.forEach(form => {
         form.addEventListener('submit', function(e) {
+            if (e.defaultPrevented) return; // Only act if form submission wasn't prevented
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) {
                 submitBtn.classList.add('loading');
-                // Don't disable the button - let the form submit normally
-                setTimeout(() => {
-                    submitBtn.disabled = true;
-                }, 100); // Small delay to allow form submission
+                submitBtn.disabled = true;
             }
         });
     });
@@ -614,18 +612,7 @@ window.SenaiApp.utils = {
     hideLoading
 };
 
-/**
- * Handle form submissions with loading states
- */
-document.addEventListener('submit', function(e) {
-    const form = e.target;
-    if (form.tagName === 'FORM') {
-        // Add a small delay to show loading after form starts submitting
-        setTimeout(() => {
-            showLoading(form);
-        }, 50);
-    }
-});
+// Removed global form submit handler to avoid duplication with per-form handler above
 
 /**
  * Handle page unload to clean up
