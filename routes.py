@@ -389,9 +389,16 @@ def teacher_profile(id):
         avg_planning = planning_sum / total_evaluations
         avg_class = class_sum / total_evaluations
     
+    # Check if there are recent credentials in session for this teacher
+    recent_credentials = session.get('new_teacher_credentials')
+    teacher_password = None
+    if recent_credentials and recent_credentials.get('nif') == teacher.nif:
+        teacher_password = recent_credentials.get('password')
+    
     return render_template('teacher_profile.html', 
                          teacher=teacher, 
                          teacher_user=teacher_user,
+                         teacher_password=teacher_password,
                          evaluations=evaluations,
                          total_evaluations=total_evaluations,
                          avg_planning=avg_planning,

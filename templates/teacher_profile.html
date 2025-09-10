@@ -19,6 +19,7 @@
                             data-teacher-name="{{ teacher.name }}" 
                             data-teacher-username="{{ teacher_user.username }}" 
                             data-teacher-nif="{{ teacher.nif }}"
+                            data-teacher-password="{{ teacher_password if teacher_password else 'Definida pela coordenação' }}"
                             onclick="printCredentialsFromButton(this)">
                         <i class="fas fa-print"></i> Imprimir Credencial
                     </button>
@@ -209,6 +210,7 @@ function printCredentialsFromButton(button) {
     const teacherName = button.getAttribute('data-teacher-name');
     const username = button.getAttribute('data-teacher-username');
     const nif = button.getAttribute('data-teacher-nif');
+    const password = button.getAttribute('data-teacher-password');
     // Create a new window for printing
     const printWindow = window.open('', '_blank');
     
@@ -315,7 +317,7 @@ function printCredentialsFromButton(button) {
             
             <div class="credential-item">
                 <span class="credential-label">Senha:</span>
-                <span class="credential-value">Definida pela coordenação</span>
+                <span class="credential-value">${password}</span>
             </div>
         </div>
         
