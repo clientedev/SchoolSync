@@ -10,7 +10,7 @@
                 <i class="fas fa-graduation-cap me-2"></i>Cursos
             </h1>
             <div class="btn-group">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#courseModal">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#courseModal" onclick="resetCourseToAddMode()">
                     <i class="fas fa-plus me-1"></i>Novo Curso
                 </button>
                 <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
@@ -125,7 +125,7 @@
 <div class="modal fade" id="courseModal" tabindex="-1" aria-labelledby="courseModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form id="courseForm" method="POST">
+            <form id="courseForm" method="POST" action="{{ url_for('add_course') }}">
                 {{ form.hidden_tag() if form }}
                 <div class="modal-header">
                     <h5 class="modal-title" id="courseModalLabel">
@@ -272,6 +272,27 @@
 
 {% block extra_scripts %}
 <script>
+// Function to reset modal to "Add Course" mode
+function resetCourseToAddMode() {
+    console.log('🔧 DEBUG: Resetting course modal to ADD mode');
+    document.getElementById('modalTitle').textContent = 'Novo Curso';
+    document.getElementById('courseForm').action = "{{ url_for('add_course') }}";
+    document.getElementById('courseForm').method = 'POST';
+    document.getElementById('courseForm').reset();
+    console.log('🔧 DEBUG: Course form action set to:', document.getElementById('courseForm').action);
+    
+    // Reset curricular units to single field
+    const container = document.getElementById('curricularUnitsContainer');
+    container.innerHTML = `
+        <div class="input-group mb-2">
+            <input type="text" name="curricular_units[]" class="form-control" placeholder="Digite o nome da unidade curricular">
+            <button type="button" class="btn btn-outline-success" onclick="addCurricularUnit()">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    `;
+}
+
 function editCourse(id, name, period, curriculum_component, class_code) {
     document.getElementById('modalTitle').textContent = 'Editar Curso';
     document.getElementById('courseForm').action = `/courses/edit/${id}`;
@@ -292,22 +313,18 @@ function confirmDelete(itemName, deleteUrl) {
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
 
-// Reset form when modal is closed
+// Reset form when modal is closed - use the same resetCourseToAddMode function
 document.getElementById('courseModal').addEventListener('hidden.bs.modal', function () {
-    document.getElementById('modalTitle').textContent = 'Novo Curso';
-    document.getElementById('courseForm').action = '/courses/add';
-    document.getElementById('courseForm').reset();
-    
-    // Reset curricular units to single field
-    const container = document.getElementById('curricularUnitsContainer');
-    container.innerHTML = `
-        <div class="input-group mb-2">
-            <input type="text" class="form-control" name="curricular_units[]" placeholder="Nome da Unidade Curricular 1" required>
-            <button type="button" class="btn btn-outline-secondary" onclick="addCurricularUnit()">
-                <i class="fas fa-plus"></i>
-            </button>
-        </div>
-    `;
+    resetCourseToAddMode();
+});
+
+// Also reset when modal is shown for new course (double safety)
+document.getElementById('courseModal').addEventListener('show.bs.modal', function (event) {
+    const triggerButton = event.relatedTarget;
+    // If triggered by the "Novo Curso" button, ensure it's in add mode
+    if (triggerButton && triggerButton.textContent.includes('Novo Curso')) {
+        resetCourseToAddMode();
+    }
 });
 
 // Function to add new curricular unit field

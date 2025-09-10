@@ -704,18 +704,34 @@ def import_teachers_excel():
     
     return redirect(url_for('teachers'))
 
-@app.route('/courses')
+@app.route('/courses', methods=['GET'])
 @login_required
 def courses():
     """List all courses"""
+    # DEBUG: Log requests to help diagnose 405 errors
+    logging.info(f"🔍 DEBUG courses() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
+    
     courses_list = Course.query.all()
     form = CourseForm()
     return render_template('courses.html', courses=courses_list, form=form)
 
-@app.route('/courses/add', methods=['GET', 'POST'])
+# DEBUG: Defensive route to catch POST requests to /courses
+@app.route('/courses', methods=['POST'])
+@login_required 
+def courses_post_redirect():
+    """DEBUG: Catch POST requests that should go to /courses/add"""
+    logging.warning(f"🚨 DEBUG: POST request to /courses (should be /courses/add) - Method: {request.method}, Path: {request.path}")
+    logging.warning(f"🚨 Form data: {dict(request.form)}")
+    flash('Redirecionando cadastro para URL correta...', 'info')
+    return redirect(url_for('add_course'), code=307)  # 307 preserves POST method
+
+@app.route('/courses/add', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def add_course():
     """Add new course"""
+    # DEBUG: Log requests to help diagnose 405 errors
+    logging.info(f"🔍 DEBUG add_course() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
+    
     form = CourseForm()
     
     if request.method == 'POST':
