@@ -81,28 +81,31 @@ def send_evaluation_email(teacher_email, evaluation, teacher_user=None, report_p
         # Get teacher user credentials if linked
         teacher_credentials = ""
         if teacher_user:
-            # For security, we'll show a generic password message
+            # Include username, password will be shown generically for security
             teacher_credentials = f"""
 ACESSO AO SISTEMA:
 Para acessar o sistema e assinar sua avaliação, utilize:
 - Usuário: {teacher_user.username}
-- Senha: Utilize a senha fornecida pela coordenação
+- Senha: Sua senha é a mesma fornecida pela coordenação
 
-Se você esqueceu sua senha, entre em contato com a coordenação.
+IMPORTANTE: Altere sua senha no primeiro acesso por motivos de segurança.
+Se você não lembra da senha, entre em contato com a coordenação.
 """
         elif evaluation.teacher.user:
             teacher_credentials = f"""
 ACESSO AO SISTEMA:
 Para acessar o sistema e assinar sua avaliação, utilize:
 - Usuário: {evaluation.teacher.user.username}
-- Senha: Utilize a senha fornecida pela coordenação
+- Senha: Sua senha é a mesma fornecida pela coordenação
 
-Se você esqueceu sua senha, entre em contato com a coordenação.
+IMPORTANTE: Altere sua senha no primeiro acesso por motivos de segurança.
+Se você não lembra da senha, entre em contato com a coordenação.
 """
         else:
             teacher_credentials = """
 ACESSO AO SISTEMA:
 Entre em contato com a coordenação para obter suas credenciais de acesso ao sistema.
+Seu usuário será seu número SN (NIF) e a senha será fornecida pela coordenação.
 """
         
         msg = Message(
