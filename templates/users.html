@@ -38,8 +38,14 @@
                         <td>{{ user_item.name }}</td>
                         <td>{{ user_item.username }}</td>
                         <td>
-                            <span class="badge bg-{{ 'danger' if user_item.role == 'admin' else 'secondary' }}">
-                                {{ 'Administrador' if user_item.role == 'admin' else 'Avaliador' }}
+                            <span class="badge bg-{{ 'danger' if user_item.role == 'admin' else ('primary' if user_item.role == 'teacher' else 'secondary') }}">
+                                {% if user_item.role == 'admin' %}
+                                    Administrador
+                                {% elif user_item.role == 'teacher' %}
+                                    Docente
+                                {% else %}
+                                    Avaliador
+                                {% endif %}
                             </span>
                         </td>
                         <td>{{ user_item.email or '-' }}</td>

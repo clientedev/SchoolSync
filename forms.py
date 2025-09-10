@@ -111,13 +111,13 @@ class UserForm(FlaskForm):
     confirm_password = PasswordField('Confirmar Senha', 
                                    validators=[DataRequired(), EqualTo('password', message='As senhas devem ser iguais')])
     name = StringField('Nome Completo', validators=[DataRequired(), Length(max=100)])
-    role = SelectField('Função', choices=[('evaluator', 'Avaliador'), ('admin', 'Administrador')], validators=[DataRequired()])
+    role = SelectField('Função', choices=[('evaluator', 'Avaliador'), ('admin', 'Administrador'), ('teacher', 'Docente')], validators=[DataRequired()])
     email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
 
 class UserEditForm(FlaskForm):
     username = StringField('Nome de Usuário', validators=[DataRequired(), Length(min=3, max=80)])
     name = StringField('Nome Completo', validators=[DataRequired(), Length(max=100)])
-    role = SelectField('Função', choices=[('evaluator', 'Avaliador'), ('admin', 'Administrador')], validators=[DataRequired()])
+    role = SelectField('Função', choices=[('evaluator', 'Avaliador'), ('admin', 'Administrador'), ('teacher', 'Docente')], validators=[DataRequired()])
     email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
     is_active = SelectField('Status', choices=[('True', 'Ativo'), ('False', 'Inativo')], validators=[DataRequired()])
 
