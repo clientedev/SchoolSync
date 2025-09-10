@@ -570,7 +570,7 @@ Configuração para Railway incluída:
 
 ### 📞 Suporte Técnico
 Para suporte técnico ou dúvidas sobre o sistema:
-- **Desenvolvedor:** Sistema desenvolvido para SENAI Morvan Figueiredo
+- **Desenvolvedor:** Sistema desenvolvido para SENAI Morvan Figueiredo, Docente: Gabriel Eduardo Almeida
 - **Documentação:** Este README contém todas as informações necessárias
 - **Logs:** Use `/health` para verificar status do sistema
 
