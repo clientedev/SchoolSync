@@ -1,4 +1,5 @@
 import os
+import logging
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
 from production_app import csrf
@@ -1144,12 +1145,16 @@ def edit_evaluation(id):
     
     return render_template('evaluation_form.html', form=form, evaluation=evaluation, edit_mode=True)
 
-@app.route('/evaluations/delete/<int:id>', methods=['DELETE'])
+@app.route('/evaluations/delete/<int:id>', methods=['POST'])
 @login_required
-@csrf.exempt
 def delete_evaluation(id):
     """Delete evaluation - only admin can delete"""
     logging.info(f"Delete evaluation request for ID: {id} by user: {current_user.id}")
+    
+    # Check if request is AJAX (contains proper headers)
+    if not request.is_json and 'application/json' not in request.content_type:
+        logging.warning(f"Non-AJAX delete request for evaluation {id}")
+        return jsonify({'error': 'Requisição inválida.'}), 400
     
     if not current_user.is_admin():
         logging.warning(f"Non-admin user {current_user.id} tried to delete evaluation {id}")
