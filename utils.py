@@ -1301,111 +1301,105 @@ def process_curricular_units_excel_import(file_path):
         }
 
 def generate_teacher_credentials_pdf(teacher_name, teacher_nif, username, password):
-    """Generate PDF with teacher credentials for download"""
+    """Generate PDF with teacher credentials for download - Optimized for single page"""
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, 
-                           topMargin=1*inch, bottomMargin=1*inch,
-                           leftMargin=1*inch, rightMargin=1*inch)
+                           topMargin=0.5*inch, bottomMargin=0.5*inch,
+                           leftMargin=0.75*inch, rightMargin=0.75*inch)
     styles = getSampleStyleSheet()
     story = []
     
-    # Title
+    # Title - More compact
     title_style = ParagraphStyle('CustomTitle', parent=styles['Title'], 
-                                fontSize=20, spaceAfter=30, alignment=TA_CENTER,
+                                fontSize=16, spaceAfter=15, alignment=TA_CENTER,
                                 textColor=colors.darkblue)
     story.append(Paragraph("CREDENCIAIS DE ACESSO", title_style))
-    story.append(Paragraph("Sistema de Avaliação Docente", title_style))
-    story.append(Spacer(1, 30))
     
-    # Institution info
+    # Institution info - Combined with subtitle
     institution_style = ParagraphStyle('Institution', parent=styles['Normal'],
-                                     fontSize=14, alignment=TA_CENTER,
+                                     fontSize=12, spaceAfter=20, alignment=TA_CENTER,
                                      textColor=colors.darkgrey)
-    story.append(Paragraph("SENAI Morvan Figueiredo", institution_style))
-    story.append(Spacer(1, 40))
+    story.append(Paragraph("Sistema de Avaliação Docente - SENAI Morvan Figueiredo", institution_style))
     
-    # Credentials Box
+    # Credentials Box - Compact version without empty rows
     credentials_data = [
-        ['', ''],  # Empty row for spacing
         ['DADOS PARA ACESSO', ''],
-        ['', ''],  # Empty row for spacing
         ['Nome Completo:', teacher_name],
         ['NIF:', teacher_nif],
         ['Usuário (Login):', username],
-        ['Senha Temporária:', password],
-        ['', ''],  # Empty row for spacing
+        ['Senha Temporária:', password]
     ]
     
-    credentials_table = Table(credentials_data, colWidths=[2.5*inch, 3.5*inch])
+    credentials_table = Table(credentials_data, colWidths=[2.3*inch, 3.7*inch])
     credentials_table.setStyle(TableStyle([
         # Header styling
-        ('BACKGROUND', (0, 1), (-1, 1), colors.darkblue),
-        ('TEXTCOLOR', (0, 1), (-1, 1), colors.whitesmoke),
-        ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 1), (-1, 1), 14),
-        ('SPAN', (0, 1), (-1, 1)),  # Merge header cells
-        ('ALIGN', (0, 1), (-1, 1), 'CENTER'),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 13),
+        ('SPAN', (0, 0), (-1, 0)),  # Merge header cells
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         
         # Data labels styling
-        ('BACKGROUND', (0, 3), (0, 6), colors.lightblue),
-        ('FONTNAME', (0, 3), (0, 6), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 12),
+        ('BACKGROUND', (0, 1), (0, 4), colors.lightblue),
+        ('FONTNAME', (0, 1), (0, 4), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         
         # Data values styling
-        ('BACKGROUND', (1, 3), (1, 6), colors.beige),
-        ('FONTNAME', (1, 6), (1, 6), 'Helvetica-Bold'),  # Password in bold
-        ('TEXTCOLOR', (1, 6), (1, 6), colors.red),  # Password in red
+        ('BACKGROUND', (1, 1), (1, 4), colors.beige),
+        ('FONTNAME', (1, 4), (1, 4), 'Helvetica-Bold'),  # Password in bold
+        ('TEXTCOLOR', (1, 4), (1, 4), colors.red),  # Password in red
         
-        # Border and padding
-        ('GRID', (0, 1), (-1, 6), 1, colors.black),
-        ('TOPPADDING', (0, 0), (-1, -1), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('LEFTPADDING', (0, 0), (-1, -1), 15),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 15),
+        # Border and padding - Reduced padding
+        ('GRID', (0, 0), (-1, 4), 1, colors.black),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING', (0, 0), (-1, -1), 12),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 12),
     ]))
     
     story.append(credentials_table)
-    story.append(Spacer(1, 40))
+    story.append(Spacer(1, 20))
     
-    # Instructions
+    # Instructions - More compact
     instructions_style = ParagraphStyle('Instructions', parent=styles['Normal'],
-                                      fontSize=11, spaceAfter=10,
-                                      leftIndent=0.5*inch, rightIndent=0.5*inch)
+                                      fontSize=10, spaceAfter=5,
+                                      leftIndent=0.2*inch, rightIndent=0.2*inch,
+                                      leading=14)
     
     story.append(Paragraph("<b>INSTRUÇÕES IMPORTANTES:</b>", instructions_style))
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
     
-    instructions = [
-        "1. Acesse o sistema usando o usuário e senha fornecidos acima",
-        "2. No primeiro acesso, você será direcionado para alterar sua senha",
-        "3. Escolha uma senha segura que contenha letras, números e símbolos",
-        "4. Mantenha suas credenciais em local seguro",
-        "5. Em caso de dúvidas, entre em contato com a coordenação"
-    ]
+    # Compact instructions in a single paragraph with bullet points
+    instructions_text = """
+    • Use o usuário e senha acima para acessar o sistema<br/>
+    • No primeiro acesso, altere sua senha por uma segura<br/>
+    • Mantenha suas credenciais em local seguro<br/>
+    • Contate a coordenação em caso de dúvidas
+    """
     
-    for instruction in instructions:
-        story.append(Paragraph(instruction, instructions_style))
+    story.append(Paragraph(instructions_text, instructions_style))
+    story.append(Spacer(1, 15))
     
-    story.append(Spacer(1, 30))
-    
-    # Warning box
+    # Warning box - More compact
     warning_style = ParagraphStyle('Warning', parent=styles['Normal'],
-                                 fontSize=10, alignment=TA_CENTER,
+                                 fontSize=9, alignment=TA_CENTER,
                                  textColor=colors.red,
+                                 backColor=colors.mistyrose,
                                  borderColor=colors.red,
                                  borderWidth=1,
-                                 borderPadding=10)
+                                 borderPadding=8,
+                                 spaceAfter=15)
     
     story.append(Paragraph("<b>⚠️ ATENÇÃO: Esta senha é temporária e deve ser alterada no primeiro acesso!</b>", warning_style))
     
-    story.append(Spacer(1, 40))
-    
-    # Footer
+    # Footer - Compact
     footer_style = ParagraphStyle('Footer', parent=styles['Normal'],
-                                fontSize=9, alignment=TA_CENTER,
-                                textColor=colors.grey)
+                                fontSize=8, alignment=TA_CENTER,
+                                textColor=colors.grey,
+                                spaceAfter=5)
     
     current_date = datetime.now().strftime("%d/%m/%Y às %H:%M")
     story.append(Paragraph(f"Credenciais geradas em {current_date}", footer_style))
