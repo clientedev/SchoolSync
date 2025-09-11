@@ -1096,10 +1096,7 @@ def process_courses_excel_import(file_path):
                         if unit_name:
                             curricular_units.append(unit_name)
                 
-                # Validate at least one curricular unit
-                if not curricular_units:
-                    results['errors'].append(f'Linha {index + 2}: Pelo menos uma Unidade Curricular é obrigatória')
-                    continue
+                # Note: Curricular units are now optional
                 
                 # Check if course already exists
                 existing_course = Course.query.filter_by(name=course_name).first()

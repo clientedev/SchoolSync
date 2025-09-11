@@ -1020,13 +1020,9 @@ def add_course():
             db.session.add(course)
             db.session.flush()  # Get course ID
             
-            # Process curricular units
+            # Process curricular units (optional)
             curricular_units = request.form.getlist('curricular_units[]')
             curricular_units = [unit.strip() for unit in curricular_units if unit.strip()]
-            
-            if not curricular_units:
-                flash('Pelo menos uma unidade curricular é obrigatória.', 'error')
-                return render_template('courses.html', form=form, courses=Course.query.all())
             
             units_added = 0
             for unit_name in curricular_units:
@@ -1047,7 +1043,11 @@ def add_course():
             
             db.session.commit()
             
-            flash(f'Curso {course.name} cadastrado com sucesso! {units_added} unidade(s) curricular(es) adicionada(s).', 'success')
+            # Dynamic success message based on units added
+            if units_added > 0:
+                flash(f'Curso {course.name} cadastrado com sucesso! {units_added} unidade(s) curricular(es) adicionada(s).', 'success')
+            else:
+                flash(f'Curso {course.name} cadastrado com sucesso!', 'success')
             return redirect(url_for('courses'))
         else:
             # Form validation failed
