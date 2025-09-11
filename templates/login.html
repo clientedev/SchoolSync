@@ -15,20 +15,23 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
 </head>
 <body class="bg-dark">
-    <div class="container-fluid vh-100 d-flex align-items-center justify-content-center">
-        <div class="row w-100">
-            <div class="col-md-6 col-lg-5 col-xl-4 mx-auto">
+    <div class="container-fluid vh-100 d-flex align-items-center justify-content-center py-3">
+        <div class="row w-100 justify-content-center">
+            <div class="col-11 col-sm-10 col-md-8 col-lg-6 col-xl-5 col-xxl-4">
                 <div class="card shadow-lg hover-lift">
                     <div class="card-header text-center bg-primary">
-                        <div class="py-3">
-                            <i class="fas fa-chalkboard-teacher fa-3x text-white mb-3"></i>
-                            <h2 class="h4 text-white mb-0 fw-bold">SENAI Morvan Figueiredo</h2>
+                        <div class="py-2 py-md-3">
+                            <i class="fas fa-chalkboard-teacher fa-2x fa-md-3x text-white mb-2 mb-md-3"></i>
+                            <h2 class="h5 h-md-4 text-white mb-1 fw-bold">
+                                <span class="d-none d-sm-inline">SENAI Morvan Figueiredo</span>
+                                <span class="d-sm-none">SENAI<br>Morvan Figueiredo</span>
+                            </h2>
                             <p class="text-white-50 mb-0 small">Sistema de Ação Docente</p>
                         </div>
                     </div>
-                    <div class="card-body p-4">
-                        <div class="text-center mb-4">
-                            <h3 class="h5 mb-2">Acesso ao Sistema</h3>
+                    <div class="card-body p-3 p-md-4">
+                        <div class="text-center mb-3 mb-md-4">
+                            <h3 class="h6 h-md-5 mb-1 mb-md-2">Acesso ao Sistema</h3>
                             <p class="text-muted small">Faça login para continuar</p>
                         </div>
 
@@ -51,7 +54,7 @@
                                     <span class="input-group-text">
                                         <i class="fas fa-user"></i>
                                     </span>
-                                    {{ form.username(class="form-control form-control-lg", placeholder="Digite seu usuário") }}
+                                    {{ form.username(class="form-control form-control-lg", placeholder="Usuário") }}
                                 </div>
                                 {% if form.username.errors %}
                                     <div class="text-danger small mt-1">
@@ -63,12 +66,12 @@
                                 {% endif %}
                             </div>
 
-                            <div class="mb-4">
+                            <div class="mb-3 mb-md-4">
                                 <div class="input-group">
                                     <span class="input-group-text">
                                         <i class="fas fa-lock"></i>
                                     </span>
-                                    {{ form.password(class="form-control form-control-lg", placeholder="Digite sua senha") }}
+                                    {{ form.password(class="form-control form-control-lg", placeholder="Senha") }}
                                 </div>
                                 {% if form.password.errors %}
                                     <div class="text-danger small mt-1">
@@ -87,29 +90,31 @@
                             </div>
                         </form>
                     </div>
-                    <div class="card-footer text-center text-muted py-3">
-                        <small>
+                    <div class="card-footer text-center text-muted py-2 py-md-3">
+                        <small class="d-block">
                             <i class="fas fa-shield-alt me-1"></i>
-                            Sistema protegido - acesso autorizado apenas
+                            <span class="d-none d-sm-inline">Sistema protegido - acesso autorizado apenas</span>
+                            <span class="d-sm-none">Acesso autorizado</span>
                         </small>
                     </div>
                 </div>
                 
                 <!-- Informações do sistema -->
-                <div class="text-center mt-4">
-                    <small class="text-muted">
+                <div class="text-center mt-3 mt-md-4 px-3">
+                    <small class="text-muted d-block">
                         <i class="fas fa-info-circle me-1"></i>
-                        Versão 2.0 - Desenvolvido para SENAI Morvan Figueiredo
+                        <span class="d-none d-md-inline">Versão 2.0 - Desenvolvido para SENAI Morvan Figueiredo</span>
+                        <span class="d-md-none">v2.0 - SENAI Morvan Figueiredo</span>
                     </small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Background pattern -->
-    <div class="position-fixed top-0 start-0 w-100 h-100" style="z-index: -1; opacity: 0.05;">
+    <!-- Background pattern - responsive -->
+    <div class="position-fixed top-0 start-0 w-100 h-100 d-none d-md-block" style="z-index: -1; opacity: 0.05;">
         <div class="d-flex align-items-center justify-content-center h-100">
-            <i class="fas fa-graduation-cap" style="font-size: 20rem;"></i>
+            <i class="fas fa-graduation-cap" style="font-size: clamp(8rem, 15vw, 20rem);"></i>
         </div>
     </div>
 

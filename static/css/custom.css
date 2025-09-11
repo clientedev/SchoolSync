@@ -211,6 +211,66 @@ footer {
     animation: progressAnimation 1.5s ease-in-out;
 }
 
+/* Login page specific responsive improvements */
+@media (max-width: 576px) {
+    /* Extra small devices */
+    .login-card {
+        margin: 0.5rem;
+    }
+    
+    .card-header .fa-chalkboard-teacher {
+        font-size: 1.8rem !important;
+    }
+    
+    .card-header h2 {
+        font-size: 1rem !important;
+        line-height: 1.3;
+    }
+    
+    .card-body {
+        padding: 1rem !important;
+    }
+    
+    .input-group-text {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .form-control-lg {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Small devices and tablets */
+    .vh-100 {
+        min-height: 100vh;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .card-header {
+        padding: 0.75rem;
+    }
+    
+    .card-footer {
+        padding: 0.5rem !important;
+        font-size: 0.8rem;
+    }
+    
+    /* Prevent text overflow */
+    .text-truncate-mobile {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
 /* Responsive table improvements */
 @media (max-width: 768px) {
     .table-responsive {
