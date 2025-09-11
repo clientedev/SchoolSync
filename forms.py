@@ -14,10 +14,6 @@ class CourseForm(FlaskForm):
     curriculum_component = StringField('Componente Curricular', validators=[DataRequired(), Length(max=100)])
     class_code = StringField('Código da Turma', validators=[Optional(), Length(max=20)])
 
-class EvaluatorForm(FlaskForm):
-    name = StringField('Nome', validators=[DataRequired(), Length(max=100)])
-    role = StringField('Função', validators=[DataRequired(), Length(max=50)])
-    email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
 
 class EvaluationForm(FlaskForm):
     teacher_id = SelectField('Docente', coerce=int, validators=[DataRequired()])

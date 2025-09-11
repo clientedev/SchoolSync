@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from production_app import app
 from models import db
 from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment, User, Semester, CurricularUnit, ScheduledEvaluation, DigitalSignature, TemporaryCredential
-from forms import TeacherForm, CourseForm, EvaluatorForm, EvaluationForm, LoginForm, UserForm, UserEditForm, ChangePasswordForm
+from forms import TeacherForm, CourseForm, EvaluationForm, LoginForm, UserForm, UserEditForm, ChangePasswordForm
 from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import, generate_courses_excel_template, process_courses_excel_import, generate_curricular_units_excel_template, process_curricular_units_excel_import, get_or_create_current_semester
 
 # Security utilities for credential encryption
@@ -1231,64 +1231,6 @@ def import_courses_excel():
     
     return redirect(url_for('courses'))
 
-@app.route('/evaluators')
-@login_required
-def evaluators():
-    """List all evaluators"""
-    evaluators_list = Evaluator.query.all()
-    return render_template('evaluators.html', evaluators=evaluators_list)
-
-@app.route('/evaluators/add', methods=['GET', 'POST'])
-@login_required
-def add_evaluator():
-    """Add new evaluator"""
-    form = EvaluatorForm()
-    
-    if form.validate_on_submit():
-        evaluator = Evaluator()  # type: ignore
-        evaluator.name = form.name.data
-        evaluator.role = form.role.data
-        evaluator.email = form.email.data
-        
-        db.session.add(evaluator)
-        db.session.commit()
-        
-        flash(f'Avaliador {evaluator.name} cadastrado com sucesso!', 'success')
-        return redirect(url_for('evaluators'))
-    
-    return render_template('evaluators.html', form=form, evaluators=Evaluator.query.all())
-
-@app.route('/evaluators/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
-def edit_evaluator(id):
-    """Edit evaluator"""
-    evaluator = Evaluator.query.get_or_404(id)
-    form = EvaluatorForm(obj=evaluator)
-    
-    if form.validate_on_submit():
-        form.populate_obj(evaluator)
-        db.session.commit()
-        
-        flash(f'Avaliador {evaluator.name} atualizado com sucesso!', 'success')
-        return redirect(url_for('evaluators'))
-    
-    return render_template('evaluators.html', form=form, evaluator=evaluator, evaluators=Evaluator.query.all())
-
-@app.route('/evaluators/delete/<int:id>')
-@login_required
-def delete_evaluator(id):
-    """Delete evaluator"""
-    evaluator = Evaluator.query.get_or_404(id)
-    
-    try:
-        db.session.delete(evaluator)
-        db.session.commit()
-        flash(f'Avaliador {evaluator.name} excluído com sucesso!', 'success')
-    except Exception as e:
-        flash('Erro ao excluir avaliador. Verifique se não existem avaliações vinculadas.', 'error')
-        db.session.rollback()
-    
-    return redirect(url_for('evaluators'))
 
 @app.route('/evaluations')
 @login_required

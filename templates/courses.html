@@ -450,8 +450,8 @@ function addCurricularUnitField(name = '', unitId = null, isFirst = false) {
     const container = document.getElementById('curricularUnitsContainer');
     const currentFields = container.querySelectorAll('.curricular-unit-field');
     
-    if (currentFields.length >= 10) {
-        alert('Máximo de 10 unidades curriculares permitido.');
+    if (currentFields.length >= 15) {
+        alert('Máximo de 15 unidades curriculares permitido.');
         return;
     }
     
@@ -460,18 +460,17 @@ function addCurricularUnitField(name = '', unitId = null, isFirst = false) {
     newField.innerHTML = `
         <input type="text" class="form-control" name="curricular_units[]" 
                value="${name}" 
-               placeholder="Nome da Unidade Curricular ${currentFields.length + 1}" 
-               >
+               placeholder="Nome da Unidade Curricular ${currentFields.length + 1}">
         <input type="hidden" name="curricular_unit_ids[]" value="${unitId || ''}">
-        <button type="button" class="btn ${isFirst && currentFields.length === 0 ? 'btn-outline-success' : 'btn-outline-danger'}" 
-                onclick="${isFirst && currentFields.length === 0 ? 'addCurricularUnitField()' : 'removeCurricularUnitField(this)'}">
-            <i class="fas ${isFirst && currentFields.length === 0 ? 'fa-plus' : 'fa-minus'}"></i>
+        <button type="button" class="btn btn-outline-success" 
+                onclick="addCurricularUnitField()">
+            <i class="fas fa-plus"></i>
         </button>
     `;
     
     container.appendChild(newField);
     
-    // Update the first button to add/remove as needed
+    // Update all buttons after adding new field
     updateCurricularUnitButtons();
 }
 
@@ -502,15 +501,15 @@ function updateCurricularUnitButtons() {
         const button = field.querySelector('button');
         const icon = button.querySelector('i');
         
-        if (index === 0 && fields.length === 1) {
-            // First and only field - should be Add button
+        if (index === fields.length - 1) {
+            // Last field - should be Add button
             button.className = 'btn btn-outline-success';
-            button.onclick = () => addCurricularUnitField();
+            button.setAttribute('onclick', 'addCurricularUnitField()');
             icon.className = 'fas fa-plus';
         } else {
             // Any other field - should be Remove button
             button.className = 'btn btn-outline-danger';
-            button.onclick = () => removeCurricularUnitField(button);
+            button.setAttribute('onclick', 'removeCurricularUnitField(this)');
             icon.className = 'fas fa-minus';
         }
     });
@@ -522,7 +521,7 @@ function resetCurricularUnitsToDefault() {
     container.innerHTML = `
         <div class="input-group mb-2 curricular-unit-field">
             <input type="text" name="curricular_units[]" class="form-control" 
-                   placeholder="Digite o nome da unidade curricular" required>
+                   placeholder="Nome da Unidade Curricular 1">
             <input type="hidden" name="curricular_unit_ids[]" value="">
             <button type="button" class="btn btn-outline-success" onclick="addCurricularUnitField()">
                 <i class="fas fa-plus"></i>

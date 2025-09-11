@@ -50,9 +50,6 @@
                             <li><a class="dropdown-item" href="{{ url_for('courses') }}">
                                 <i class="fas fa-graduation-cap me-1"></i>Cursos
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('evaluators') }}">
-                                <i class="fas fa-user-check me-1"></i>Avaliadores
-                            </a></li>
                             {% if current_user.is_authenticated and current_user.role == 'admin' %}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('manage_accounts') }}">
