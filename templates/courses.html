@@ -180,14 +180,14 @@
                             <label class="form-label">Unidades Curriculares</label>
                             <div id="curricularUnitsContainer">
                                 <div class="input-group mb-2 curricular-unit-field">
-                                    <input type="text" class="form-control" name="curricular_units[]" placeholder="Nome da Unidade Curricular 1" required>
+                                    <input type="text" class="form-control" name="curricular_units[]" placeholder="Nome da Unidade Curricular 1">
                                     <input type="hidden" name="curricular_unit_ids[]" value="">
                                     <button type="button" class="btn btn-outline-success" onclick="addCurricularUnitField()">
                                         <i class="fas fa-plus"></i>
                                     </button>
                                 </div>
                             </div>
-                            <small class="form-text text-muted">Adicione pelo menos uma unidade curricular. Clique em + para adicionar mais.</small>
+                            <small class="form-text text-muted">Unidades curriculares são opcionais. Clique em + para adicionar mais.</small>
                         </div>
                     {% endif %}
                 </div>
@@ -461,7 +461,7 @@ function addCurricularUnitField(name = '', unitId = null, isFirst = false) {
         <input type="text" class="form-control" name="curricular_units[]" 
                value="${name}" 
                placeholder="Nome da Unidade Curricular ${currentFields.length + 1}" 
-               ${isFirst ? 'required' : ''}>
+               >
         <input type="hidden" name="curricular_unit_ids[]" value="${unitId || ''}">
         <button type="button" class="btn ${isFirst && currentFields.length === 0 ? 'btn-outline-success' : 'btn-outline-danger'}" 
                 onclick="${isFirst && currentFields.length === 0 ? 'addCurricularUnitField()' : 'removeCurricularUnitField(this)'}">
@@ -488,7 +488,7 @@ function removeCurricularUnitField(button) {
         const remainingInputs = container.querySelectorAll('input[name="curricular_units[]"]');
         remainingInputs.forEach((input, index) => {
             input.placeholder = `Nome da Unidade Curricular ${index + 1}`;
-            input.required = index === 0; // Only first field is required
+            // Curricular units are now optional
         });
     }
 }
