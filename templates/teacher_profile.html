@@ -215,8 +215,8 @@ function generateCredentials(teacherId) {
         if (data.success) {
             // Show success message with option to download credentials PDF
             if (confirm(`Credenciais geradas com sucesso!\nNova senha: ${data.new_password}\nEmail: ${data.email_status}\n\nDeseja baixar o PDF das credenciais agora?`)) {
-                // Download credentials PDF
-                window.location.href = `/teachers/${teacherId}/credentials/download`;
+                // Download credentials PDF using the secure token
+                window.location.href = `/teachers/${teacherId}/credentials/download?token=${data.credential_token}`;
             }
             // Reload page to show updated status
             setTimeout(() => window.location.reload(), 1000);

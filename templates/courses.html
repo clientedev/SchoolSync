@@ -179,9 +179,10 @@
                         <div class="mb-3">
                             <label class="form-label">Unidades Curriculares</label>
                             <div id="curricularUnitsContainer">
-                                <div class="input-group mb-2">
+                                <div class="input-group mb-2 curricular-unit-field">
                                     <input type="text" class="form-control" name="curricular_units[]" placeholder="Nome da Unidade Curricular 1" required>
-                                    <button type="button" class="btn btn-outline-secondary" onclick="addCurricularUnit()">
+                                    <input type="hidden" name="curricular_unit_ids[]" value="">
+                                    <button type="button" class="btn btn-outline-success" onclick="addCurricularUnitField()">
                                         <i class="fas fa-plus"></i>
                                     </button>
                                 </div>
@@ -282,15 +283,7 @@ function resetCourseToAddMode() {
     console.log('🔧 DEBUG: Course form action set to:', document.getElementById('courseForm').action);
     
     // Reset curricular units to single field
-    const container = document.getElementById('curricularUnitsContainer');
-    container.innerHTML = `
-        <div class="input-group mb-2">
-            <input type="text" name="curricular_units[]" class="form-control" placeholder="Digite o nome da unidade curricular">
-            <button type="button" class="btn btn-outline-success" onclick="addCurricularUnit()">
-                <i class="fas fa-plus"></i>
-            </button>
-        </div>
-    `;
+    resetCurricularUnitsToDefault();
 }
 
 function editCourse(id, name, period, curriculum_component, class_code) {
@@ -302,6 +295,9 @@ function editCourse(id, name, period, curriculum_component, class_code) {
     document.querySelector('input[name="period"]').value = period;
     document.querySelector('input[name="curriculum_component"]').value = curriculum_component;
     document.querySelector('input[name="class_code"]').value = class_code;
+    
+    // Load existing curricular units for this course
+    loadCurricularUnitsForEdit(id);
     
     // Show modal
     new bootstrap.Modal(document.getElementById('courseModal')).show();
@@ -327,42 +323,14 @@ document.getElementById('courseModal').addEventListener('show.bs.modal', functio
     }
 });
 
-// Function to add new curricular unit field
+// Function to add new curricular unit field (legacy support)
 function addCurricularUnit() {
-    const container = document.getElementById('curricularUnitsContainer');
-    const currentFields = container.querySelectorAll('input[name="curricular_units[]"]');
-    
-    if (currentFields.length >= 10) {
-        alert('Máximo de 10 unidades curriculares permitido.');
-        return;
-    }
-    
-    const newField = document.createElement('div');
-    newField.className = 'input-group mb-2';
-    newField.innerHTML = `
-        <input type="text" class="form-control" name="curricular_units[]" placeholder="Nome da Unidade Curricular ${currentFields.length + 1}">
-        <button type="button" class="btn btn-outline-danger" onclick="removeCurricularUnit(this)">
-            <i class="fas fa-minus"></i>
-        </button>
-    `;
-    
-    container.appendChild(newField);
+    addCurricularUnitField();
 }
 
-// Function to remove curricular unit field
+// Function to remove curricular unit field (legacy support)
 function removeCurricularUnit(button) {
-    const container = document.getElementById('curricularUnitsContainer');
-    const fields = container.querySelectorAll('.input-group');
-    
-    if (fields.length > 1) {
-        button.parentElement.remove();
-        
-        // Update placeholders
-        const remainingInputs = container.querySelectorAll('input[name="curricular_units[]"]');
-        remainingInputs.forEach((input, index) => {
-            input.placeholder = `Nome da Unidade Curricular ${index + 1}`;
-        });
-    }
+    removeCurricularUnitField(button);
 }
 
 // Import file validation and button control
@@ -441,6 +409,126 @@ document.addEventListener('DOMContentLoaded', function() {
 function manageCurricularUnits(courseId, courseName) {
     // Redirect to curricular units page with course filter
     window.location.href = `/curricular_units?course_id=${courseId}`;
+}
+
+// Function to load curricular units for editing
+function loadCurricularUnitsForEdit(courseId) {
+    fetch(`/api/courses/${courseId}/curricular_units`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                populateCurricularUnitsForEdit(data.units);
+            } else {
+                console.error('Error loading curricular units:', data.error);
+                // Fall back to single empty field
+                resetCurricularUnitsToDefault();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading curricular units:', error);
+            resetCurricularUnitsToDefault();
+        });
+}
+
+// Function to populate curricular units in edit mode
+function populateCurricularUnitsForEdit(units) {
+    const container = document.getElementById('curricularUnitsContainer');
+    container.innerHTML = '';
+    
+    if (units && units.length > 0) {
+        units.forEach((unit, index) => {
+            addCurricularUnitField(unit.name, unit.id, index === 0);
+        });
+    } else {
+        // Add one empty field if no units exist
+        addCurricularUnitField('', null, true);
+    }
+}
+
+// Enhanced function to add curricular unit field with optional data
+function addCurricularUnitField(name = '', unitId = null, isFirst = false) {
+    const container = document.getElementById('curricularUnitsContainer');
+    const currentFields = container.querySelectorAll('.curricular-unit-field');
+    
+    if (currentFields.length >= 10) {
+        alert('Máximo de 10 unidades curriculares permitido.');
+        return;
+    }
+    
+    const newField = document.createElement('div');
+    newField.className = 'input-group mb-2 curricular-unit-field';
+    newField.innerHTML = `
+        <input type="text" class="form-control" name="curricular_units[]" 
+               value="${name}" 
+               placeholder="Nome da Unidade Curricular ${currentFields.length + 1}" 
+               ${isFirst ? 'required' : ''}>
+        <input type="hidden" name="curricular_unit_ids[]" value="${unitId || ''}">
+        <button type="button" class="btn ${isFirst && currentFields.length === 0 ? 'btn-outline-success' : 'btn-outline-danger'}" 
+                onclick="${isFirst && currentFields.length === 0 ? 'addCurricularUnitField()' : 'removeCurricularUnitField(this)'}">
+            <i class="fas ${isFirst && currentFields.length === 0 ? 'fa-plus' : 'fa-minus'}"></i>
+        </button>
+    `;
+    
+    container.appendChild(newField);
+    
+    // Update the first button to add/remove as needed
+    updateCurricularUnitButtons();
+}
+
+// Function to remove curricular unit field
+function removeCurricularUnitField(button) {
+    const container = document.getElementById('curricularUnitsContainer');
+    const fields = container.querySelectorAll('.curricular-unit-field');
+    
+    if (fields.length > 1) {
+        button.parentElement.remove();
+        updateCurricularUnitButtons();
+        
+        // Update placeholders
+        const remainingInputs = container.querySelectorAll('input[name="curricular_units[]"]');
+        remainingInputs.forEach((input, index) => {
+            input.placeholder = `Nome da Unidade Curricular ${index + 1}`;
+            input.required = index === 0; // Only first field is required
+        });
+    }
+}
+
+// Function to update buttons in curricular unit fields
+function updateCurricularUnitButtons() {
+    const container = document.getElementById('curricularUnitsContainer');
+    const fields = container.querySelectorAll('.curricular-unit-field');
+    
+    fields.forEach((field, index) => {
+        const button = field.querySelector('button');
+        const icon = button.querySelector('i');
+        
+        if (index === 0 && fields.length === 1) {
+            // First and only field - should be Add button
+            button.className = 'btn btn-outline-success';
+            button.onclick = () => addCurricularUnitField();
+            icon.className = 'fas fa-plus';
+        } else {
+            // Any other field - should be Remove button
+            button.className = 'btn btn-outline-danger';
+            button.onclick = () => removeCurricularUnitField(button);
+            icon.className = 'fas fa-minus';
+        }
+    });
+}
+
+// Function to reset curricular units to default state
+function resetCurricularUnitsToDefault() {
+    const container = document.getElementById('curricularUnitsContainer');
+    container.innerHTML = `
+        <div class="input-group mb-2 curricular-unit-field">
+            <input type="text" name="curricular_units[]" class="form-control" 
+                   placeholder="Digite o nome da unidade curricular" required>
+            <input type="hidden" name="curricular_unit_ids[]" value="">
+            <button type="button" class="btn btn-outline-success" onclick="addCurricularUnitField()">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    `;
 }
 </script>
 {% endblock %}

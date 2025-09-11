@@ -1,14 +1,53 @@
 import os
 import logging
+import secrets
+import hashlib
+from cryptography.fernet import Fernet
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
 from production_app import csrf
 from datetime import datetime, timedelta
 from production_app import app
 from models import db
-from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment, User, Semester, CurricularUnit, ScheduledEvaluation, DigitalSignature
+from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment, User, Semester, CurricularUnit, ScheduledEvaluation, DigitalSignature, TemporaryCredential
 from forms import TeacherForm, CourseForm, EvaluatorForm, EvaluationForm, LoginForm, UserForm, UserEditForm, ChangePasswordForm
 from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import, generate_courses_excel_template, process_courses_excel_import, generate_curricular_units_excel_template, process_curricular_units_excel_import, get_or_create_current_semester
+
+# Security utilities for credential encryption
+def get_encryption_key():
+    """Get or create encryption key for secure credential storage"""
+    key = os.environ.get("CREDENTIAL_ENCRYPTION_KEY")
+    if not key:
+        # Generate a new key and store it (for production, this should be persistent)
+        key = Fernet.generate_key().decode()
+        os.environ["CREDENTIAL_ENCRYPTION_KEY"] = key
+        current_app.logger.warning("Generated new encryption key for credentials. This should be persistent in production.")
+    return key.encode()
+
+def encrypt_credential(password: str) -> str:
+    """Encrypt a credential for secure storage"""
+    fernet = Fernet(get_encryption_key())
+    return fernet.encrypt(password.encode()).decode()
+
+def decrypt_credential(encrypted_password: str) -> str:
+    """Decrypt a credential for retrieval"""
+    fernet = Fernet(get_encryption_key())
+    return fernet.decrypt(encrypted_password.encode()).decode()
+
+def generate_secure_token() -> str:
+    """Generate a secure token for credential access"""
+    return secrets.token_urlsafe(32)
+
+def cleanup_expired_credentials():
+    """Remove expired credential tokens"""
+    expired_credentials = TemporaryCredential.query.filter(
+        TemporaryCredential.expires_at < datetime.utcnow()
+    ).all()
+    for cred in expired_credentials:
+        db.session.delete(cred)
+    if expired_credentials:
+        db.session.commit()
+        current_app.logger.info(f"Cleaned up {len(expired_credentials)} expired credential tokens")
 
 def redirect_by_role():
     """Helper function to redirect users based on their role"""
@@ -617,19 +656,40 @@ def generate_teacher_credentials(teacher_id):
     if not teacher_user:
         return jsonify({'success': False, 'message': 'Usuário não encontrado'}), 404
     
+    # Clean up any expired credentials first
+    cleanup_expired_credentials()
+    
+    # Invalidate any existing credentials for this teacher
+    existing_credentials = TemporaryCredential.query.filter_by(
+        teacher_id=teacher.id,
+        is_used=False
+    ).all()
+    for cred in existing_credentials:
+        cred.mark_as_used()
+    
     # Generate new password
-    import secrets
     import string
     password_chars = string.ascii_letters + string.digits
     new_password = ''.join(secrets.choice(password_chars) for _ in range(10))
     
+    # Update teacher's actual password
     teacher_user.set_password(new_password)
-    db.session.commit()
     
-    # Store only a flag that credentials were generated (no password)
-    session['teacher_credentials_generated_' + str(teacher.id)] = {
-        'generated_at': datetime.now().isoformat()
-    }
+    # Create secure temporary credential token
+    token = generate_secure_token()
+    encrypted_password = encrypt_credential(new_password)
+    
+    temp_credential = TemporaryCredential(
+        token=token,
+        teacher_id=teacher.id,
+        user_id=teacher_user.id,
+        encrypted_password=encrypted_password,
+        expires_at=datetime.utcnow() + timedelta(hours=1),  # 1 hour expiration
+        created_by=current_user.id
+    )
+    
+    db.session.add(temp_credential)
+    db.session.commit()
     
     # Log the credential generation
     current_app.logger.info(f"New credentials generated for teacher {teacher.name} (NIF: {teacher.nif}) by admin {current_user.username}")
@@ -653,7 +713,8 @@ def generate_teacher_credentials(teacher_id):
         'show_credentials': True,
         'teacher_name': teacher.name,
         'teacher_nif': teacher.nif,
-        'username': teacher_user.username
+        'username': teacher_user.username,
+        'credential_token': token  # Include token for PDF download
     })
 
 @app.route('/teachers/<int:teacher_id>/credentials/download')
@@ -671,23 +732,33 @@ def download_teacher_credentials_pdf(teacher_id):
         flash('Professor não possui conta de usuário.', 'error')
         return redirect(url_for('teachers'))
     
-    # Check if there are recent credentials in session or just generated
-    recent_credentials = session.get('new_teacher_credentials')
-    session_key = 'teacher_credentials_generated_' + str(teacher.id)
-    recent_generation = session.get(session_key)
-    
-    password = None
-    if recent_credentials and recent_credentials.get('nif') == teacher.nif:
-        password = recent_credentials.get('password')
-    elif recent_generation:
-        # Password was generated but not stored for security
-        flash('Credenciais temporárias expiraram. Gere novas credenciais para baixar o PDF.', 'warning')
+    # Get token from query parameter
+    token = request.args.get('token')
+    if not token:
+        flash('Token de credencial não fornecido. Gere novas credenciais primeiro.', 'warning')
         return redirect(url_for('teacher_profile', id=teacher.id))
-    else:
-        flash('Nenhuma credencial recente encontrada. Gere novas credenciais primeiro.', 'warning')
+    
+    # Find and validate the credential token
+    temp_credential = TemporaryCredential.query.filter_by(
+        token=token,
+        teacher_id=teacher_id
+    ).first()
+    
+    if not temp_credential:
+        flash('Token de credencial inválido. Gere novas credenciais primeiro.', 'warning')
+        return redirect(url_for('teacher_profile', id=teacher.id))
+    
+    if not temp_credential.is_valid():
+        flash('Token de credencial expirou ou já foi usado. Gere novas credenciais primeiro.', 'warning')
         return redirect(url_for('teacher_profile', id=teacher.id))
     
     try:
+        # Decrypt the password
+        password = decrypt_credential(temp_credential.encrypted_password)
+        
+        # Mark token as used for security
+        temp_credential.mark_as_used()
+        
         from utils import generate_teacher_credentials_pdf
         
         # Generate PDF with teacher credentials
@@ -699,6 +770,8 @@ def download_teacher_credentials_pdf(teacher_id):
         )
         
         filename = f"credenciais_{teacher.name.replace(' ', '_')}_{teacher.nif}.pdf"
+        
+        current_app.logger.info(f"Credential PDF downloaded for teacher {teacher.name} (NIF: {teacher.nif}) by admin {current_user.username}")
         
         return send_file(
             pdf_buffer,
@@ -994,13 +1067,79 @@ def edit_course(id):
     form = CourseForm(obj=course)
     
     if form.validate_on_submit():
+        # Handle basic course fields
         form.populate_obj(course)
-        db.session.commit()
         
+        # Handle curricular units from form data
+        if 'curricular_units[]' in request.form:
+            unit_names = request.form.getlist('curricular_units[]')
+            unit_ids = request.form.getlist('curricular_unit_ids[]')
+            
+            # Get existing units
+            existing_units = {str(unit.id): unit for unit in course.curricular_units}
+            updated_unit_ids = set()
+            
+            # Process each unit from the form
+            for i, unit_name in enumerate(unit_names):
+                if unit_name.strip():
+                    unit_id = unit_ids[i] if i < len(unit_ids) and unit_ids[i] else None
+                    
+                    if unit_id and unit_id in existing_units:
+                        # Update existing unit
+                        existing_units[unit_id].name = unit_name.strip()
+                        updated_unit_ids.add(unit_id)
+                    else:
+                        # Create new unit
+                        unit = CurricularUnit()  # type: ignore
+                        unit.name = unit_name.strip()
+                        unit.course_id = course.id
+                        unit.description = f"Unidade curricular do curso {course.name}"
+                        unit.is_active = True
+                        db.session.add(unit)
+            
+            # Delete units that were removed (not in the updated list)
+            for unit_id, unit in existing_units.items():
+                if unit_id not in updated_unit_ids:
+                    # Check if unit has evaluations before deleting
+                    if not unit.evaluations:
+                        db.session.delete(unit)
+                    else:
+                        flash(f'Unidade curricular "{unit.name}" não pode ser excluída pois possui avaliações vinculadas.', 'warning')
+        
+        try:
+            db.session.flush()  # Ensure all operations are staged
+            db.session.commit()  # Commit all changes
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating course {course.name}: {str(e)}")
+            flash('Erro ao atualizar o curso. Tente novamente.', 'error')
+            return render_template('courses.html', form=form, course=course, courses=Course.query.all())
         flash(f'Curso {course.name} atualizado com sucesso!', 'success')
         return redirect(url_for('courses'))
     
     return render_template('courses.html', form=form, course=course, courses=Course.query.all())
+
+@app.route('/api/courses/<int:course_id>/curricular_units')
+@login_required
+def get_course_curricular_units(course_id):
+    """Get curricular units for a specific course (API endpoint)"""
+    if not current_user.is_admin():
+        return jsonify({'success': False, 'error': 'Acesso negado'}), 403
+    
+    course = Course.query.get_or_404(course_id)
+    units = [{
+        'id': unit.id,
+        'name': unit.name,
+        'code': unit.code,
+        'workload': unit.workload,
+        'description': unit.description
+    } for unit in course.curricular_units]
+    
+    return jsonify({
+        'success': True,
+        'units': units,
+        'course_name': course.name
+    })
 
 @app.route('/courses/delete/<int:id>')
 @login_required

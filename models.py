@@ -283,3 +283,36 @@ class DigitalSignature(db.Model):
     
     def __repr__(self):
         return f'<DigitalSignature {self.user.name} - {self.signature_type}>'
+
+class TemporaryCredential(db.Model):
+    """Secure token-based storage for temporary teacher credentials"""
+    id = db.Column(Integer, primary_key=True)
+    token = db.Column(String(64), unique=True, nullable=False, index=True)
+    teacher_id = db.Column(Integer, ForeignKey('teacher.id'), nullable=False)
+    user_id = db.Column(Integer, ForeignKey('user.id'), nullable=False)
+    encrypted_password = db.Column(String(255), nullable=False)  # Encrypted password
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    expires_at = db.Column(DateTime, nullable=False)
+    is_used = db.Column(Boolean, default=False)
+    created_by = db.Column(Integer, ForeignKey('user.id'), nullable=False)
+    
+    # Relationships
+    teacher = relationship('Teacher')
+    user = relationship('User', foreign_keys=[user_id])
+    creator = relationship('User', foreign_keys=[created_by])
+    
+    def is_expired(self):
+        """Check if the token has expired"""
+        return datetime.utcnow() > self.expires_at
+    
+    def is_valid(self):
+        """Check if token is valid (not used and not expired)"""
+        return not self.is_used and not self.is_expired()
+    
+    def mark_as_used(self):
+        """Mark token as used"""
+        self.is_used = True
+        db.session.commit()
+    
+    def __repr__(self):
+        return f'<TemporaryCredential {self.teacher.name} - {self.token[:8]}...>'
