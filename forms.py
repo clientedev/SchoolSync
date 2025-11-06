@@ -72,14 +72,10 @@ class EvaluationForm(FlaskForm):
                                             choices=[('', '---'), ('Sim', 'Sim'), ('Não', 'Não'), ('Não se aplica', 'Não se aplica')])
     class_recovery_process = SelectField('Promove o processo de recuperação', 
                                        choices=[('', '---'), ('Sim', 'Sim'), ('Não', 'Não'), ('Não se aplica', 'Não se aplica')])
-    class_school_pedagogy = SelectField('Pedagogia da escola', 
-                                      choices=[('', '---'), ('Sim', 'Sim'), ('Não', 'Não'), ('Não se aplica', 'Não se aplica')])
     class_learning_exercises = SelectField('Aplica exercícios de forma a estimular o aprendizado', 
                                          choices=[('', '---'), ('Sim', 'Sim'), ('Não', 'Não'), ('Não se aplica', 'Não se aplica')])
     class_discipline = SelectField('Mantém a disciplina na sala de aula', 
                                  choices=[('', '---'), ('Sim', 'Sim'), ('Não', 'Não'), ('Não se aplica', 'Não se aplica')])
-    class_educational_orientation = SelectField('Orientação Educacional', 
-                                              choices=[('', '---'), ('Sim', 'Sim'), ('Não', 'Não'), ('Não se aplica', 'Não se aplica')])
     class_teaching_strategies = SelectField('Aplica estratégias de ensino pertinentes aos objetivos da aula', 
                                           choices=[('', '---'), ('Sim', 'Sim'), ('Não', 'Não'), ('Não se aplica', 'Não se aplica')])
     class_machines_equipment = SelectField('Orienta a utilização de máquinas, equipamentos e ferramentas', 
