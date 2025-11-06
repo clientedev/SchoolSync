@@ -6,7 +6,7 @@ packages = ["cargo", "freetype", "glibcLocales", "libiconv", "libxcrypt", "opens
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["uv", "run", "gunicorn", "--bind", "0.0.0.0:5000", "--reuse-port", "main:app"]
+run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
 runButton = "Project"
@@ -39,6 +39,10 @@ externalPort = 80
 [[ports]]
 localPort = 34953
 externalPort = 3001
+
+[[ports]]
+localPort = 37025
+externalPort = 3003
 
 [[ports]]
 localPort = 44591
