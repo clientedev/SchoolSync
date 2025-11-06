@@ -1370,18 +1370,28 @@ def new_evaluation():
         
         # Handle multiple file uploads
         uploaded_files = request.files.getlist('attachments')
+        files_saved = 0
         for file in uploaded_files:
             if file and file.filename:
-                file_info = save_uploaded_file(file)
-                if file_info:
-                    attachment = EvaluationAttachment()  # type: ignore
-                    attachment.evaluation_id = evaluation.id
-                    attachment.filename = file_info['filename']
-                    attachment.original_filename = file_info['original_filename']
-                    attachment.file_path = file_info['file_path']
-                    attachment.file_size = file_info['file_size']
-                    attachment.mime_type = file_info['mime_type']
-                    db.session.add(attachment)
+                try:
+                    file_info = save_uploaded_file(file)
+                    if file_info:
+                        attachment = EvaluationAttachment()  # type: ignore
+                        attachment.evaluation_id = evaluation.id
+                        attachment.filename = file_info['filename']
+                        attachment.original_filename = file_info['original_filename']
+                        attachment.file_path = file_info['file_path']
+                        attachment.file_size = file_info['file_size']
+                        attachment.mime_type = file_info['mime_type']
+                        db.session.add(attachment)
+                        files_saved += 1
+                        logging.info(f"Arquivo salvo: {file_info['original_filename']} ({file_info['file_size']} bytes)")
+                except Exception as e:
+                    logging.error(f"Erro ao salvar arquivo {file.filename}: {str(e)}")
+                    flash(f'Erro ao salvar arquivo {file.filename}. Continuando com outros arquivos.', 'warning')
+        
+        if files_saved > 0:
+            logging.info(f"Total de {files_saved} arquivo(s) anexado(s) à avaliação")
         
         # Verificar se há agendamento correspondente e marcar como concluído
         scheduled_evaluation = ScheduledEvaluation.query.filter_by(
@@ -1511,18 +1521,28 @@ def edit_evaluation(id):
         
         # Handle multiple new file uploads
         uploaded_files = request.files.getlist('attachments')
+        files_saved = 0
         for file in uploaded_files:
             if file and file.filename:
-                file_info = save_uploaded_file(file)
-                if file_info:
-                    attachment = EvaluationAttachment()  # type: ignore
-                    attachment.evaluation_id = evaluation.id
-                    attachment.filename = file_info['filename']
-                    attachment.original_filename = file_info['original_filename']
-                    attachment.file_path = file_info['file_path']
-                    attachment.file_size = file_info['file_size']
-                    attachment.mime_type = file_info['mime_type']
-                    db.session.add(attachment)
+                try:
+                    file_info = save_uploaded_file(file)
+                    if file_info:
+                        attachment = EvaluationAttachment()  # type: ignore
+                        attachment.evaluation_id = evaluation.id
+                        attachment.filename = file_info['filename']
+                        attachment.original_filename = file_info['original_filename']
+                        attachment.file_path = file_info['file_path']
+                        attachment.file_size = file_info['file_size']
+                        attachment.mime_type = file_info['mime_type']
+                        db.session.add(attachment)
+                        files_saved += 1
+                        logging.info(f"Arquivo adicionado na edição: {file_info['original_filename']} ({file_info['file_size']} bytes)")
+                except Exception as e:
+                    logging.error(f"Erro ao adicionar arquivo {file.filename}: {str(e)}")
+                    flash(f'Erro ao adicionar arquivo {file.filename}. Continuando com outros arquivos.', 'warning')
+        
+        if files_saved > 0:
+            logging.info(f"Total de {files_saved} novo(s) arquivo(s) adicionado(s)")
         
         db.session.commit()
         

@@ -491,12 +491,38 @@
                         
                         <div class="mb-3">
                             {{ form.attachments.label(class="form-label") }}
-                            <input type="file" name="attachments" class="form-control" multiple 
+                            <input type="file" name="attachments" id="fileInput" class="form-control" multiple 
                                    accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
                             <small class="form-text text-muted">
                                 Arquivos permitidos: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX (máx. 16MB cada). Você pode selecionar múltiplos arquivos.
                             </small>
+                            
+                            <!-- Preview of selected files -->
+                            <div id="filePreview" class="mt-3" style="display: none;">
+                                <label class="form-label"><strong>Arquivos selecionados:</strong></label>
+                                <ul id="fileList" class="list-group"></ul>
+                            </div>
                         </div>
+                        
+                        <!-- Show existing attachments in edit mode -->
+                        {% if evaluation and evaluation.attachments %}
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Anexos já salvos:</strong></label>
+                                <ul class="list-group">
+                                    {% for attachment in evaluation.attachments %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <a href="{{ url_for('download_attachment', attachment_id=attachment.id) }}" class="text-decoration-none">
+                                                <i class="fas fa-file-download me-2"></i>
+                                                {{ attachment.original_filename }}
+                                            </a>
+                                            <small class="text-muted">
+                                                {{ (attachment.file_size / 1024) | round(1) }} KB
+                                            </small>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -618,6 +644,77 @@ document.addEventListener('DOMContentLoaded', function() {
             radio.dispatchEvent(new Event('change'));
         }
     });
+    
+    // File upload preview functionality
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const filePreview = document.getElementById('filePreview');
+            const fileList = document.getElementById('fileList');
+            
+            if (this.files.length > 0) {
+                filePreview.style.display = 'block';
+                fileList.innerHTML = '';
+                
+                // Maximum file size in bytes (16MB)
+                const maxSize = 16 * 1024 * 1024;
+                let totalSize = 0;
+                let hasError = false;
+                
+                Array.from(this.files).forEach((file, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    
+                    // Check file size
+                    if (file.size > maxSize) {
+                        li.innerHTML = `
+                            <span class="text-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                ${file.name}
+                            </span>
+                            <small class="text-danger">Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(2)} MB)</small>
+                        `;
+                        hasError = true;
+                    } else {
+                        li.innerHTML = `
+                            <span>
+                                <i class="fas fa-file me-2"></i>
+                                ${file.name}
+                            </span>
+                            <small class="text-muted">${(file.size / 1024).toFixed(1)} KB</small>
+                        `;
+                        totalSize += file.size;
+                    }
+                    
+                    fileList.appendChild(li);
+                });
+                
+                // Add total size info
+                if (!hasError && this.files.length > 1) {
+                    const totalLi = document.createElement('li');
+                    totalLi.className = 'list-group-item bg-light';
+                    totalLi.innerHTML = `
+                        <strong>Total: ${this.files.length} arquivo(s)</strong>
+                        <span class="float-end">${(totalSize / 1024).toFixed(1)} KB</span>
+                    `;
+                    fileList.appendChild(totalLi);
+                }
+                
+                // Show warning if there are oversized files
+                if (hasError) {
+                    const warningLi = document.createElement('li');
+                    warningLi.className = 'list-group-item list-group-item-danger';
+                    warningLi.innerHTML = `
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção:</strong> Arquivos maiores que 16MB não serão enviados. Por favor, selecione arquivos menores.
+                    `;
+                    fileList.insertBefore(warningLi, fileList.firstChild);
+                }
+            } else {
+                filePreview.style.display = 'none';
+            }
+        });
+    }
 });
 
 // Auto-save functionality (optional enhancement)
