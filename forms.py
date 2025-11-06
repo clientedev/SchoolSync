@@ -88,10 +88,11 @@ class EvaluationForm(FlaskForm):
     class_observations = TextAreaField('Observações - Período da Aula')
     general_observations = TextAreaField('Observações Gerais')
     
-    # File upload
+    # File upload - now accepts multiple files
     attachments = FileField('Anexos (fotos, documentos)', 
-                          validators=[FileAllowed(['jpg', 'png', 'pdf', 'doc', 'docx'], 
-                                                'Apenas arquivos de imagem e documentos são permitidos!')])
+                          validators=[FileAllowed(['jpg', 'png', 'pdf', 'doc', 'docx', 'jpeg', 'xlsx', 'xls'], 
+                                                'Apenas arquivos de imagem e documentos são permitidos!')],
+                          render_kw={'multiple': True})
 
 class LoginForm(FlaskForm):
     username = StringField('Usuário', validators=[DataRequired()])

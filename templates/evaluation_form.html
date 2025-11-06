@@ -471,10 +471,10 @@
                                 <ul class="list-group">
                                     {% for attachment in evaluation.attachments %}
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>
-                                                <i class="fas fa-file me-2"></i>
+                                            <a href="{{ url_for('download_attachment', attachment_id=attachment.id) }}" class="text-decoration-none">
+                                                <i class="fas fa-file-download me-2"></i>
                                                 {{ attachment.original_filename }}
-                                            </span>
+                                            </a>
                                             <small class="text-muted">
                                                 {{ (attachment.file_size / 1024) | round(1) }} KB
                                             </small>
@@ -491,9 +491,10 @@
                         
                         <div class="mb-3">
                             {{ form.attachments.label(class="form-label") }}
-                            {{ form.attachments(class="form-control") }}
+                            <input type="file" name="attachments" class="form-control" multiple 
+                                   accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
                             <small class="form-text text-muted">
-                                Arquivos permitidos: JPG, PNG, PDF, DOC, DOCX (máx. 16MB)
+                                Arquivos permitidos: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX (máx. 16MB cada). Você pode selecionar múltiplos arquivos.
                             </small>
                         </div>
                     {% endif %}

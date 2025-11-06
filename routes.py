@@ -1368,18 +1368,20 @@ def new_evaluation():
         db.session.add(evaluation)
         db.session.flush()  # Get the ID before commit
         
-        # Handle file upload
-        if form.attachments.data:
-            file_info = save_uploaded_file(form.attachments.data)
-            if file_info:
-                attachment = EvaluationAttachment()  # type: ignore
-                attachment.evaluation_id = evaluation.id
-                attachment.filename = file_info['filename']
-                attachment.original_filename = file_info['original_filename']
-                attachment.file_path = file_info['file_path']
-                attachment.file_size = file_info['file_size']
-                attachment.mime_type = file_info['mime_type']
-                db.session.add(attachment)
+        # Handle multiple file uploads
+        uploaded_files = request.files.getlist('attachments')
+        for file in uploaded_files:
+            if file and file.filename:
+                file_info = save_uploaded_file(file)
+                if file_info:
+                    attachment = EvaluationAttachment()  # type: ignore
+                    attachment.evaluation_id = evaluation.id
+                    attachment.filename = file_info['filename']
+                    attachment.original_filename = file_info['original_filename']
+                    attachment.file_path = file_info['file_path']
+                    attachment.file_size = file_info['file_size']
+                    attachment.mime_type = file_info['mime_type']
+                    db.session.add(attachment)
         
         # Verificar se há agendamento correspondente e marcar como concluído
         scheduled_evaluation = ScheduledEvaluation.query.filter_by(
@@ -1507,18 +1509,20 @@ def edit_evaluation(id):
         form.populate_obj(evaluation)
         evaluation.updated_at = datetime.utcnow()
         
-        # Handle new file upload
-        if form.attachments.data:
-            file_info = save_uploaded_file(form.attachments.data)
-            if file_info:
-                attachment = EvaluationAttachment()  # type: ignore
-                attachment.evaluation_id = evaluation.id
-                attachment.filename = file_info['filename']
-                attachment.original_filename = file_info['original_filename']
-                attachment.file_path = file_info['file_path']
-                attachment.file_size = file_info['file_size']
-                attachment.mime_type = file_info['mime_type']
-                db.session.add(attachment)
+        # Handle multiple new file uploads
+        uploaded_files = request.files.getlist('attachments')
+        for file in uploaded_files:
+            if file and file.filename:
+                file_info = save_uploaded_file(file)
+                if file_info:
+                    attachment = EvaluationAttachment()  # type: ignore
+                    attachment.evaluation_id = evaluation.id
+                    attachment.filename = file_info['filename']
+                    attachment.original_filename = file_info['original_filename']
+                    attachment.file_path = file_info['file_path']
+                    attachment.file_size = file_info['file_size']
+                    attachment.mime_type = file_info['mime_type']
+                    db.session.add(attachment)
         
         db.session.commit()
         
@@ -1526,6 +1530,25 @@ def edit_evaluation(id):
         return redirect(url_for('view_evaluation', id=evaluation.id))
     
     return render_template('evaluation_form.html', form=form, evaluation=evaluation, edit_mode=True)
+
+@app.route('/attachments/download/<int:attachment_id>')
+@login_required
+def download_attachment(attachment_id):
+    """Download an evaluation attachment"""
+    attachment = EvaluationAttachment.query.get_or_404(attachment_id)
+    
+    # Verify file exists
+    if not os.path.exists(attachment.file_path):
+        flash('Arquivo não encontrado.', 'error')
+        return redirect(url_for('evaluations'))
+    
+    # Return file for download
+    return send_file(
+        attachment.file_path,
+        as_attachment=True,
+        download_name=attachment.original_filename,
+        mimetype=attachment.mime_type
+    )
 
 @app.route('/evaluations/delete/<int:id>', methods=['POST'])
 @login_required
