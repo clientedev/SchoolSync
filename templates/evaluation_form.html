@@ -274,38 +274,111 @@
 
             <!-- Planning Section -->
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-tasks me-2"></i>Aspectos Observados no Período de Planejamento
                     </h5>
+                    {% if not view_only %}
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChecklistItem('planning')">
+                        <i class="fas fa-plus me-1"></i>Adicionar Item
+                    </button>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered">
+                        <table class="table table-bordered" id="planning-checklist-table">
                             <thead>
                                 <tr>
-                                    <th width="60%">Aspecto</th>
+                                    <th width="{% if view_only %}60{% else %}55{% endif %}%">Aspecto</th>
                                     <th width="13%" class="text-center">Sim</th>
                                     <th width="13%" class="text-center">Não</th>
                                     <th width="14%" class="text-center">Não se aplica</th>
+                                    {% if not view_only %}
+                                    <th width="5%" class="text-center">Ação</th>
+                                    {% endif %}
                                 </tr>
                             </thead>
-                            <tbody>
-                                {% set planning_fields = [
-                                    (form.planning_schedule if form else None, evaluation.planning_schedule if evaluation else None, "Elabora cronograma de aula, replaneja quando necessário"),
-                                    (form.planning_lesson_plan if form else None, evaluation.planning_lesson_plan if evaluation else None, "Planeja a aula considerando estratégias de avaliação pertinentes aos objetivos da aula em conformidade com os documentos estruturantes (MSEP e Plano de Curso)"),
-                                    (form.planning_evaluation if form else None, evaluation.planning_evaluation if evaluation else None, "Planeja instrumentos de avaliação diversificados ao longo do período letivo"),
-                                    (form.planning_documents if form else None, evaluation.planning_documents if evaluation else None, "Conhece os documentos estruturantes (MSEP e Plano de Curso)"),
-                                    (form.planning_diversified if form else None, evaluation.planning_diversified if evaluation else None, "Utiliza instrumentos diversificados ao longo do período letivo"),
-                                    (form.planning_local_work if form else None, evaluation.planning_local_work if evaluation else None, "Prepara previamente o local de trabalho, máquinas, equipamentos e ferramentas"),
-                                    (form.planning_tools if form else None, evaluation.planning_tools if evaluation else None, "Disponibiliza e acompanha a realização de atividades pertinentes no Portal Educacional"),
-                                    (form.planning_educational_portal if form else None, evaluation.planning_educational_portal if evaluation else None, "Portal Educacional")
-                                ] %}
-                                
-                                {% for field_form, field_value, description in planning_fields %}
-                                    <tr>
-                                        <td>{{ description }}</td>
+                            <tbody id="planning-checklist-body">
+                                {% if default_planning_items %}
+                                    {% for item in default_planning_items %}
+                                    <tr class="checklist-row" data-is-default="{{ 'true' if item.is_default else 'false' }}">
+                                        <td>
+                                            {% if view_only %}
+                                                {{ item.label }}
+                                                {% if not item.is_default %}
+                                                <span class="badge bg-info ms-1">Personalizado</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <input type="hidden" name="checklist_id[]" value="{{ item.id if item.id else '' }}">
+                                                <input type="hidden" name="checklist_category[]" value="planning">
+                                                <input type="hidden" name="checklist_is_default[]" value="{{ 'true' if item.is_default else 'false' }}">
+                                                {% if item.is_default %}
+                                                    <input type="hidden" name="checklist_label[]" value="{{ item.label }}">
+                                                    {{ item.label }}
+                                                {% else %}
+                                                    <input type="text" name="checklist_label[]" value="{{ item.label }}" class="form-control form-control-sm" placeholder="Descrição do item">
+                                                    <span class="badge bg-info mt-1">Personalizado</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
                                         {% if view_only %}
+                                            <td class="text-center">
+                                                {% if item.value == 'Sim' %}
+                                                    <i class="fas fa-check text-success"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if item.value == 'Não' %}
+                                                    <i class="fas fa-times text-danger"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if item.value == 'Não se aplica' %}
+                                                    <i class="fas fa-minus text-muted"></i>
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td class="text-center">
+                                                <input type="radio" name="checklist_value_{{ loop.index }}_planning" value="Sim" class="form-check-input checklist-radio"
+                                                       {% if item.value == 'Sim' %}checked{% endif %}>
+                                                <input type="hidden" name="checklist_value[]" value="{{ item.value if item.value else '' }}" class="checklist-value-hidden">
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="radio" name="checklist_value_{{ loop.index }}_planning" value="Não" class="form-check-input checklist-radio"
+                                                       {% if item.value == 'Não' %}checked{% endif %}>
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="radio" name="checklist_value_{{ loop.index }}_planning" value="Não se aplica" class="form-check-input checklist-radio"
+                                                       {% if item.value == 'Não se aplica' %}checked{% endif %}>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if not item.is_default %}
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeChecklistItem(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                {% else %}
+                                                <span class="text-muted" title="Itens padrão não podem ser removidos">
+                                                    <i class="fas fa-lock"></i>
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    {% if evaluation %}
+                                        {% set planning_fields = [
+                                            (evaluation.planning_schedule, "Elabora cronograma de aula, replaneja quando necessário"),
+                                            (evaluation.planning_lesson_plan, "Planeja a aula considerando estratégias de avaliação pertinentes aos objetivos da aula em conformidade com os documentos estruturantes (MSEP e Plano de Curso)"),
+                                            (evaluation.planning_evaluation, "Planeja instrumentos de avaliação diversificados ao longo do período letivo"),
+                                            (evaluation.planning_documents, "Conhece os documentos estruturantes (MSEP e Plano de Curso)"),
+                                            (evaluation.planning_diversified, "Utiliza instrumentos diversificados ao longo do período letivo"),
+                                            (evaluation.planning_local_work, "Prepara previamente o local de trabalho, máquinas, equipamentos e ferramentas"),
+                                            (evaluation.planning_tools, "Disponibiliza e acompanha a realização de atividades pertinentes no Portal Educacional")
+                                        ] %}
+                                        {% for field_value, description in planning_fields %}
+                                        <tr>
+                                            <td>{{ description }}</td>
                                             <td class="text-center">
                                                 {% if field_value == 'Sim' %}
                                                     <i class="fas fa-check text-success"></i>
@@ -321,22 +394,10 @@
                                                     <i class="fas fa-minus text-muted"></i>
                                                 {% endif %}
                                             </td>
-                                        {% else %}
-                                            <td class="text-center">
-                                                <input type="radio" name="{{ field_form.name }}" value="Sim" class="form-check-input"
-                                                       {% if field_form.data == 'Sim' %}checked{% endif %}>
-                                            </td>
-                                            <td class="text-center">
-                                                <input type="radio" name="{{ field_form.name }}" value="Não" class="form-check-input"
-                                                       {% if field_form.data == 'Não' %}checked{% endif %}>
-                                            </td>
-                                            <td class="text-center">
-                                                <input type="radio" name="{{ field_form.name }}" value="Não se aplica" class="form-check-input"
-                                                       {% if field_form.data == 'Não se aplica' %}checked{% endif %}>
-                                            </td>
-                                        {% endif %}
-                                    </tr>
-                                {% endfor %}
+                                        </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
@@ -358,47 +419,121 @@
 
             <!-- Classroom Section -->
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-chalkboard-teacher me-2"></i>Aspectos Observados no Período da Aula
                     </h5>
+                    {% if not view_only %}
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChecklistItem('class')">
+                        <i class="fas fa-plus me-1"></i>Adicionar Item
+                    </button>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered">
+                        <table class="table table-bordered" id="class-checklist-table">
                             <thead>
                                 <tr>
-                                    <th width="60%">Aspecto</th>
+                                    <th width="{% if view_only %}60{% else %}55{% endif %}%">Aspecto</th>
                                     <th width="13%" class="text-center">Sim</th>
                                     <th width="13%" class="text-center">Não</th>
                                     <th width="14%" class="text-center">Não se aplica</th>
+                                    {% if not view_only %}
+                                    <th width="5%" class="text-center">Ação</th>
+                                    {% endif %}
                                 </tr>
                             </thead>
-                            <tbody>
-                                {% set class_fields = [
-                                    (form.class_presentation if form else None, evaluation.class_presentation if evaluation else None, "Demonstra apresentação pessoal e postura adequadas"),
-                                    (form.class_knowledge if form else None, evaluation.class_knowledge if evaluation else None, "Demonstra conhecimento dos assuntos que ministra"),
-                                    (form.class_student_performance if form else None, evaluation.class_student_performance if evaluation else None, "Acompanha o desempenho dos alunos e realiza os registros de ocorrências, quando necessário"),
-                                    (form.class_attendance if form else None, evaluation.class_attendance if evaluation else None, "Efetua registros de ocorrências, quando necessário"),
-                                    (form.class_difficulties if form else None, evaluation.class_difficulties if evaluation else None, "Realiza levantamento de dificuldades dos alunos quanto ao aprendizado teórico e prático, alinhado com SAEP"),
-                                    (form.class_theoretical_practical if form else None, evaluation.class_theoretical_practical if evaluation else None, "Relaciona o aprendizado teórico e prático, alinhado com SAEP"),
-                                    (form.class_previous_lesson if form else None, evaluation.class_previous_lesson if evaluation else None, "Inicia a aula retomando a anterior, explicitando objetivos e associando-os ao projeto do curso"),
-                                    (form.class_objectives if form else None, evaluation.class_objectives if evaluation else None, "Explicita objetivos e associa-os ao projeto do curso"),
-                                    (form.class_questions if form else None, evaluation.class_questions if evaluation else None, "Propõe questões, previamente planejadas, que permite verificar se o conteúdo ministrado está sendo assimilado"),
-                                    (form.class_content_assimilation if form else None, evaluation.class_content_assimilation if evaluation else None, "Verifica se o conteúdo ministrado está sendo assimilado"),
-                                    (form.class_student_participation if form else None, evaluation.class_student_participation if evaluation else None, "Estimula a participação dos alunos durante a aula"),
-                                    (form.class_recovery_process if form else None, evaluation.class_recovery_process if evaluation else None, "Promove o processo de recuperação, atendendo à Proposta Pedagógica da escola"),
-                                    (form.class_learning_exercises if form else None, evaluation.class_learning_exercises if evaluation else None, "Aplica exercícios de forma a estimular o aprendizado"),
-                                    (form.class_discipline if form else None, evaluation.class_discipline if evaluation else None, "Mantém a disciplina na sala de aula, encaminhando ocorrências à Orientação Educacional"),
-                                    (form.class_teaching_strategies if form else None, evaluation.class_teaching_strategies if evaluation else None, "Aplica estratégias de ensino pertinentes aos objetivos da aula"),
-                                    (form.class_machines_equipment if form else None, evaluation.class_machines_equipment if evaluation else None, "Orienta a utilização de máquinas, equipamentos e ferramentas durante a aula"),
-                                    (form.class_safety_procedures if form else None, evaluation.class_safety_procedures if evaluation else None, "Cumpre e faz cumprir normas e procedimentos de segurança e uso dos EPI's/EPC's")
-                                ] %}
-                                
-                                {% for field_form, field_value, description in class_fields %}
-                                    <tr>
-                                        <td>{{ description }}</td>
+                            <tbody id="class-checklist-body">
+                                {% if default_class_items %}
+                                    {% for item in default_class_items %}
+                                    <tr class="checklist-row" data-is-default="{{ 'true' if item.is_default else 'false' }}">
+                                        <td>
+                                            {% if view_only %}
+                                                {{ item.label }}
+                                                {% if not item.is_default %}
+                                                <span class="badge bg-info ms-1">Personalizado</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <input type="hidden" name="checklist_id[]" value="{{ item.id if item.id else '' }}">
+                                                <input type="hidden" name="checklist_category[]" value="class">
+                                                <input type="hidden" name="checklist_is_default[]" value="{{ 'true' if item.is_default else 'false' }}">
+                                                {% if item.is_default %}
+                                                    <input type="hidden" name="checklist_label[]" value="{{ item.label }}">
+                                                    {{ item.label }}
+                                                {% else %}
+                                                    <input type="text" name="checklist_label[]" value="{{ item.label }}" class="form-control form-control-sm" placeholder="Descrição do item">
+                                                    <span class="badge bg-info mt-1">Personalizado</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
                                         {% if view_only %}
+                                            <td class="text-center">
+                                                {% if item.value == 'Sim' %}
+                                                    <i class="fas fa-check text-success"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if item.value == 'Não' %}
+                                                    <i class="fas fa-times text-danger"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if item.value == 'Não se aplica' %}
+                                                    <i class="fas fa-minus text-muted"></i>
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td class="text-center">
+                                                <input type="radio" name="checklist_value_{{ loop.index }}_class" value="Sim" class="form-check-input checklist-radio"
+                                                       {% if item.value == 'Sim' %}checked{% endif %}>
+                                                <input type="hidden" name="checklist_value[]" value="{{ item.value if item.value else '' }}" class="checklist-value-hidden">
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="radio" name="checklist_value_{{ loop.index }}_class" value="Não" class="form-check-input checklist-radio"
+                                                       {% if item.value == 'Não' %}checked{% endif %}>
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="radio" name="checklist_value_{{ loop.index }}_class" value="Não se aplica" class="form-check-input checklist-radio"
+                                                       {% if item.value == 'Não se aplica' %}checked{% endif %}>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if not item.is_default %}
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeChecklistItem(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                {% else %}
+                                                <span class="text-muted" title="Itens padrão não podem ser removidos">
+                                                    <i class="fas fa-lock"></i>
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    {% if evaluation %}
+                                        {% set class_fields = [
+                                            (evaluation.class_presentation, "Demonstra apresentação pessoal e postura adequadas"),
+                                            (evaluation.class_knowledge, "Demonstra conhecimento dos assuntos que ministra"),
+                                            (evaluation.class_student_performance, "Acompanha o desempenho dos alunos e realiza os registros de ocorrências, quando necessário"),
+                                            (evaluation.class_attendance, "Efetua registros de ocorrências, quando necessário"),
+                                            (evaluation.class_difficulties, "Realiza levantamento de dificuldades dos alunos quanto ao aprendizado teórico e prático, alinhado com SAEP"),
+                                            (evaluation.class_theoretical_practical, "Relaciona o aprendizado teórico e prático, alinhado com SAEP"),
+                                            (evaluation.class_previous_lesson, "Inicia a aula retomando a anterior, explicitando objetivos e associando-os ao projeto do curso"),
+                                            (evaluation.class_objectives, "Explicita objetivos e associa-os ao projeto do curso"),
+                                            (evaluation.class_questions, "Propõe questões, previamente planejadas, que permite verificar se o conteúdo ministrado está sendo assimilado"),
+                                            (evaluation.class_content_assimilation, "Verifica se o conteúdo ministrado está sendo assimilado"),
+                                            (evaluation.class_student_participation, "Estimula a participação dos alunos durante a aula"),
+                                            (evaluation.class_recovery_process, "Promove o processo de recuperação, atendendo à Proposta Pedagógica da escola"),
+                                            (evaluation.class_learning_exercises, "Aplica exercícios de forma a estimular o aprendizado"),
+                                            (evaluation.class_discipline, "Mantém a disciplina na sala de aula, encaminhando ocorrências à Orientação Educacional"),
+                                            (evaluation.class_teaching_strategies, "Aplica estratégias de ensino pertinentes aos objetivos da aula"),
+                                            (evaluation.class_machines_equipment, "Orienta a utilização de máquinas, equipamentos e ferramentas durante a aula"),
+                                            (evaluation.class_safety_procedures, "Cumpre e faz cumprir normas e procedimentos de segurança e uso dos EPI's/EPC's")
+                                        ] %}
+                                        {% for field_value, description in class_fields %}
+                                        <tr>
+                                            <td>{{ description }}</td>
                                             <td class="text-center">
                                                 {% if field_value == 'Sim' %}
                                                     <i class="fas fa-check text-success"></i>
@@ -414,22 +549,10 @@
                                                     <i class="fas fa-minus text-muted"></i>
                                                 {% endif %}
                                             </td>
-                                        {% else %}
-                                            <td class="text-center">
-                                                <input type="radio" name="{{ field_form.name }}" value="Sim" class="form-check-input"
-                                                       {% if field_form.data == 'Sim' %}checked{% endif %}>
-                                            </td>
-                                            <td class="text-center">
-                                                <input type="radio" name="{{ field_form.name }}" value="Não" class="form-check-input"
-                                                       {% if field_form.data == 'Não' %}checked{% endif %}>
-                                            </td>
-                                            <td class="text-center">
-                                                <input type="radio" name="{{ field_form.name }}" value="Não se aplica" class="form-check-input"
-                                                       {% if field_form.data == 'Não se aplica' %}checked{% endif %}>
-                                            </td>
-                                        {% endif %}
-                                    </tr>
-                                {% endfor %}
+                                        </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
@@ -615,18 +738,113 @@
 
 {% block extra_scripts %}
 <script>
+// Counter for unique row IDs
+let checklistRowCounter = 1000;
+
+// Add a new custom checklist item
+function addChecklistItem(category) {
+    const tbody = document.getElementById(category + '-checklist-body');
+    if (!tbody) return;
+    
+    checklistRowCounter++;
+    const rowId = 'new_' + checklistRowCounter;
+    
+    const tr = document.createElement('tr');
+    tr.className = 'checklist-row';
+    tr.setAttribute('data-is-default', 'false');
+    tr.innerHTML = `
+        <td>
+            <input type="hidden" name="checklist_id[]" value="">
+            <input type="hidden" name="checklist_category[]" value="${category}">
+            <input type="hidden" name="checklist_is_default[]" value="false">
+            <input type="text" name="checklist_label[]" value="" class="form-control form-control-sm" placeholder="Descrição do novo item personalizado">
+            <span class="badge bg-info mt-1">Personalizado</span>
+        </td>
+        <td class="text-center">
+            <input type="radio" name="checklist_value_${rowId}" value="Sim" class="form-check-input checklist-radio">
+            <input type="hidden" name="checklist_value[]" value="" class="checklist-value-hidden">
+        </td>
+        <td class="text-center">
+            <input type="radio" name="checklist_value_${rowId}" value="Não" class="form-check-input checklist-radio">
+        </td>
+        <td class="text-center">
+            <input type="radio" name="checklist_value_${rowId}" value="Não se aplica" class="form-check-input checklist-radio">
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeChecklistItem(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(tr);
+    
+    // Focus on the new input
+    const input = tr.querySelector('input[type="text"]');
+    if (input) input.focus();
+    
+    // Add event listeners to new radio buttons
+    setupRadioListeners(tr);
+}
+
+// Remove a custom checklist item
+function removeChecklistItem(button) {
+    const row = button.closest('tr');
+    if (row) {
+        const isDefault = row.getAttribute('data-is-default') === 'true';
+        if (isDefault) {
+            alert('Itens padrão não podem ser removidos.');
+            return;
+        }
+        row.remove();
+    }
+}
+
+// Setup radio button listeners for a row
+function setupRadioListeners(row) {
+    const radios = row.querySelectorAll('input[type="radio"].checklist-radio');
+    const hiddenInput = row.querySelector('input.checklist-value-hidden');
+    
+    radios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Update hidden input with selected value
+            if (hiddenInput) {
+                hiddenInput.value = this.value;
+            }
+            
+            // Update row styling
+            row.classList.remove('table-success', 'table-danger', 'table-warning');
+            if (this.value === 'Sim') {
+                row.classList.add('table-success');
+            } else if (this.value === 'Não') {
+                row.classList.add('table-danger');
+            } else if (this.value === 'Não se aplica') {
+                row.classList.add('table-warning');
+            }
+        });
+    });
+}
+
 // Form enhancement for evaluation criteria
 document.addEventListener('DOMContentLoaded', function() {
-    // Add visual feedback for radio button selection
-    const radioButtons = document.querySelectorAll('input[type="radio"]');
+    // Setup all existing checklist rows
+    document.querySelectorAll('.checklist-row').forEach(row => {
+        setupRadioListeners(row);
+        
+        // Initialize row styling for already-checked radios
+        const checkedRadio = row.querySelector('input[type="radio"]:checked');
+        if (checkedRadio) {
+            checkedRadio.dispatchEvent(new Event('change'));
+        }
+    });
+    
+    // Add visual feedback for radio button selection (for old-style form fields)
+    const radioButtons = document.querySelectorAll('input[type="radio"]:not(.checklist-radio)');
     radioButtons.forEach(radio => {
         radio.addEventListener('change', function() {
-            // Reset row styling
             const row = this.closest('tr');
             if (row) {
                 row.classList.remove('table-success', 'table-danger', 'table-warning');
-                
-                // Add appropriate styling based on selection
                 if (this.value === 'Sim') {
                     row.classList.add('table-success');
                 } else if (this.value === 'Não') {
@@ -645,7 +863,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // File upload preview functionality
+    // File upload preview functionality with change button
     const fileInput = document.getElementById('fileInput');
     if (fileInput) {
         fileInput.addEventListener('change', function(e) {
@@ -656,7 +874,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 filePreview.style.display = 'block';
                 fileList.innerHTML = '';
                 
-                // Maximum file size in bytes (16MB)
                 const maxSize = 16 * 1024 * 1024;
                 let totalSize = 0;
                 let hasError = false;
@@ -665,7 +882,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     const li = document.createElement('li');
                     li.className = 'list-group-item d-flex justify-content-between align-items-center';
                     
-                    // Check file size
                     if (file.size > maxSize) {
                         li.innerHTML = `
                             <span class="text-danger">
@@ -689,7 +905,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     fileList.appendChild(li);
                 });
                 
-                // Add total size info
                 if (!hasError && this.files.length > 1) {
                     const totalLi = document.createElement('li');
                     totalLi.className = 'list-group-item bg-light';
@@ -700,13 +915,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     fileList.appendChild(totalLi);
                 }
                 
-                // Show warning if there are oversized files
+                // Add change file button
+                const changeLi = document.createElement('li');
+                changeLi.className = 'list-group-item bg-light text-center';
+                changeLi.innerHTML = `
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('fileInput').click();">
+                        <i class="fas fa-exchange-alt me-1"></i>Trocar Arquivo(s)
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFileSelection();">
+                        <i class="fas fa-times me-1"></i>Limpar Seleção
+                    </button>
+                `;
+                fileList.appendChild(changeLi);
+                
                 if (hasError) {
                     const warningLi = document.createElement('li');
                     warningLi.className = 'list-group-item list-group-item-danger';
                     warningLi.innerHTML = `
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Atenção:</strong> Arquivos maiores que 16MB não serão enviados. Por favor, selecione arquivos menores.
+                        <strong>Atenção:</strong> Arquivos maiores que 16MB não serão enviados.
                     `;
                     fileList.insertBefore(warningLi, fileList.firstChild);
                 }
@@ -717,17 +944,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Auto-save functionality (optional enhancement)
-function autoSave() {
-    const form = document.querySelector('form');
-    if (form && !document.querySelector('[data-view-only]')) {
-        const formData = new FormData(form);
-        // Implementation for auto-save could be added here
-        console.log('Auto-save functionality can be implemented here');
+// Clear file selection
+function clearFileSelection() {
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) {
+        fileInput.value = '';
+        const filePreview = document.getElementById('filePreview');
+        if (filePreview) filePreview.style.display = 'none';
     }
 }
-
-// Set up auto-save interval (every 2 minutes)
-// setInterval(autoSave, 120000);
 </script>
 {% endblock %}

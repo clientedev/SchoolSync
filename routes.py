@@ -9,7 +9,7 @@ from production_app import csrf
 from datetime import datetime, timedelta
 from production_app import app
 from models import db
-from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment, User, Semester, CurricularUnit, ScheduledEvaluation, DigitalSignature, TemporaryCredential
+from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment, User, Semester, CurricularUnit, ScheduledEvaluation, DigitalSignature, TemporaryCredential, EvaluationChecklistItem, create_default_checklist_items, DEFAULT_CHECKLIST_ITEMS
 from forms import TeacherForm, CourseForm, EvaluationForm, LoginForm, UserForm, UserEditForm, ChangePasswordForm
 from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import, generate_courses_excel_template, process_courses_excel_import, generate_curricular_units_excel_template, process_curricular_units_excel_import, get_or_create_current_semester
 
@@ -1393,6 +1393,31 @@ def new_evaluation():
         if files_saved > 0:
             logging.info(f"Total de {files_saved} arquivo(s) anexado(s) à avaliação")
         
+        # Handle dynamic checklist items from form
+        checklist_labels = request.form.getlist('checklist_label[]')
+        checklist_categories = request.form.getlist('checklist_category[]')
+        checklist_values = request.form.getlist('checklist_value[]')
+        checklist_is_default = request.form.getlist('checklist_is_default[]')
+        checklist_ids = request.form.getlist('checklist_id[]')
+        
+        if checklist_labels:
+            # Process checklist items from form
+            for i, label in enumerate(checklist_labels):
+                if label.strip():
+                    item = EvaluationChecklistItem()
+                    item.evaluation_id = evaluation.id
+                    item.label = label.strip()
+                    item.category = checklist_categories[i] if i < len(checklist_categories) else 'planning'
+                    item.value = checklist_values[i] if i < len(checklist_values) and checklist_values[i] else None
+                    item.is_default = checklist_is_default[i] == 'true' if i < len(checklist_is_default) else False
+                    item.display_order = i
+                    db.session.add(item)
+        else:
+            # Create default checklist items if no items in form
+            default_items = create_default_checklist_items(evaluation.id)
+            for item in default_items:
+                db.session.add(item)
+        
         # Verificar se há agendamento correspondente e marcar como concluído
         scheduled_evaluation = ScheduledEvaluation.query.filter_by(
             teacher_id=evaluation.teacher_id,
@@ -1482,7 +1507,13 @@ def new_evaluation():
         flash('Avaliação criada com sucesso!', 'success')
         return redirect(url_for('view_evaluation', id=evaluation.id))
     
-    return render_template('evaluation_form.html', form=form)
+    # For GET request, prepare default checklist items for the template
+    default_planning_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['planning']]
+    default_class_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['class']]
+    
+    return render_template('evaluation_form.html', form=form, 
+                         default_planning_items=default_planning_items,
+                         default_class_items=default_class_items)
 
 @app.route('/api/curricular-units/<int:course_id>')
 @login_required
@@ -1501,7 +1532,21 @@ def get_curricular_units_by_course(course_id):
 def view_evaluation(id):
     """View single evaluation"""
     evaluation = Evaluation.query.get_or_404(id)
-    return render_template('evaluation_form.html', evaluation=evaluation, view_only=True)
+    
+    # Prepare checklist items for the template
+    if evaluation.checklist_items:
+        # Use existing checklist items
+        planning_items = [{'id': item.id, 'label': item.label, 'is_default': item.is_default, 'value': item.value} 
+                         for item in evaluation.checklist_items if item.category == 'planning']
+        class_items = [{'id': item.id, 'label': item.label, 'is_default': item.is_default, 'value': item.value} 
+                      for item in evaluation.checklist_items if item.category == 'class']
+    else:
+        # For backward compatibility, create items based on old column data
+        planning_items = []
+        class_items = []
+    
+    return render_template('evaluation_form.html', evaluation=evaluation, view_only=True,
+                         default_planning_items=planning_items, default_class_items=class_items)
 
 @app.route('/evaluations/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -1544,12 +1589,66 @@ def edit_evaluation(id):
         if files_saved > 0:
             logging.info(f"Total de {files_saved} novo(s) arquivo(s) adicionado(s)")
         
+        # Handle dynamic checklist items from form
+        checklist_labels = request.form.getlist('checklist_label[]')
+        checklist_categories = request.form.getlist('checklist_category[]')
+        checklist_values = request.form.getlist('checklist_value[]')
+        checklist_is_default = request.form.getlist('checklist_is_default[]')
+        checklist_ids = request.form.getlist('checklist_id[]')
+        
+        if checklist_labels:
+            # Keep track of which existing items to keep
+            existing_item_ids = set()
+            
+            for i, label in enumerate(checklist_labels):
+                if label.strip():
+                    item_id = checklist_ids[i] if i < len(checklist_ids) and checklist_ids[i] else None
+                    
+                    if item_id:
+                        # Update existing item
+                        item = EvaluationChecklistItem.query.get(int(item_id))
+                        if item and item.evaluation_id == evaluation.id:
+                            # Only allow editing label for non-default items
+                            if not item.is_default:
+                                item.label = label.strip()
+                            item.value = checklist_values[i] if i < len(checklist_values) and checklist_values[i] else None
+                            item.display_order = i
+                            existing_item_ids.add(item.id)
+                    else:
+                        # Create new item
+                        item = EvaluationChecklistItem()
+                        item.evaluation_id = evaluation.id
+                        item.label = label.strip()
+                        item.category = checklist_categories[i] if i < len(checklist_categories) else 'planning'
+                        item.value = checklist_values[i] if i < len(checklist_values) and checklist_values[i] else None
+                        item.is_default = checklist_is_default[i] == 'true' if i < len(checklist_is_default) else False
+                        item.display_order = i
+                        db.session.add(item)
+            
+            # Delete removed custom items (only non-default items can be deleted)
+            for item in evaluation.checklist_items:
+                if item.id not in existing_item_ids and not item.is_default:
+                    db.session.delete(item)
+        
         db.session.commit()
         
         flash('Avaliação atualizada com sucesso!', 'success')
         return redirect(url_for('view_evaluation', id=evaluation.id))
     
-    return render_template('evaluation_form.html', form=form, evaluation=evaluation, edit_mode=True)
+    # Prepare checklist items for the template
+    if evaluation.checklist_items:
+        # Use existing checklist items
+        planning_items = [{'id': item.id, 'label': item.label, 'is_default': item.is_default, 'value': item.value} 
+                         for item in evaluation.checklist_items if item.category == 'planning']
+        class_items = [{'id': item.id, 'label': item.label, 'is_default': item.is_default, 'value': item.value} 
+                      for item in evaluation.checklist_items if item.category == 'class']
+    else:
+        # Use default checklist items if no dynamic items exist (backward compatibility)
+        planning_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['planning']]
+        class_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['class']]
+    
+    return render_template('evaluation_form.html', form=form, evaluation=evaluation, edit_mode=True,
+                         default_planning_items=planning_items, default_class_items=class_items)
 
 @app.route('/attachments/download/<int:attachment_id>')
 @login_required
