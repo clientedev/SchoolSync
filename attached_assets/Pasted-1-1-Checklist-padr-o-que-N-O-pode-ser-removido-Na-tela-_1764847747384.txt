@@ -1,0 +1,58 @@
+1.1 Checklist padrão que NÃO pode ser removido
+Na tela de avaliação, mantenha obrigatoriamente os itens de checklist padrão abaixo, garantindo que:
+
+Eles sempre existam no banco e na interface.
+
+O usuário possa marcar/desmarcar, mas não possa excluir esses itens.
+
+A edição de texto seja permitida apenas para itens novos (personalizados); os textos abaixo devem permanecer como padrão do sistema.
+
+Itens de checklist padrão:
+
+Aspectos Observados no Período de Planejamento, Elabora cronograma de aula, replaneja quando necessário
+
+Planeja a aula considerando estratégias de avaliação pertinentes aos objetivos da aula em conformidade com os documentos estruturantes (MSEP e Plano de Curso)
+
+Planeja instrumentos de avaliação diversificados ao longo do período letivo
+
+Conhece os documentos estruturantes (MSEP e Plano de Curso)
+
+Utiliza instrumentos diversificados ao longo do período letivo
+
+Prepara previamente o local de trabalho, máquinas, equipamentos e ferramentas
+
+Disponibiliza e acompanha a realização de atividades pertinentes no Portal Educacional e Aspectos Observados no Período da Aula, Demonstra apresentação pessoal e postura adequadas
+
+Demonstra conhecimento dos assuntos que ministra
+
+Acompanha o desempenho dos alunos e realiza os registros de ocorrências, quando necessário
+
+Efetua registros de ocorrências, quando necessário
+
+Realiza levantamento de dificuldades dos alunos quanto ao aprendizado teórico e prático, alinhado com SAEP
+
+Relaciona o aprendizado teórico e prático, alinhado com SAEP
+
+Inicia a aula retomando a anterior, explicitando objetivos e associando-os ao projeto do curso
+
+Explicita objetivos e associa-os ao projeto do curso
+
+Propõe questões, previamente planejadas, que permite verificar se o conteúdo ministrado está sendo assimilado
+
+Verifica se o conteúdo ministrado está sendo assimilado
+
+Estimula a participação dos alunos durante a aula
+
+Promove o processo de recuperação, atendendo à Proposta Pedagógica da escola
+
+Aplica exercícios de forma a estimular o aprendizado
+
+Mantém a disciplina na sala de aula, encaminhando ocorrências à Orientação Educacional
+
+Aplica estratégias de ensino pertinentes aos objetivos da aula
+
+Orienta a utilização de máquinas, equipamentos e ferramentas durante a aula
+
+Cumpre e faz cumprir normas e procedimentos de segurança e uso dos EPI's/EPC's
+
+No banco de dados, indique esses itens com um campo is_default = true e utilize esse campo para impedir exclusão desses registros e para recriá‑los se estiverem faltando na base de produção.

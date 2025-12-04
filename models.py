@@ -155,9 +155,23 @@ class Evaluation(db.Model):
     curricular_unit = relationship('CurricularUnit', back_populates='evaluations')
     scheduled_evaluation = relationship('ScheduledEvaluation', back_populates='evaluation')
     signatures = relationship('DigitalSignature', back_populates='evaluation', cascade='all, delete-orphan')
+    checklist_items = relationship('EvaluationChecklistItem', back_populates='evaluation', cascade='all, delete-orphan', order_by='EvaluationChecklistItem.display_order')
     
     def calculate_planning_percentage(self):
         """Calculate percentage of 'Sim' responses in planning section"""
+        # Try to use dynamic checklist items first
+        planning_items = [item for item in self.checklist_items if item.category == 'planning'] if self.checklist_items else []
+        
+        if planning_items:
+            # Use dynamic checklist items
+            values = [item.value for item in planning_items]
+            total_applicable = len([v for v in values if v and v != 'Não se aplica'])
+            if total_applicable == 0:
+                return 0
+            yes_count = len([v for v in values if v == 'Sim'])
+            return round((yes_count / total_applicable) * 100, 1)
+        
+        # Fallback to column-based fields for backwards compatibility
         planning_fields = [
             self.planning_schedule, self.planning_lesson_plan, self.planning_evaluation,
             self.planning_documents, self.planning_diversified, self.planning_local_work,
@@ -173,6 +187,19 @@ class Evaluation(db.Model):
     
     def calculate_class_percentage(self):
         """Calculate percentage of 'Sim' responses in classroom section"""
+        # Try to use dynamic checklist items first
+        class_items = [item for item in self.checklist_items if item.category == 'class'] if self.checklist_items else []
+        
+        if class_items:
+            # Use dynamic checklist items
+            values = [item.value for item in class_items]
+            total_applicable = len([v for v in values if v and v != 'Não se aplica'])
+            if total_applicable == 0:
+                return 0
+            yes_count = len([v for v in values if v == 'Sim'])
+            return round((yes_count / total_applicable) * 100, 1)
+        
+        # Fallback to column-based fields for backwards compatibility
         class_fields = [
             self.class_presentation, self.class_knowledge, self.class_student_performance,
             self.class_attendance, self.class_difficulties, self.class_theoretical_practical,
@@ -316,3 +343,82 @@ class TemporaryCredential(db.Model):
     
     def __repr__(self):
         return f'<TemporaryCredential {self.teacher.name} - {self.token[:8]}...>'
+
+
+class EvaluationChecklistItem(db.Model):
+    """Dynamic checklist items for evaluations - supports both default and custom items"""
+    id = db.Column(Integer, primary_key=True)
+    evaluation_id = db.Column(Integer, ForeignKey('evaluation.id'), nullable=False)
+    label = db.Column(Text, nullable=False)
+    category = db.Column(String(50), nullable=False)  # 'planning' or 'class'
+    is_default = db.Column(Boolean, default=False)  # True for system default items that cannot be deleted
+    value = db.Column(String(20), nullable=True)  # 'Sim', 'Não', 'Não se aplica', or None
+    display_order = db.Column(Integer, default=0)
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship
+    evaluation = relationship('Evaluation', back_populates='checklist_items')
+    
+    def __repr__(self):
+        return f'<EvaluationChecklistItem {self.label[:30]}... - {self.value}>'
+
+
+# Default checklist items - these are always created for new evaluations
+DEFAULT_CHECKLIST_ITEMS = {
+    'planning': [
+        "Elabora cronograma de aula, replaneja quando necessário",
+        "Planeja a aula considerando estratégias de avaliação pertinentes aos objetivos da aula em conformidade com os documentos estruturantes (MSEP e Plano de Curso)",
+        "Planeja instrumentos de avaliação diversificados ao longo do período letivo",
+        "Conhece os documentos estruturantes (MSEP e Plano de Curso)",
+        "Utiliza instrumentos diversificados ao longo do período letivo",
+        "Prepara previamente o local de trabalho, máquinas, equipamentos e ferramentas",
+        "Disponibiliza e acompanha a realização de atividades pertinentes no Portal Educacional",
+    ],
+    'class': [
+        "Demonstra apresentação pessoal e postura adequadas",
+        "Demonstra conhecimento dos assuntos que ministra",
+        "Acompanha o desempenho dos alunos e realiza os registros de ocorrências, quando necessário",
+        "Efetua registros de ocorrências, quando necessário",
+        "Realiza levantamento de dificuldades dos alunos quanto ao aprendizado teórico e prático, alinhado com SAEP",
+        "Relaciona o aprendizado teórico e prático, alinhado com SAEP",
+        "Inicia a aula retomando a anterior, explicitando objetivos e associando-os ao projeto do curso",
+        "Explicita objetivos e associa-os ao projeto do curso",
+        "Propõe questões, previamente planejadas, que permite verificar se o conteúdo ministrado está sendo assimilado",
+        "Verifica se o conteúdo ministrado está sendo assimilado",
+        "Estimula a participação dos alunos durante a aula",
+        "Promove o processo de recuperação, atendendo à Proposta Pedagógica da escola",
+        "Aplica exercícios de forma a estimular o aprendizado",
+        "Mantém a disciplina na sala de aula, encaminhando ocorrências à Orientação Educacional",
+        "Aplica estratégias de ensino pertinentes aos objetivos da aula",
+        "Orienta a utilização de máquinas, equipamentos e ferramentas durante a aula",
+        "Cumpre e faz cumprir normas e procedimentos de segurança e uso dos EPI's/EPC's",
+    ]
+}
+
+
+def create_default_checklist_items(evaluation_id):
+    """Create default checklist items for a new evaluation"""
+    items = []
+    
+    # Planning items
+    for order, label in enumerate(DEFAULT_CHECKLIST_ITEMS['planning']):
+        item = EvaluationChecklistItem()
+        item.evaluation_id = evaluation_id
+        item.label = label
+        item.category = 'planning'
+        item.is_default = True
+        item.display_order = order
+        items.append(item)
+    
+    # Class items
+    for order, label in enumerate(DEFAULT_CHECKLIST_ITEMS['class']):
+        item = EvaluationChecklistItem()
+        item.evaluation_id = evaluation_id
+        item.label = label
+        item.category = 'class'
+        item.is_default = True
+        item.display_order = order
+        items.append(item)
+    
+    return items

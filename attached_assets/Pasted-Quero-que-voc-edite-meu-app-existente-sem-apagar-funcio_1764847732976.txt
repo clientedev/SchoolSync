@@ -1,0 +1,172 @@
+Quero que você edite meu app existente, sem apagar funcionalidades que já funcionam, apenas estendendo o que existe.
+
+Contexto geral
+O projeto já está rodando, com tela de avaliação, banco PostgreSQL (Railway) e upload de anexos.
+
+A versão deployada está dando erro ao carregar dados, provavelmente por divergência entre o schema do banco de produção e o código atual. Precisa revisar o banco, ajustar o schema e garantir que, no deploy, rode a migração/correção necessária para subir tudo certo.​
+
+Use o padrão de arquitetura/código já existente no repositório (mesma stack, mesmo estilo).​
+
+Antes de alterar muita coisa, leia os arquivos relacionados à “avaliação” (páginas, componentes, rotas de API, modelos do banco e migrations).​
+
+1. Ajustes na tela de avaliação
+Na tela de avaliação (frontend):
+
+Checklist padrão com edição e adição
+
+Mantenha os itens de checklist padrão que já existem hoje.
+
+Adicione suporte para:
+
+Editar o texto de cada item de checklist (inline ou via modal, escolha o que encaixar melhor no código atual).
+
+Adicionar novos itens de checklist personalizados.
+
+Itens novos ou editados devem ser salvos no banco vinculados àquela avaliação (e, se já existir conceito de “modelo” de avaliação, siga esse padrão).
+
+Garanta que, ao reabrir a avaliação, todos os itens (padrão + adicionados) apareçam corretamente marcados/desmarcados conforme o que foi salvo.
+
+Upload de arquivo com nome exibido e opção de trocar
+
+No campo de anexar arquivo da avaliação:
+
+Ao selecionar um arquivo, mostre o nome do arquivo ao lado ou abaixo do input (por exemplo: “arquivo_selecionado.pdf”).​
+
+Ofereça um botão/ação “Trocar arquivo” ou similar, que permita selecionar outro arquivo e atualize o nome exibido.​
+
+Se houver mais de um anexo por avaliação no modelo atual, siga essa lógica para cada anexo (ou ajuste o modelo para suportar um ou múltiplos, de forma clara).
+
+Visualização da avaliação com download do anexo
+
+Na tela/página de visualização de uma avaliação já salva:
+
+Para cada anexo, exiba:
+
+Nome do arquivo.
+
+Um botão/link de download, que faça o browser baixar o arquivo.
+
+Implemente a rota/backend necessária para servir o arquivo de forma segura (considerando onde os arquivos estão armazenados: local, bucket S3, etc.).
+
+2. Ajustes no banco de dados (Postgres / Railway)
+Quero que você padronize o schema para suportar:
+
+Tabela de avaliações (já existente; adapte em vez de recriar).
+
+Relacionamento entre avaliação e:
+
+Itens de checklist (incluindo se são padrão ou criados pelo usuário).
+
+Anexos (meta-informações do arquivo: id, avaliação_id, nome_arquivo_original, caminho/URL, tipo MIME, data de criação).
+
+Tarefas específicas:
+
+Modelo/migrations para checklist
+
+Se ainda não existir tabela para itens de checklist, crie algo como:
+
+evaluation_checklist_items com campos:
+
+id
+
+evaluation_id (FK)
+
+label (texto do item)
+
+is_default (boolean, para saber se é padrão do sistema ou personalizado)
+
+checked ou outra estrutura que o projeto já use
+
+timestamps.
+
+Se já existir algo semelhante, evolua o modelo sem quebrar dados atuais (por exemplo, adicionando colunas novas e migrations de alteração).
+
+Modelo/migrations para anexos
+
+Crie/ajuste uma tabela semelhante a:
+
+evaluation_attachments com:
+
+id
+
+evaluation_id (FK)
+
+file_name_original
+
+file_path_or_url
+
+mime_type
+
+created_at
+
+Ajuste o código de upload para salvar o registro nessa tabela a cada upload realizado.
+
+Migrations consistentes
+
+Use o sistema de migrations já utilizado no projeto (Prisma, Sequelize, TypeORM, Knex, etc.), seguindo o padrão dos arquivos existentes.​
+
+Gere migrations incrementais, sem apagar tabelas existentes.
+
+Se for necessário renomear colunas ou mover dados, crie migrations de alteração, não destrutivas.
+
+3. Script para arrumar o banco na Railway
+Crie um script de migração/ajuste que possa ser executado na Railway para alinhar o banco existente com o novo schema e corrigir o problema de carregamento de dados na versão deployada.
+
+Requisitos:
+
+Arquivo de script
+
+Crie um arquivo, por exemplo:
+
+scripts/fix_database_railway.sql (SQL puro) ou
+
+scripts/fix_database_railway.js / ts (usando o ORM ou cliente PostgreSQL já usado no projeto).
+
+Esse script deve:
+
+Verificar se as tabelas/colunas necessárias existem.
+
+Criá-las ou alterá-las se necessário.
+
+Migrar dados antigos para a nova estrutura quando aplicável (por exemplo, mover dados de campos antigos de anexo para a nova tabela evaluation_attachments).
+
+Corrigir qualquer diferença que possa causar erro ao carregar dados em produção (tipos, colunas faltando, chaves estrangeiras, etc.).​
+
+Instruções de execução
+
+No README ou em um comentário no próprio script, inclua instruções claras de como rodar no Railway, por exemplo:
+
+Via psql com DATABASE_URL do Railway.
+
+Ou via node scripts/fix_database_railway.js usando DATABASE_URL das variáveis de ambiente.​
+
+Uso automático no deploy
+
+Configure o projeto para que, a cada deploy, execute automaticamente o script de migração/ajuste antes de iniciar o servidor (por exemplo, um comando de “migrate” ou script customizado em start/postinstall ou equivalente, conforme a stack).​
+
+Certifique-se de que essa etapa seja idempotente (pode rodar mais de uma vez sem quebrar o banco).
+
+Uso da variável DATABASE_URL
+
+Garanta que todo o código de conexão com o banco use a variável de ambiente DATABASE_URL configurada na Railway.​
+
+4. Qualidade, testes e revisão
+Não remova funcionalidades existentes sem necessidade.
+
+Atualize ou crie testes (se o projeto já tiver testes automatizados) para:
+
+CRUD da avaliação com checklist editável.
+
+Upload, troca e download de anexos.
+
+Fluxo de deploy: verificar se, em ambiente de produção, a aplicação sobe com o banco migrado corretamente, sem erro ao carregar dados.​
+
+Teste manualmente:
+
+Criar uma avaliação nova, editar checklist, anexar arquivo, trocar arquivo, salvar.
+
+Reabrir a avaliação e conferir se checklist e anexos aparecem corretamente.
+
+Visualizar avaliação e baixar o anexo sem erros de permissão/rota.
+
+Fazer um deploy de teste e confirmar que o script de migração roda e o app consegue carregar dados normalmente.
