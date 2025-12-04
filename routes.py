@@ -1318,36 +1318,8 @@ def new_evaluation():
         evaluation.period = form.period.data
         evaluation.class_time = form.class_time.data
         
-        # Planning fields
-        evaluation.planning_schedule = form.planning_schedule.data
-        evaluation.planning_lesson_plan = form.planning_lesson_plan.data
-        evaluation.planning_evaluation = form.planning_evaluation.data
-        evaluation.planning_documents = form.planning_documents.data
-        evaluation.planning_diversified = form.planning_diversified.data
-        evaluation.planning_local_work = form.planning_local_work.data
-        evaluation.planning_tools = form.planning_tools.data
-        evaluation.planning_educational_portal = form.planning_educational_portal.data
-        
-        # Class fields
-        evaluation.class_presentation = form.class_presentation.data
-        evaluation.class_knowledge = form.class_knowledge.data
-        evaluation.class_student_performance = form.class_student_performance.data
-        evaluation.class_attendance = form.class_attendance.data
-        evaluation.class_difficulties = form.class_difficulties.data
-        evaluation.class_theoretical_practical = form.class_theoretical_practical.data
-        evaluation.class_previous_lesson = form.class_previous_lesson.data
-        evaluation.class_objectives = form.class_objectives.data
-        evaluation.class_questions = form.class_questions.data
-        evaluation.class_content_assimilation = form.class_content_assimilation.data
-        evaluation.class_student_participation = form.class_student_participation.data
-        evaluation.class_recovery_process = form.class_recovery_process.data
-        evaluation.class_school_pedagogy = form.class_school_pedagogy.data
-        evaluation.class_learning_exercises = form.class_learning_exercises.data
-        evaluation.class_discipline = form.class_discipline.data
-        evaluation.class_educational_orientation = form.class_educational_orientation.data
-        evaluation.class_teaching_strategies = form.class_teaching_strategies.data
-        evaluation.class_machines_equipment = form.class_machines_equipment.data
-        evaluation.class_safety_procedures = form.class_safety_procedures.data
+        # Note: Legacy planning_* and class_* fields are no longer used.
+        # The dynamic checklist system (EvaluationChecklistItem) handles these criteria.
         
         # Observations
         evaluation.planning_observations = form.planning_observations.data
@@ -1604,8 +1576,19 @@ def edit_evaluation(id):
     form.curricular_unit_id.choices = [(0, 'Nenhuma unidade curricular específica')] + [(u.id, f"{u.name} ({u.course.name})") for u in CurricularUnit.query.join(Course).all()]
     
     if form.validate_on_submit():
-        form.populate_obj(evaluation)
+        # Update only the fields that are actually used (not using populate_obj to avoid overwriting legacy fields)
+        evaluation.teacher_id = form.teacher_id.data
+        evaluation.course_id = form.course_id.data
+        evaluation.curricular_unit_id = form.curricular_unit_id.data if form.curricular_unit_id.data and form.curricular_unit_id.data != 0 else None
+        evaluation.period = form.period.data
+        evaluation.class_time = form.class_time.data
+        evaluation.planning_observations = form.planning_observations.data
+        evaluation.class_observations = form.class_observations.data
+        evaluation.general_observations = form.general_observations.data
         evaluation.updated_at = datetime.utcnow()
+        
+        # Note: Legacy planning_* and class_* fields are no longer updated.
+        # The dynamic checklist system (EvaluationChecklistItem) handles these criteria.
         
         # Handle multiple new file uploads
         uploaded_files = request.files.getlist('attachments')
@@ -2214,36 +2197,8 @@ def new_evaluation_from_schedule(schedule_id):
         evaluation.period = form.period.data
         evaluation.class_time = form.class_time.data
         
-        # Planning fields
-        evaluation.planning_schedule = form.planning_schedule.data
-        evaluation.planning_lesson_plan = form.planning_lesson_plan.data
-        evaluation.planning_evaluation = form.planning_evaluation.data
-        evaluation.planning_documents = form.planning_documents.data
-        evaluation.planning_diversified = form.planning_diversified.data
-        evaluation.planning_local_work = form.planning_local_work.data
-        evaluation.planning_tools = form.planning_tools.data
-        evaluation.planning_educational_portal = form.planning_educational_portal.data
-        
-        # Class fields
-        evaluation.class_presentation = form.class_presentation.data
-        evaluation.class_knowledge = form.class_knowledge.data
-        evaluation.class_student_performance = form.class_student_performance.data
-        evaluation.class_attendance = form.class_attendance.data
-        evaluation.class_difficulties = form.class_difficulties.data
-        evaluation.class_theoretical_practical = form.class_theoretical_practical.data
-        evaluation.class_previous_lesson = form.class_previous_lesson.data
-        evaluation.class_objectives = form.class_objectives.data
-        evaluation.class_questions = form.class_questions.data
-        evaluation.class_content_assimilation = form.class_content_assimilation.data
-        evaluation.class_student_participation = form.class_student_participation.data
-        evaluation.class_recovery_process = form.class_recovery_process.data
-        evaluation.class_school_pedagogy = form.class_school_pedagogy.data
-        evaluation.class_learning_exercises = form.class_learning_exercises.data
-        evaluation.class_discipline = form.class_discipline.data
-        evaluation.class_educational_orientation = form.class_educational_orientation.data
-        evaluation.class_teaching_strategies = form.class_teaching_strategies.data
-        evaluation.class_machines_equipment = form.class_machines_equipment.data
-        evaluation.class_safety_procedures = form.class_safety_procedures.data
+        # Note: Legacy planning_* and class_* fields are no longer used.
+        # The dynamic checklist system (EvaluationChecklistItem) handles these criteria.
         
         # Observations
         evaluation.planning_observations = form.planning_observations.data
