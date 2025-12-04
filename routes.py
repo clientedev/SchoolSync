@@ -1290,12 +1290,17 @@ def new_evaluation():
     """Create new evaluation"""
     form = EvaluationForm()
     
-    # Populate choices
+    # Populate choices BEFORE processing the form
     form.teacher_id.choices = [(t.id, t.name) for t in Teacher.query.all()]
     form.course_id.choices = [(c.id, f"{c.name} - {c.period}") for c in Course.query.all()]
     form.curricular_unit_id.choices = [(0, 'Nenhuma unidade curricular específica')] + [(u.id, f"{u.name} ({u.course.name})") for u in CurricularUnit.query.join(Course).all()]
     
+    if request.method == 'POST':
+        logging.info("Form POST received for new_evaluation")
+        logging.info(f"Form data keys: {list(request.form.keys())[:10]}")
+    
     if form.validate_on_submit():
+        logging.info("Form validated successfully")
         evaluation = Evaluation()  # type: ignore
         evaluation.teacher_id = form.teacher_id.data
         evaluation.course_id = form.course_id.data
@@ -1506,8 +1511,14 @@ def new_evaluation():
         
         flash('Avaliação criada com sucesso!', 'success')
         return redirect(url_for('view_evaluation', id=evaluation.id))
+    elif request.method == 'POST':
+        # Form validation failed - log and show errors
+        logging.error(f"Form validation failed. Errors: {form.errors}")
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'Erro no campo {field}: {error}', 'error')
     
-    # For GET request, prepare default checklist items for the template
+    # Prepare default checklist items for the template
     default_planning_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['planning']]
     default_class_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['class']]
     
@@ -2154,7 +2165,7 @@ def scheduling():
         flash('Erro ao carregar agendamentos. Tente novamente.', 'error')
         return redirect(url_for('index'))
 
-@app.route('/evaluations/new-from-schedule/<int:schedule_id>')
+@app.route('/evaluations/new-from-schedule/<int:schedule_id>', methods=['GET', 'POST'])
 @login_required
 def new_evaluation_from_schedule(schedule_id):
     """Create evaluation directly from scheduled evaluation"""
@@ -2171,12 +2182,13 @@ def new_evaluation_from_schedule(schedule_id):
     form.course_id.choices = [(c.id, f"{c.name} - {c.period}") for c in Course.query.all()]
     form.curricular_unit_id.choices = [(0, 'Nenhuma unidade curricular específica')] + [(u.id, f"{u.name} ({u.course.name})") for u in CurricularUnit.query.join(Course).all()]
     
-    # Set default values
-    form.teacher_id.data = scheduled.teacher_id
-    form.curricular_unit_id.data = scheduled.curricular_unit_id
+    if request.method == 'GET':
+        # Set default values only on GET
+        form.teacher_id.data = scheduled.teacher_id
+        form.curricular_unit_id.data = scheduled.curricular_unit_id
     
     if form.validate_on_submit():
-        evaluation = Evaluation()
+        evaluation = Evaluation()  # type: ignore
         evaluation.teacher_id = form.teacher_id.data
         evaluation.course_id = form.course_id.data
         evaluation.curricular_unit_id = form.curricular_unit_id.data if form.curricular_unit_id.data and form.curricular_unit_id.data != 0 else None
@@ -2185,7 +2197,7 @@ def new_evaluation_from_schedule(schedule_id):
         # Set other fields
         current_evaluator = Evaluator.query.filter_by(name=current_user.name).first()
         if not current_evaluator:
-            current_evaluator = Evaluator()
+            current_evaluator = Evaluator()  # type: ignore
             current_evaluator.name = current_user.name
             current_evaluator.role = current_user.role if current_user.role == 'admin' else 'Coordenador'
             current_evaluator.email = current_user.email if hasattr(current_user, 'email') else f"{current_user.name.lower().replace(' ', '.')}@senai.br"
@@ -2232,21 +2244,85 @@ def new_evaluation_from_schedule(schedule_id):
         evaluation.class_observations = form.class_observations.data
         evaluation.general_observations = form.general_observations.data
         
+        # Set semester
+        current_semester = get_or_create_current_semester()
+        evaluation.semester_id = current_semester.id
+        
         # Mark as completed
         evaluation.is_completed = True
+        
+        db.session.add(evaluation)
+        db.session.flush()  # Get the ID before commit
+        
+        # Handle multiple file uploads
+        uploaded_files = request.files.getlist('attachments')
+        files_saved = 0
+        for file in uploaded_files:
+            if file and file.filename:
+                try:
+                    file_info = save_uploaded_file(file)
+                    if file_info:
+                        attachment = EvaluationAttachment()  # type: ignore
+                        attachment.evaluation_id = evaluation.id
+                        attachment.filename = file_info['filename']
+                        attachment.original_filename = file_info['original_filename']
+                        attachment.file_path = file_info['file_path']
+                        attachment.file_size = file_info['file_size']
+                        attachment.mime_type = file_info['mime_type']
+                        db.session.add(attachment)
+                        files_saved += 1
+                        logging.info(f"Arquivo salvo: {file_info['original_filename']} ({file_info['file_size']} bytes)")
+                except Exception as e:
+                    logging.error(f"Erro ao salvar arquivo {file.filename}: {str(e)}")
+                    flash(f'Erro ao salvar arquivo {file.filename}. Continuando com outros arquivos.', 'warning')
+        
+        # Handle dynamic checklist items from form
+        checklist_labels = request.form.getlist('checklist_label[]')
+        checklist_categories = request.form.getlist('checklist_category[]')
+        checklist_values = request.form.getlist('checklist_value[]')
+        checklist_is_default = request.form.getlist('checklist_is_default[]')
+        
+        if checklist_labels:
+            # Process checklist items from form
+            for i, label in enumerate(checklist_labels):
+                if label.strip():
+                    item = EvaluationChecklistItem()  # type: ignore
+                    item.evaluation_id = evaluation.id
+                    item.label = label.strip()
+                    item.category = checklist_categories[i] if i < len(checklist_categories) else 'planning'
+                    item.value = checklist_values[i] if i < len(checklist_values) and checklist_values[i] else None
+                    item.is_default = checklist_is_default[i] == 'true' if i < len(checklist_is_default) else False
+                    item.display_order = i
+                    db.session.add(item)
+        else:
+            # Create default checklist items if no items in form
+            default_items = create_default_checklist_items(evaluation.id)
+            for item in default_items:
+                db.session.add(item)
         
         # Mark scheduled evaluation as completed
         scheduled.is_completed = True
         scheduled.completed_at = datetime.utcnow()
         scheduled.evaluation = evaluation
         
-        db.session.add(evaluation)
         db.session.commit()
         
         flash('Avaliação criada com sucesso a partir do agendamento!', 'success')
         return redirect(url_for('view_evaluation', id=evaluation.id))
+    elif request.method == 'POST':
+        # Form validation failed - log and show errors
+        logging.error(f"Form validation failed in new_evaluation_from_schedule. Errors: {form.errors}")
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'Erro no campo {field}: {error}', 'error')
     
-    return render_template('evaluation_form.html', form=form, scheduled=scheduled, title="Nova Avaliação - Agendamento")
+    # Create default checklist items for the form
+    default_planning_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['planning']]
+    default_class_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['class']]
+    
+    return render_template('evaluation_form.html', form=form, scheduled=scheduled, title="Nova Avaliação - Agendamento",
+                         default_planning_items=default_planning_items,
+                         default_class_items=default_class_items)
 
 @app.route('/scheduling/add', methods=['POST'])
 @login_required
