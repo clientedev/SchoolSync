@@ -1677,6 +1677,12 @@ def edit_evaluation(id):
         
         flash('Avaliação atualizada com sucesso!', 'success')
         return redirect(url_for('view_evaluation', id=evaluation.id))
+    elif request.method == 'POST':
+        # Form validation failed - log and show errors
+        logging.error(f"Form validation failed in edit_evaluation. Errors: {form.errors}")
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'Erro no campo {field}: {error}', 'error')
     
     # Prepare checklist items for the template
     if evaluation.checklist_items and len(evaluation.checklist_items) > 0:
