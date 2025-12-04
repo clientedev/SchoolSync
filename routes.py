@@ -1534,16 +1534,48 @@ def view_evaluation(id):
     evaluation = Evaluation.query.get_or_404(id)
     
     # Prepare checklist items for the template
-    if evaluation.checklist_items:
+    if evaluation.checklist_items and len(evaluation.checklist_items) > 0:
         # Use existing checklist items
         planning_items = [{'id': item.id, 'label': item.label, 'is_default': item.is_default, 'value': item.value} 
                          for item in evaluation.checklist_items if item.category == 'planning']
         class_items = [{'id': item.id, 'label': item.label, 'is_default': item.is_default, 'value': item.value} 
                       for item in evaluation.checklist_items if item.category == 'class']
     else:
-        # For backward compatibility, create items based on old column data
-        planning_items = []
-        class_items = []
+        # For backward compatibility, populate from legacy columns data
+        legacy_planning_fields = [
+            (evaluation.planning_schedule, "Elabora cronograma de aula, replaneja quando necessário"),
+            (evaluation.planning_lesson_plan, "Planeja a aula considerando estratégias de avaliação pertinentes aos objetivos da aula em conformidade com os documentos estruturantes (MSEP e Plano de Curso)"),
+            (evaluation.planning_evaluation, "Planeja instrumentos de avaliação diversificados ao longo do período letivo"),
+            (evaluation.planning_documents, "Conhece os documentos estruturantes (MSEP e Plano de Curso)"),
+            (evaluation.planning_diversified, "Utiliza instrumentos diversificados ao longo do período letivo"),
+            (evaluation.planning_local_work, "Prepara previamente o local de trabalho, máquinas, equipamentos e ferramentas"),
+            (evaluation.planning_tools, "Disponibiliza e acompanha a realização de atividades pertinentes no Portal Educacional"),
+            (evaluation.planning_educational_portal, "Portal Educacional")
+        ]
+        planning_items = [{'label': label, 'is_default': True, 'value': value} 
+                         for value, label in legacy_planning_fields]
+        
+        legacy_class_fields = [
+            (evaluation.class_presentation, "Demonstra apresentação pessoal e postura adequadas"),
+            (evaluation.class_knowledge, "Demonstra conhecimento dos assuntos que ministra"),
+            (evaluation.class_student_performance, "Acompanha o desempenho dos alunos e realiza os registros de ocorrências, quando necessário"),
+            (evaluation.class_attendance, "Efetua registros de ocorrências, quando necessário"),
+            (evaluation.class_difficulties, "Realiza levantamento de dificuldades dos alunos quanto ao aprendizado teórico e prático, alinhado com SAEP"),
+            (evaluation.class_theoretical_practical, "Relaciona o aprendizado teórico e prático, alinhado com SAEP"),
+            (evaluation.class_previous_lesson, "Inicia a aula retomando a anterior, explicitando objetivos e associando-os ao projeto do curso"),
+            (evaluation.class_objectives, "Explicita objetivos e associa-os ao projeto do curso"),
+            (evaluation.class_questions, "Propõe questões, previamente planejadas, que permite verificar se o conteúdo ministrado está sendo assimilado"),
+            (evaluation.class_content_assimilation, "Verifica se o conteúdo ministrado está sendo assimilado"),
+            (evaluation.class_student_participation, "Estimula a participação dos alunos durante a aula"),
+            (evaluation.class_recovery_process, "Promove o processo de recuperação, atendendo à Proposta Pedagógica da escola"),
+            (evaluation.class_learning_exercises, "Aplica exercícios de forma a estimular o aprendizado"),
+            (evaluation.class_discipline, "Mantém a disciplina na sala de aula, encaminhando ocorrências à Orientação Educacional"),
+            (evaluation.class_teaching_strategies, "Aplica estratégias de ensino pertinentes aos objetivos da aula"),
+            (evaluation.class_machines_equipment, "Orienta a utilização de máquinas, equipamentos e ferramentas durante a aula"),
+            (evaluation.class_safety_procedures, "Cumpre e faz cumprir normas e procedimentos de segurança e uso dos EPI's/EPC's")
+        ]
+        class_items = [{'label': label, 'is_default': True, 'value': value} 
+                      for value, label in legacy_class_fields]
     
     return render_template('evaluation_form.html', evaluation=evaluation, view_only=True,
                          default_planning_items=planning_items, default_class_items=class_items)
@@ -1636,16 +1668,48 @@ def edit_evaluation(id):
         return redirect(url_for('view_evaluation', id=evaluation.id))
     
     # Prepare checklist items for the template
-    if evaluation.checklist_items:
+    if evaluation.checklist_items and len(evaluation.checklist_items) > 0:
         # Use existing checklist items
         planning_items = [{'id': item.id, 'label': item.label, 'is_default': item.is_default, 'value': item.value} 
                          for item in evaluation.checklist_items if item.category == 'planning']
         class_items = [{'id': item.id, 'label': item.label, 'is_default': item.is_default, 'value': item.value} 
                       for item in evaluation.checklist_items if item.category == 'class']
     else:
-        # Use default checklist items if no dynamic items exist (backward compatibility)
-        planning_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['planning']]
-        class_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['class']]
+        # For backward compatibility, populate from legacy columns data
+        legacy_planning_fields = [
+            (evaluation.planning_schedule, "Elabora cronograma de aula, replaneja quando necessário"),
+            (evaluation.planning_lesson_plan, "Planeja a aula considerando estratégias de avaliação pertinentes aos objetivos da aula em conformidade com os documentos estruturantes (MSEP e Plano de Curso)"),
+            (evaluation.planning_evaluation, "Planeja instrumentos de avaliação diversificados ao longo do período letivo"),
+            (evaluation.planning_documents, "Conhece os documentos estruturantes (MSEP e Plano de Curso)"),
+            (evaluation.planning_diversified, "Utiliza instrumentos diversificados ao longo do período letivo"),
+            (evaluation.planning_local_work, "Prepara previamente o local de trabalho, máquinas, equipamentos e ferramentas"),
+            (evaluation.planning_tools, "Disponibiliza e acompanha a realização de atividades pertinentes no Portal Educacional"),
+            (evaluation.planning_educational_portal, "Portal Educacional")
+        ]
+        planning_items = [{'label': label, 'is_default': True, 'value': value} 
+                         for value, label in legacy_planning_fields]
+        
+        legacy_class_fields = [
+            (evaluation.class_presentation, "Demonstra apresentação pessoal e postura adequadas"),
+            (evaluation.class_knowledge, "Demonstra conhecimento dos assuntos que ministra"),
+            (evaluation.class_student_performance, "Acompanha o desempenho dos alunos e realiza os registros de ocorrências, quando necessário"),
+            (evaluation.class_attendance, "Efetua registros de ocorrências, quando necessário"),
+            (evaluation.class_difficulties, "Realiza levantamento de dificuldades dos alunos quanto ao aprendizado teórico e prático, alinhado com SAEP"),
+            (evaluation.class_theoretical_practical, "Relaciona o aprendizado teórico e prático, alinhado com SAEP"),
+            (evaluation.class_previous_lesson, "Inicia a aula retomando a anterior, explicitando objetivos e associando-os ao projeto do curso"),
+            (evaluation.class_objectives, "Explicita objetivos e associa-os ao projeto do curso"),
+            (evaluation.class_questions, "Propõe questões, previamente planejadas, que permite verificar se o conteúdo ministrado está sendo assimilado"),
+            (evaluation.class_content_assimilation, "Verifica se o conteúdo ministrado está sendo assimilado"),
+            (evaluation.class_student_participation, "Estimula a participação dos alunos durante a aula"),
+            (evaluation.class_recovery_process, "Promove o processo de recuperação, atendendo à Proposta Pedagógica da escola"),
+            (evaluation.class_learning_exercises, "Aplica exercícios de forma a estimular o aprendizado"),
+            (evaluation.class_discipline, "Mantém a disciplina na sala de aula, encaminhando ocorrências à Orientação Educacional"),
+            (evaluation.class_teaching_strategies, "Aplica estratégias de ensino pertinentes aos objetivos da aula"),
+            (evaluation.class_machines_equipment, "Orienta a utilização de máquinas, equipamentos e ferramentas durante a aula"),
+            (evaluation.class_safety_procedures, "Cumpre e faz cumprir normas e procedimentos de segurança e uso dos EPI's/EPC's")
+        ]
+        class_items = [{'label': label, 'is_default': True, 'value': value} 
+                      for value, label in legacy_class_fields]
     
     return render_template('evaluation_form.html', form=form, evaluation=evaluation, edit_mode=True,
                          default_planning_items=planning_items, default_class_items=class_items)

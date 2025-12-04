@@ -155,12 +155,12 @@ class Evaluation(db.Model):
     curricular_unit = relationship('CurricularUnit', back_populates='evaluations')
     scheduled_evaluation = relationship('ScheduledEvaluation', back_populates='evaluation')
     signatures = relationship('DigitalSignature', back_populates='evaluation', cascade='all, delete-orphan')
-    checklist_items = relationship('EvaluationChecklistItem', back_populates='evaluation', cascade='all, delete-orphan', order_by='EvaluationChecklistItem.display_order')
+    checklist_items = relationship('EvaluationChecklistItem', back_populates='evaluation', cascade='all, delete-orphan', lazy='selectin', order_by='EvaluationChecklistItem.display_order')
     
     def calculate_planning_percentage(self):
         """Calculate percentage of 'Sim' responses in planning section"""
-        # Try to use dynamic checklist items first
-        planning_items = [item for item in self.checklist_items if item.category == 'planning'] if self.checklist_items else []
+        # Try to use dynamic checklist items first (check if list has items, not just truthy)
+        planning_items = [item for item in self.checklist_items if item.category == 'planning'] if self.checklist_items and len(self.checklist_items) > 0 else []
         
         if planning_items:
             # Use dynamic checklist items
@@ -187,8 +187,8 @@ class Evaluation(db.Model):
     
     def calculate_class_percentage(self):
         """Calculate percentage of 'Sim' responses in classroom section"""
-        # Try to use dynamic checklist items first
-        class_items = [item for item in self.checklist_items if item.category == 'class'] if self.checklist_items else []
+        # Try to use dynamic checklist items first (check if list has items, not just truthy)
+        class_items = [item for item in self.checklist_items if item.category == 'class'] if self.checklist_items and len(self.checklist_items) > 0 else []
         
         if class_items:
             # Use dynamic checklist items

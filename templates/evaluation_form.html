@@ -831,12 +831,34 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.checklist-row').forEach(row => {
         setupRadioListeners(row);
         
+        // Initialize hidden input value from checked radio on page load
+        const checkedRadio = row.querySelector('input[type="radio"].checklist-radio:checked');
+        const hiddenInput = row.querySelector('input.checklist-value-hidden');
+        if (hiddenInput && checkedRadio) {
+            hiddenInput.value = checkedRadio.value;
+        }
+        
         // Initialize row styling for already-checked radios
-        const checkedRadio = row.querySelector('input[type="radio"]:checked');
         if (checkedRadio) {
             checkedRadio.dispatchEvent(new Event('change'));
         }
     });
+    
+    // Form submit handler to sync all radio values to hidden inputs
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Sync all radio values before submit
+            document.querySelectorAll('.checklist-row').forEach(row => {
+                const hiddenInput = row.querySelector('input.checklist-value-hidden');
+                
+                if (hiddenInput) {
+                    const checkedRadio = row.querySelector('input[type="radio"].checklist-radio:checked');
+                    hiddenInput.value = checkedRadio ? checkedRadio.value : '';
+                }
+            });
+        });
+    }
     
     // Add visual feedback for radio button selection (for old-style form fields)
     const radioButtons = document.querySelectorAll('input[type="radio"]:not(.checklist-radio)');
