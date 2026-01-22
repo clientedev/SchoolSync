@@ -86,21 +86,24 @@ def send_evaluation_notification_resend(evaluation):
     subject = f"Nova Avaliação Docente - Assinatura Necessária - {evaluation.evaluation_date.strftime('%d/%m/%Y')}"
     
     # Credenciais e Link
-    system_link = "https://web-production-a43ed.up.railway.app/"
+    system_link = os.environ.get("DOMAIN") or "https://web-production-a43ed.up.railway.app/"
     username = teacher_user.username
     
-    # Senha
-    password_info = f"<strong>{teacher_user.username}</strong> (Padrão: NIF)"
+    # Senha - Tenta pegar a senha real
+    password_info = "Padrão: NIF"
     if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
-        password_info = f"<strong>{teacher_user._password_plain}</strong>"
+        password_info = teacher_user._password_plain
     elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
-        password_info = f"<strong>{teacher_user._temp_password}</strong>"
+        password_info = teacher_user._temp_password
+    elif teacher_user.username:
+        # Fallback para o NIF se não houver outra senha disponível
+        password_info = teacher_user.username
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h1 style="color: #1976d2;">Novo Agendamento de Avaliação</h1>
+        <h1 style="color: #1976d2;">Finalização de Avaliação - Assinatura Necessária</h1>
         <p>Olá <strong>{evaluation.teacher.name}</strong>,</p>
-        <p>Uma nova avaliação foi registrada para você e <strong>necessita de sua assinatura digital</strong>.</p>
+        <p>Uma nova avaliação foi concluída para você e <strong>necessita de sua assinatura digital</strong>.</p>
         
         <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h2 style="margin-top: 0; font-size: 18px;">Detalhes da Avaliação:</h2>
@@ -115,12 +118,12 @@ def send_evaluation_notification_resend(evaluation):
             <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Suas Credenciais de Acesso:</h2>
             <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
             <p style="margin-bottom: 5px;"><strong>Usuário (Login):</strong> <strong>{username}</strong></p>
-            <p style="margin: 0;"><strong>Senha:</strong> {password_info}</p>
+            <p style="margin: 0;"><strong>Senha:</strong> <strong>{password_info}</strong></p>
         </div>
 
         <p><strong>Próximos Passos:</strong></p>
         <ol>
-            <li>Acesse o link acima.</li>
+            <li>Acesse o sistema pelo link acima.</li>
             <li>Entre com seu usuário e senha.</li>
             <li>Localize a avaliação na sua área de docente.</li>
             <li>Revise os detalhes e realize a assinatura digital.</li>
@@ -143,15 +146,18 @@ def send_scheduling_notification_resend(scheduled):
     subject = f"Novo Agendamento de Avaliação - {scheduled.teacher.name}"
     
     # Credenciais e Link
-    system_link = "https://web-production-a43ed.up.railway.app/"
+    system_link = os.environ.get("DOMAIN") or "https://web-production-a43ed.up.railway.app/"
     username = teacher_user.username
     
-    # Senha
-    password_info = f"<strong>{teacher_user.username}</strong> (Padrão: NIF)"
+    # Senha - Tenta pegar a senha real
+    password_info = "Padrão: NIF"
     if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
-        password_info = f"<strong>{teacher_user._password_plain}</strong>"
+        password_info = teacher_user._password_plain
     elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
-        password_info = f"<strong>{teacher_user._temp_password}</strong>"
+        password_info = teacher_user._temp_password
+    elif teacher_user.username:
+        # Fallback para o NIF se não houver outra senha disponível
+        password_info = teacher_user.username
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -162,8 +168,7 @@ def send_scheduling_notification_resend(scheduled):
         <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h2 style="margin-top: 0; font-size: 18px;">Detalhes do Agendamento:</h2>
             <ul style="list-style: none; padding-left: 0;">
-                <li><strong>Mês:</strong> {scheduled.scheduled_month}</li>
-                <li><strong>Ano:</strong> {scheduled.scheduled_year}</li>
+                <li><strong>Mês/Ano:</strong> {scheduled.scheduled_month}/{scheduled.scheduled_year}</li>
                 <li><strong>Unidade Curricular:</strong> {scheduled.curricular_unit.name if scheduled.curricular_unit else 'N/A'}</li>
             </ul>
         </div>
@@ -172,7 +177,7 @@ def send_scheduling_notification_resend(scheduled):
             <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Suas Credenciais de Acesso:</h2>
             <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
             <p style="margin-bottom: 5px;"><strong>Usuário (Login):</strong> <strong>{username}</strong></p>
-            <p style="margin: 0;"><strong>Senha:</strong> {password_info}</p>
+            <p style="margin: 0;"><strong>Senha:</strong> <strong>{password_info}</strong></p>
         </div>
 
         <p>Acesse o sistema para mais informações e para se preparar para a avaliação.</p>

@@ -518,6 +518,10 @@ def add_teacher():
                 'teacher_id': teacher.id
             }
             
+            # Ensure the plain password is set on the user object for immediate email use
+            teacher_user._password_plain = password
+            teacher_user._temp_password = password
+            
             # Send welcome email with credentials if teacher has email
             if teacher_user.email:
                 try:
