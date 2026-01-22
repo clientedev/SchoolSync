@@ -23,4 +23,5 @@ dependencies = [
     "pyjwt>=2.10.1",
     "sendgrid>=6.12.4",
     "cryptography>=45.0.7",
+    "resend>=2.19.0",
 ]

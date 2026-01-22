@@ -1,3 +1,4 @@
+import resend
 import os
 import uuid
 from werkzeug.utils import secure_filename
@@ -5,6 +6,70 @@ from flask import current_app
 from flask_mail import Message
 from production_app import mail
 from io import BytesIO
+
+def send_resend_email(to_email, subject, html_content):
+    """Send email using Resend API"""
+    resend_api_key = os.environ.get("RESEND_API_KEY")
+    if not resend_api_key:
+        current_app.logger.warning("RESEND_API_KEY not configured - skipping email")
+        return False
+    
+    try:
+        resend.api_key = resend_api_key
+        params = {
+            "from": current_app.config.get('MAIL_DEFAULT_SENDER', 'onboarding@resend.dev'),
+            "to": [to_email],
+            "subject": subject,
+            "html": html_content,
+        }
+        r = resend.Emails.send(params)
+        current_app.logger.info(f"Email sent via Resend to {to_email}: {r}")
+        return True
+    except Exception as e:
+        current_app.logger.error(f"Resend error sending email to {to_email}: {str(e)}")
+        return False
+
+def send_evaluation_notification_resend(evaluation):
+    """Send notification email when an evaluation is completed"""
+    if not evaluation.teacher or not evaluation.teacher.user or not evaluation.teacher.user.email:
+        return False
+    
+    teacher_email = evaluation.teacher.user.email
+    subject = f"Avaliação Concluída - {evaluation.teacher.name}"
+    
+    html_content = f"""
+    <h1>Avaliação Docente Concluída</h1>
+    <p>Olá {evaluation.teacher.name},</p>
+    <p>Uma nova avaliação foi registrada para você.</p>
+    <ul>
+        <li><strong>Data:</strong> {evaluation.evaluation_date.strftime('%d/%m/%Y')}</li>
+        <li><strong>Curso:</strong> {evaluation.course.name if evaluation.course else 'N/A'}</li>
+        <li><strong>Avaliador:</strong> {evaluation.evaluator.name if evaluation.evaluator else 'N/A'}</li>
+    </ul>
+    <p>Por favor, acesse o sistema para conferir os detalhes e assinar.</p>
+    """
+    return send_resend_email(teacher_email, subject, html_content)
+
+def send_scheduling_notification_resend(scheduled):
+    """Send notification email when a new schedule is created"""
+    if not scheduled.teacher or not scheduled.teacher.user or not scheduled.teacher.user.email:
+        return False
+    
+    teacher_email = scheduled.teacher.user.email
+    subject = f"Novo Agendamento de Avaliação - {scheduled.teacher.name}"
+    
+    html_content = f"""
+    <h1>Novo Agendamento de Avaliação</h1>
+    <p>Olá {scheduled.teacher.name},</p>
+    <p>Um novo agendamento de avaliação foi criado para você.</p>
+    <ul>
+        <li><strong>Mês:</strong> {scheduled.scheduled_month}</li>
+        <li><strong>Ano:</strong> {scheduled.scheduled_year}</li>
+        <li><strong>Unidade Curricular:</strong> {scheduled.curricular_unit.name if scheduled.curricular_unit else 'N/A'}</li>
+    </ul>
+    <p>Acesse o sistema para mais informações.</p>
+    """
+    return send_resend_email(teacher_email, subject, html_content)
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch

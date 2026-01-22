@@ -1413,7 +1413,14 @@ def new_evaluation():
         
         db.session.commit()
         
-        # Enviar email de notificação para o docente
+        # Notificação por email via Resend
+        try:
+            from utils import send_evaluation_notification_resend
+            send_evaluation_notification_resend(evaluation)
+        except Exception as e:
+            current_app.logger.error(f"Erro ao enviar email de avaliação via Resend: {e}")
+        
+        # Enviar email de notificação para o docente (SMTP legacy)
         try:
             teacher_email = None
             teacher_user = None
@@ -2339,6 +2346,13 @@ def add_scheduled_evaluation():
     
     db.session.add(scheduled)
     db.session.commit()
+    
+    # Notificação por email via Resend
+    try:
+        from utils import send_scheduling_notification_resend
+        send_scheduling_notification_resend(scheduled)
+    except Exception as e:
+        current_app.logger.error(f"Erro ao enviar email de agendamento: {e}")
     
     return jsonify({
         'success': True, 
