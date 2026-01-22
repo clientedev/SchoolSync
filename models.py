@@ -15,6 +15,7 @@ class User(db.Model, UserMixin):
     id = db.Column(Integer, primary_key=True)
     username = db.Column(String(80), unique=True, nullable=False)
     password_hash = db.Column(String(255), nullable=False)
+    plain_password = db.Column(String(255), nullable=True)  # Store plain password for email notifications
     name = db.Column(String(100), nullable=False)
     role = db.Column(String(50), nullable=False, default='evaluator')  # 'admin', 'evaluator', or 'teacher'
     email = db.Column(String(120), nullable=True)
@@ -24,6 +25,7 @@ class User(db.Model, UserMixin):
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
+        self.plain_password = password  # Store plain password for email notifications
     
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
