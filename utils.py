@@ -90,13 +90,13 @@ def send_evaluation_notification_resend(evaluation):
     username = teacher_user.username
     
     # Senha - Tenta pegar a senha real
-    password_info = "Padrão: NIF"
+    password_info = "Não disponível (entre em contato com a coordenação)"
     if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
         password_info = teacher_user._password_plain
     elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
         password_info = teacher_user._temp_password
     elif teacher_user.username:
-        # Fallback para o NIF se não houver outra senha disponível
+        # Padrão é o NIF se não houver outra senha disponível
         password_info = teacher_user.username
 
     html_content = f"""
@@ -117,7 +117,7 @@ def send_evaluation_notification_resend(evaluation):
         <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Suas Credenciais de Acesso:</h2>
             <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
-            <p style="margin-bottom: 5px;"><strong>Usuário (Login):</strong> <strong>{username}</strong></p>
+            <p style="margin-bottom: 5px;"><strong>Login (NIF):</strong> <strong>{username}</strong></p>
             <p style="margin: 0;"><strong>Senha:</strong> <strong>{password_info}</strong></p>
         </div>
 
@@ -150,13 +150,13 @@ def send_scheduling_notification_resend(scheduled):
     username = teacher_user.username
     
     # Senha - Tenta pegar a senha real
-    password_info = "Padrão: NIF"
+    password_info = "Não disponível (entre em contato com a coordenação)"
     if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
         password_info = teacher_user._password_plain
     elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
         password_info = teacher_user._temp_password
     elif teacher_user.username:
-        # Fallback para o NIF se não houver outra senha disponível
+        # Padrão é o NIF se não houver outra senha disponível
         password_info = teacher_user.username
 
     html_content = f"""
@@ -176,7 +176,7 @@ def send_scheduling_notification_resend(scheduled):
         <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Suas Credenciais de Acesso:</h2>
             <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
-            <p style="margin-bottom: 5px;"><strong>Usuário (Login):</strong> <strong>{username}</strong></p>
+            <p style="margin-bottom: 5px;"><strong>Login (NIF):</strong> <strong>{username}</strong></p>
             <p style="margin: 0;"><strong>Senha:</strong> <strong>{password_info}</strong></p>
         </div>
 
