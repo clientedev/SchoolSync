@@ -172,6 +172,13 @@ with app.app_context():
         # Create tables if needed
         try:
             db.create_all()
+            from sqlalchemy import text
+            try:
+                db.session.execute(text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS plain_password VARCHAR(255)'))
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                logging.warning(f"⚠️ plain_password column migration warning: {e}")
             logging.info("✅ Database tables verified")
         except Exception as table_error:
             logging.warning(f"⚠️ Table creation failed: {table_error}")
