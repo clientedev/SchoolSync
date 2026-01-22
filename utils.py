@@ -7,8 +7,8 @@ from flask_mail import Message
 from production_app import mail
 from io import BytesIO
 
-def send_resend_email(to_email, subject, html_content):
-    """Send email using Resend API"""
+def send_resend_email(to_email, subject, html_content, attachments=None):
+    """Send email using Resend API with optional attachments"""
     resend_api_key = os.environ.get("RESEND_API_KEY")
     if not resend_api_key:
         current_app.logger.warning("RESEND_API_KEY not configured - skipping email")
@@ -22,6 +22,10 @@ def send_resend_email(to_email, subject, html_content):
             "subject": subject,
             "html": html_content,
         }
+        
+        if attachments:
+            params["attachments"] = attachments
+            
         r = resend.Emails.send(params)
         current_app.logger.info(f"Email sent via Resend to {to_email}: {r}")
         return True
@@ -114,6 +118,23 @@ def send_evaluation_notification_resend(evaluation):
     if not password_info:
         password_info = teacher_user.username # Login/NIF como padrão de sistema
 
+    # Gerar PDF de credenciais
+    attachments = []
+    try:
+        from base64 import b64encode
+        pdf_buffer = generate_teacher_credentials_pdf(
+            evaluation.teacher.name, 
+            evaluation.teacher.nif, 
+            username, 
+            password_info
+        )
+        attachments.append({
+            "filename": f"Credenciais_{username}.pdf",
+            "content": list(pdf_buffer.getvalue())
+        })
+    except Exception as pdf_err:
+        current_app.logger.error(f"Erro ao gerar PDF de credenciais para anexo: {pdf_err}")
+
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
         <h1 style="color: #1976d2;">Finalização de Avaliação - Assinatura Necessária</h1>
@@ -130,10 +151,9 @@ def send_evaluation_notification_resend(evaluation):
         </div>
 
         <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Suas Credenciais de Acesso:</h2>
+            <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Acesso ao Sistema:</h2>
+            <p>Suas credenciais de acesso (Login e Senha) estão no <strong>PDF em anexo</strong> a este e-mail.</p>
             <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
-            <p style="margin-bottom: 5px;"><strong>Login (NIF):</strong> <strong>{username}</strong></p>
-            <p style="margin: 0;"><strong>Senha:</strong> <strong>{password_info}</strong></p>
         </div>
 
         <p><strong>Próximos Passos:</strong></p>
@@ -149,7 +169,7 @@ def send_evaluation_notification_resend(evaluation):
         </p>
     </div>
     """
-    return send_resend_email(teacher_email, subject, html_content)
+    return send_resend_email(teacher_email, subject, html_content, attachments=attachments)
 
 def send_scheduling_notification_resend(scheduled):
     """Send notification email when a new schedule is created"""
@@ -189,6 +209,22 @@ def send_scheduling_notification_resend(scheduled):
     if not password_info:
         password_info = teacher_user.username # Login/NIF como padrão de sistema
 
+    # Gerar PDF de credenciais
+    attachments = []
+    try:
+        pdf_buffer = generate_teacher_credentials_pdf(
+            scheduled.teacher.name, 
+            scheduled.teacher.nif, 
+            username, 
+            password_info
+        )
+        attachments.append({
+            "filename": f"Credenciais_{username}.pdf",
+            "content": list(pdf_buffer.getvalue())
+        })
+    except Exception as pdf_err:
+        current_app.logger.error(f"Erro ao gerar PDF de credenciais para anexo: {pdf_err}")
+
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
         <h1 style="color: #1976d2;">Novo Agendamento de Avaliação</h1>
@@ -204,10 +240,9 @@ def send_scheduling_notification_resend(scheduled):
         </div>
 
         <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Suas Credenciais de Acesso:</h2>
+            <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Acesso ao Sistema:</h2>
+            <p>Suas credenciais de acesso (Login e Senha) estão no <strong>PDF em anexo</strong> a este e-mail.</p>
             <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
-            <p style="margin-bottom: 5px;"><strong>Login (NIF):</strong> <strong>{username}</strong></p>
-            <p style="margin: 0;"><strong>Senha:</strong> <strong>{password_info}</strong></p>
         </div>
 
         <p>Acesse o sistema para mais informações e para se preparar para a avaliação.</p>
@@ -217,7 +252,7 @@ def send_scheduling_notification_resend(scheduled):
         </p>
     </div>
     """
-    return send_resend_email(teacher_email, subject, html_content)
+    return send_resend_email(teacher_email, subject, html_content, attachments=attachments)
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
