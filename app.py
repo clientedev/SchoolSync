@@ -81,6 +81,14 @@ with app.app_context():
         print("✅ Database connection successful")
         
         db.create_all()
+        # Ensure the column exists if create_all didn't add it to an existing table
+        from sqlalchemy import text
+        try:
+            db.session.execute(text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS plain_password VARCHAR(255)'))
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Column migration warning: {e}")
         print("✅ Database tables created/verified")
         
         # Create admin user if it doesn't exist
