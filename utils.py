@@ -96,25 +96,26 @@ def send_evaluation_notification_resend(evaluation):
     # Senha - Tenta pegar a senha real de forma mais abrangente
     password_info = None
     
+    # PRIORIDADE: Seguir a mesma lógica do perfil para consistência total
     # 1. Tenta o campo permanentemente armazenado no banco
     if hasattr(teacher_user, 'plain_password') and teacher_user.plain_password:
         password_info = teacher_user.plain_password
     
-    # 2. Tenta atributos temporários no objeto user
+    # 2. Tenta atributos temporários no objeto user (Request atual)
     if not password_info:
         if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
             password_info = teacher_user._password_plain
         elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
             password_info = teacher_user._temp_password
     
-    # 3. Tenta buscar na sessão se estivermos no contexto de um request
+    # 3. Tenta buscar na sessão (Última ação do usuário)
     if not password_info:
         from flask import session
         recent_creds = session.get('new_teacher_credentials')
         if recent_creds and recent_creds.get('username') == teacher_user.username:
             password_info = recent_creds.get('password')
 
-    # 4. Fallback final
+    # 4. Fallback final (Caso nada funcione)
     if not password_info:
         password_info = teacher_user.username # Login/NIF como padrão de sistema
 
@@ -189,25 +190,26 @@ def send_scheduling_notification_resend(scheduled):
     # Senha - Tenta pegar a senha real de forma mais abrangente
     password_info = None
     
+    # PRIORIDADE: Seguir a mesma lógica do perfil para consistência total
     # 1. Tenta o campo permanentemente armazenado no banco
     if hasattr(teacher_user, 'plain_password') and teacher_user.plain_password:
         password_info = teacher_user.plain_password
     
-    # 2. Tenta atributos temporários no objeto user
+    # 2. Tenta atributos temporários no objeto user (Request atual)
     if not password_info:
         if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
             password_info = teacher_user._password_plain
         elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
             password_info = teacher_user._temp_password
     
-    # 3. Tenta buscar na sessão se estivermos no contexto de um request
+    # 3. Tenta buscar na sessão (Última ação do usuário)
     if not password_info:
         from flask import session
         recent_creds = session.get('new_teacher_credentials')
         if recent_creds and recent_creds.get('username') == teacher_user.username:
             password_info = recent_creds.get('password')
 
-    # 4. Fallback final
+    # 4. Fallback final (Caso nada funcione)
     if not password_info:
         password_info = teacher_user.username # Login/NIF como padrão de sistema
 

@@ -428,16 +428,25 @@ def teacher_profile(id):
         avg_planning = planning_sum / total_evaluations
         avg_class = class_sum / total_evaluations
     
-    # Check if there are recent credentials in session for this teacher
-    recent_credentials = session.get('new_teacher_credentials')
+    # Priority for password display:
+    # 1. Permanent plain_password from database
+    # 2. Temporary password from current session (for new registrations)
+    # 3. Memory-only attributes from current request
     teacher_password = None
-    if recent_credentials and recent_credentials.get('nif') == teacher.nif:
-        teacher_password = recent_credentials.get('password')
-        # DON'T clear credentials yet - keep for email sending
     
-    # Also check if teacher_user has temporary password stored
-    if teacher_user and hasattr(teacher_user, '_temp_password'):
-        teacher_password = teacher_user._temp_password
+    if teacher_user and hasattr(teacher_user, 'plain_password') and teacher_user.plain_password:
+        teacher_password = teacher_user.plain_password
+    
+    if not teacher_password:
+        recent_credentials = session.get('new_teacher_credentials')
+        if recent_credentials and recent_credentials.get('nif') == teacher.nif:
+            teacher_password = recent_credentials.get('password')
+    
+    if not teacher_password and teacher_user:
+        if hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
+            teacher_password = teacher_user._temp_password
+        elif hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
+            teacher_password = teacher_user._password_plain
     
     # Check if there's a flag indicating credentials were just generated
     session_key = 'teacher_credentials_generated_' + str(teacher.id)
