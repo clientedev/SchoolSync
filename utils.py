@@ -45,9 +45,9 @@ def send_evaluation_notification_resend(evaluation):
     # Tentamos obter a senha plana se ela foi gerada agora, caso contrário avisamos que é a mesma da coordenação
     password_info = "Sua senha é a mesma fornecida pela coordenação."
     if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
-        password_info = f"Sua senha provisória é: <strong>{teacher_user._password_plain}</strong>"
+        password_info = f"<strong>{teacher_user._password_plain}</strong>"
     elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
-        password_info = f"Sua senha provisória é: <strong>{teacher_user._temp_password}</strong>"
+        password_info = f"<strong>{teacher_user._temp_password}</strong>"
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -67,7 +67,7 @@ def send_evaluation_notification_resend(evaluation):
         <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Suas Credenciais de Acesso:</h2>
             <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
-            <p style="margin-bottom: 5px;"><strong>Usuário:</strong> {username}</p>
+            <p style="margin-bottom: 5px;"><strong>Usuário (Login):</strong> <strong>{username}</strong></p>
             <p style="margin: 0;"><strong>Senha:</strong> {password_info}</p>
         </div>
 
@@ -92,18 +92,48 @@ def send_scheduling_notification_resend(scheduled):
         return False
     
     teacher_email = scheduled.teacher.user.email
+    teacher_user = scheduled.teacher.user
     subject = f"Novo Agendamento de Avaliação - {scheduled.teacher.name}"
     
+    # Credenciais e Link
+    system_link = "https://web-production-a43ed.up.railway.app/"
+    username = teacher_user.username
+    
+    # Senha
+    password_info = "Sua senha é a mesma fornecida pela coordenação."
+    if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
+        password_info = f"<strong>{teacher_user._password_plain}</strong>"
+    elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
+        password_info = f"<strong>{teacher_user._temp_password}</strong>"
+
     html_content = f"""
-    <h1>Novo Agendamento de Avaliação</h1>
-    <p>Olá {scheduled.teacher.name},</p>
-    <p>Um novo agendamento de avaliação foi criado para você.</p>
-    <ul>
-        <li><strong>Mês:</strong> {scheduled.scheduled_month}</li>
-        <li><strong>Ano:</strong> {scheduled.scheduled_year}</li>
-        <li><strong>Unidade Curricular:</strong> {scheduled.curricular_unit.name if scheduled.curricular_unit else 'N/A'}</li>
-    </ul>
-    <p>Acesse o sistema para mais informações.</p>
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h1 style="color: #1976d2;">Novo Agendamento de Avaliação</h1>
+        <p>Olá <strong>{scheduled.teacher.name}</strong>,</p>
+        <p>Um novo agendamento de avaliação foi criado para você.</p>
+        
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="margin-top: 0; font-size: 18px;">Detalhes do Agendamento:</h2>
+            <ul style="list-style: none; padding-left: 0;">
+                <li><strong>Mês:</strong> {scheduled.scheduled_month}</li>
+                <li><strong>Ano:</strong> {scheduled.scheduled_year}</li>
+                <li><strong>Unidade Curricular:</strong> {scheduled.curricular_unit.name if scheduled.curricular_unit else 'N/A'}</li>
+            </ul>
+        </div>
+
+        <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Suas Credenciais de Acesso:</h2>
+            <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
+            <p style="margin-bottom: 5px;"><strong>Usuário (Login):</strong> <strong>{username}</strong></p>
+            <p style="margin: 0;"><strong>Senha:</strong> {password_info}</p>
+        </div>
+
+        <p>Acesse o sistema para mais informações e para se preparar para a avaliação.</p>
+
+        <p style="color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
+            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI Morvan Figueiredo.
+        </p>
+    </div>
     """
     return send_resend_email(teacher_email, subject, html_content)
 from reportlab.lib.pagesizes import letter, A4
