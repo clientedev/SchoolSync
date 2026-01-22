@@ -90,7 +90,7 @@ def send_evaluation_notification_resend(evaluation):
     username = teacher_user.username
     
     # Senha
-    password_info = "Sua senha é a mesma fornecida pela coordenação."
+    password_info = f"<strong>{teacher_user.username}</strong> (Padrão: NIF)"
     if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
         password_info = f"<strong>{teacher_user._password_plain}</strong>"
     elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
@@ -147,7 +147,7 @@ def send_scheduling_notification_resend(scheduled):
     username = teacher_user.username
     
     # Senha
-    password_info = "Sua senha é a mesma fornecida pela coordenação."
+    password_info = f"<strong>{teacher_user.username}</strong> (Padrão: NIF)"
     if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
         password_info = f"<strong>{teacher_user._password_plain}</strong>"
     elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:

@@ -1414,11 +1414,15 @@ def new_evaluation():
         db.session.commit()
         
         # Notificação por email via Resend
-        try:
-            from utils import send_evaluation_notification_resend
-            send_evaluation_notification_resend(evaluation)
-        except Exception as e:
-            current_app.logger.error(f"Erro ao enviar email de avaliação via Resend: {e}")
+        if evaluation.teacher.user and evaluation.teacher.user.email:
+            current_app.logger.info(f"📧 Enviando email de avaliação para: {evaluation.teacher.user.email}")
+            try:
+                from utils import send_evaluation_notification_resend
+                send_evaluation_notification_resend(evaluation)
+            except Exception as e:
+                current_app.logger.error(f"❌ Erro ao enviar email de avaliação via Resend: {e}")
+        else:
+            current_app.logger.warning(f"⚠️ Docente {evaluation.teacher.name} não possui email para notificação.")
         
         # Enviar email de notificação para o docente (SMTP legacy)
         try:
