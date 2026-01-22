@@ -89,15 +89,25 @@ def send_evaluation_notification_resend(evaluation):
     system_link = os.environ.get("DOMAIN") or "https://web-production-a43ed.up.railway.app/"
     username = teacher_user.username
     
-    # Senha - Tenta pegar a senha real
-    password_info = "Não disponível (entre em contato com a coordenação)"
+    # Senha - Tenta pegar a senha real de forma mais abrangente
+    password_info = None
+    
+    # 1. Tenta atributos temporários no objeto user
     if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
         password_info = teacher_user._password_plain
     elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
         password_info = teacher_user._temp_password
-    elif teacher_user.username:
-        # Padrão é o NIF se não houver outra senha disponível
-        password_info = teacher_user.username
+    
+    # 2. Tenta buscar na sessão se estivermos no contexto de um request
+    if not password_info:
+        from flask import session
+        recent_creds = session.get('new_teacher_credentials')
+        if recent_creds and recent_creds.get('username') == teacher_user.username:
+            password_info = recent_creds.get('password')
+
+    # 3. Fallback final
+    if not password_info:
+        password_info = teacher_user.username # Login/NIF como padrão de sistema
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -149,15 +159,25 @@ def send_scheduling_notification_resend(scheduled):
     system_link = os.environ.get("DOMAIN") or "https://web-production-a43ed.up.railway.app/"
     username = teacher_user.username
     
-    # Senha - Tenta pegar a senha real
-    password_info = "Não disponível (entre em contato com a coordenação)"
+    # Senha - Tenta pegar a senha real de forma mais abrangente
+    password_info = None
+    
+    # 1. Tenta atributos temporários no objeto user
     if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
         password_info = teacher_user._password_plain
     elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
         password_info = teacher_user._temp_password
-    elif teacher_user.username:
-        # Padrão é o NIF se não houver outra senha disponível
-        password_info = teacher_user.username
+    
+    # 2. Tenta buscar na sessão se estivermos no contexto de um request
+    if not password_info:
+        from flask import session
+        recent_creds = session.get('new_teacher_credentials')
+        if recent_creds and recent_creds.get('username') == teacher_user.username:
+            password_info = recent_creds.get('password')
+
+    # 3. Fallback final
+    if not password_info:
+        password_info = teacher_user.username # Login/NIF como padrão de sistema
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
