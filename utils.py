@@ -29,6 +29,53 @@ def send_resend_email(to_email, subject, html_content):
         current_app.logger.error(f"Resend error sending email to {to_email}: {str(e)}")
         return False
 
+def send_message_notification_resend(to_email, recipient_name, message_content):
+    """Send notification email for a message"""
+    subject = "Nova Mensagem do Sistema de Avaliação"
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h1>Olá {recipient_name},</h1>
+        <p>Você recebeu uma nova mensagem:</p>
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            {message_content}
+        </div>
+        <p>Acesse o sistema para responder.</p>
+    </div>
+    """
+    return send_resend_email(to_email, subject, html_content)
+
+def send_signature_notification_evaluator(evaluation):
+    """Send notification email to the evaluator when a teacher signs the evaluation"""
+    if not evaluation.evaluator or not evaluation.evaluator.email:
+        return False
+    
+    evaluator_email = evaluation.evaluator.email
+    subject = f"Avaliação Assinada - {evaluation.teacher.name}"
+    
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h1 style="color: #2e7d32;">Avaliação Assinada</h1>
+        <p>Olá <strong>{evaluation.evaluator.name}</strong>,</p>
+        <p>O docente <strong>{evaluation.teacher.name}</strong> acabou de assinar digitalmente a avaliação realizada em {evaluation.evaluation_date.strftime('%d/%m/%Y')}.</p>
+        
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="margin-top: 0; font-size: 18px;">Resumo:</h2>
+            <ul style="list-style: none; padding-left: 0;">
+                <li><strong>Docente:</strong> {evaluation.teacher.name}</li>
+                <li><strong>Data da Assinatura:</strong> {evaluation.teacher_signature_date.strftime('%d/%m/%Y %H:%M') if evaluation.teacher_signature_date else 'Agora'}</li>
+                <li><strong>Curso:</strong> {evaluation.course.name if evaluation.course else 'N/A'}</li>
+            </ul>
+        </div>
+
+        <p>A avaliação agora está formalmente concluída com ambas as assinaturas.</p>
+
+        <p style="color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
+            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI Morvan Figueiredo.
+        </p>
+    </div>
+    """
+    return send_resend_email(evaluator_email, subject, html_content)
+
 def send_evaluation_notification_resend(evaluation):
     """Send notification email when an evaluation is completed"""
     if not evaluation.teacher or not evaluation.teacher.user or not evaluation.teacher.user.email:
@@ -42,7 +89,7 @@ def send_evaluation_notification_resend(evaluation):
     system_link = "https://web-production-a43ed.up.railway.app/"
     username = teacher_user.username
     
-    # Tentamos obter a senha plana se ela foi gerada agora, caso contrário avisamos que é a mesma da coordenação
+    # Senha
     password_info = "Sua senha é a mesma fornecida pela coordenação."
     if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
         password_info = f"<strong>{teacher_user._password_plain}</strong>"
@@ -51,7 +98,7 @@ def send_evaluation_notification_resend(evaluation):
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h1 style="color: #d32f2f;">Nova Avaliação Docente Disponível</h1>
+        <h1 style="color: #1976d2;">Novo Agendamento de Avaliação</h1>
         <p>Olá <strong>{evaluation.teacher.name}</strong>,</p>
         <p>Uma nova avaliação foi registrada para você e <strong>necessita de sua assinatura digital</strong>.</p>
         

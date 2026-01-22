@@ -2827,6 +2827,13 @@ def teacher_sign_evaluation_new(id):
     
     db.session.commit()
     
+    # Notificação para o avaliador via Resend
+    try:
+        from utils import send_signature_notification_evaluator
+        send_signature_notification_evaluator(evaluation)
+    except Exception as e:
+        current_app.logger.error(f"Erro ao enviar email de assinatura para o avaliador: {e}")
+    
     return jsonify({'success': True, 'message': 'Avaliação assinada com sucesso!'})
 
 @app.route('/teacher/evaluations')
