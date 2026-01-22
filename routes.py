@@ -2283,6 +2283,14 @@ def new_evaluation_from_schedule(schedule_id):
         
         db.session.commit()
         
+        # Enviar e-mail de notificação para o docente quando criado a partir do agendamento
+        if evaluation.teacher.user and evaluation.teacher.user.email:
+            try:
+                from utils import send_evaluation_notification_resend
+                send_evaluation_notification_resend(evaluation)
+            except Exception as e:
+                current_app.logger.error(f"Erro ao enviar e-mail a partir do agendamento: {e}")
+
         flash('Avaliação criada com sucesso a partir do agendamento!', 'success')
         return redirect(url_for('view_evaluation', id=evaluation.id))
     elif request.method == 'POST':
