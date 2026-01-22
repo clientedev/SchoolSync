@@ -128,9 +128,11 @@ def send_evaluation_notification_resend(evaluation):
             username, 
             password_info
         )
+        # Resend expects base64 content for attachments
+        import base64
         attachments.append({
             "filename": f"Credenciais_{username}.pdf",
-            "content": list(pdf_buffer.getvalue())
+            "content": base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
         })
     except Exception as pdf_err:
         current_app.logger.error(f"Erro ao gerar PDF de credenciais para anexo: {pdf_err}")
@@ -218,9 +220,10 @@ def send_scheduling_notification_resend(scheduled):
             username, 
             password_info
         )
+        import base64
         attachments.append({
             "filename": f"Credenciais_{username}.pdf",
-            "content": list(pdf_buffer.getvalue())
+            "content": base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
         })
     except Exception as pdf_err:
         current_app.logger.error(f"Erro ao gerar PDF de credenciais para anexo: {pdf_err}")
