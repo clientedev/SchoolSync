@@ -35,18 +35,54 @@ def send_evaluation_notification_resend(evaluation):
         return False
     
     teacher_email = evaluation.teacher.user.email
-    subject = f"Avaliação Concluída - {evaluation.teacher.name}"
+    teacher_user = evaluation.teacher.user
+    subject = f"Nova Avaliação Docente - Assinatura Necessária - {evaluation.evaluation_date.strftime('%d/%m/%Y')}"
     
+    # Credenciais e Link
+    system_link = "https://web-production-a43ed.up.railway.app/"
+    username = teacher_user.username
+    
+    # Tentamos obter a senha plana se ela foi gerada agora, caso contrário avisamos que é a mesma da coordenação
+    password_info = "Sua senha é a mesma fornecida pela coordenação."
+    if hasattr(teacher_user, '_password_plain') and teacher_user._password_plain:
+        password_info = f"Sua senha provisória é: <strong>{teacher_user._password_plain}</strong>"
+    elif hasattr(teacher_user, '_temp_password') and teacher_user._temp_password:
+        password_info = f"Sua senha provisória é: <strong>{teacher_user._temp_password}</strong>"
+
     html_content = f"""
-    <h1>Avaliação Docente Concluída</h1>
-    <p>Olá {evaluation.teacher.name},</p>
-    <p>Uma nova avaliação foi registrada para você.</p>
-    <ul>
-        <li><strong>Data:</strong> {evaluation.evaluation_date.strftime('%d/%m/%Y')}</li>
-        <li><strong>Curso:</strong> {evaluation.course.name if evaluation.course else 'N/A'}</li>
-        <li><strong>Avaliador:</strong> {evaluation.evaluator.name if evaluation.evaluator else 'N/A'}</li>
-    </ul>
-    <p>Por favor, acesse o sistema para conferir os detalhes e assinar.</p>
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h1 style="color: #d32f2f;">Nova Avaliação Docente Disponível</h1>
+        <p>Olá <strong>{evaluation.teacher.name}</strong>,</p>
+        <p>Uma nova avaliação foi registrada para você e <strong>necessita de sua assinatura digital</strong>.</p>
+        
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="margin-top: 0; font-size: 18px;">Detalhes da Avaliação:</h2>
+            <ul style="list-style: none; padding-left: 0;">
+                <li><strong>Data:</strong> {evaluation.evaluation_date.strftime('%d/%m/%Y')}</li>
+                <li><strong>Curso:</strong> {evaluation.course.name if evaluation.course else 'N/A'}</li>
+                <li><strong>Avaliador:</strong> {evaluation.evaluator.name if evaluation.evaluator else 'Coordenação'}</li>
+            </ul>
+        </div>
+
+        <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Suas Credenciais de Acesso:</h2>
+            <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
+            <p style="margin-bottom: 5px;"><strong>Usuário:</strong> {username}</p>
+            <p style="margin: 0;"><strong>Senha:</strong> {password_info}</p>
+        </div>
+
+        <p><strong>Próximos Passos:</strong></p>
+        <ol>
+            <li>Acesse o link acima.</li>
+            <li>Entre com seu usuário e senha.</li>
+            <li>Localize a avaliação na sua área de docente.</li>
+            <li>Revise os detalhes e realize a assinatura digital.</li>
+        </ol>
+
+        <p style="color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
+            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI Morvan Figueiredo.
+        </p>
+    </div>
     """
     return send_resend_email(teacher_email, subject, html_content)
 
