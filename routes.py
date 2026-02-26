@@ -2928,3 +2928,45 @@ def teacher_evaluations():
                          evaluations=evaluations,
                          start_date=start_date,
                          end_date=end_date)
+
+@app.route('/api/update_checklist_label', methods=['POST'])
+@login_required
+def update_checklist_label():
+    """API endpoint to update a checklist item label from the form"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'message': 'Nenhum dado fornecido'}), 400
+    
+    item_id = data.get('item_id')
+    new_label = data.get('label')
+    evaluation_id = data.get('evaluation_id')
+    
+    if not new_label or not new_label.strip():
+        return jsonify({'success': False, 'message': 'Rótulo não pode ser vazio'}), 400
+        
+    try:
+        from models import EvaluationChecklistItem
+        from datetime import datetime
+        if item_id:
+            # Update existing item
+            item = EvaluationChecklistItem.query.get(int(item_id))
+            if not item:
+                return jsonify({'success': False, 'message': 'Item não encontrado'}), 404
+            
+            # Security check
+            if evaluation_id and item.evaluation_id != int(evaluation_id):
+                return jsonify({'success': False, 'message': 'Acesso negado'}), 403
+                
+            item.label = new_label.strip()
+            # Also update the parent evaluation's updated_at to make it the latest template
+            item.evaluation.updated_at = datetime.utcnow()
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Rótulo atualizado com sucesso'})
+        else:
+            return jsonify({'success': False, 'message': 'Item ainda não salvo no banco. Salve a avaliação por completo.'}), 400
+            
+    except Exception as e:
+        db.session.rollback()
+        import logging
+        logging.error(f"Erro ao atualizar rótulo via API: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500

@@ -408,7 +408,7 @@ def create_default_checklist_items(evaluation_id):
     # Try to find the most recent evaluation to use it as a template
     try:
         from models import Evaluation
-        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.created_at)).first()
+        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.updated_at)).first()
         
         if latest_eval and latest_eval.checklist_items:
             # Copy items from the latest evaluation

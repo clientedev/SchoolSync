@@ -668,6 +668,13 @@ def generate_evaluation_report(evaluation):
     story.append(Paragraph("RELATÓRIO DE ACOMPANHAMENTO DOCENTE", title_style))
     story.append(Spacer(1, 20))
     
+    # Custom style for checklist items to ensure wrapping
+    criteria_style = ParagraphStyle('CriteriaStyle', 
+                                  parent=styles['Normal'], 
+                                  fontSize=9, 
+                                  leading=11, 
+                                  wordWrap='LTR')
+    
     # Basic Info Table
     basic_info = [
         ['Docente:', evaluation.teacher.name],
@@ -729,8 +736,8 @@ def generate_evaluation_report(evaluation):
     
     for item in planning_items:
         planning_criteria.append([
-            Paragraph(item.label, styles['Normal']), 
-            Paragraph(item.value or 'N/A', styles['Normal'])
+            Paragraph(item.label, criteria_style), 
+            Paragraph(item.value or 'N/A', criteria_style)
         ])
     
     # Fallback to hardcoded criteria if no dynamic items exist (for very old evaluations)
@@ -744,10 +751,10 @@ def generate_evaluation_report(evaluation):
             [Paragraph('Utiliza instrumentos diversificados', styles['Normal']), Paragraph(evaluation.planning_diversified or 'N/A', styles['Normal'])],
             [Paragraph('Prepara previamente o local', styles['Normal']), Paragraph(evaluation.planning_local_work or 'N/A', styles['Normal'])],
             [Paragraph('Disponibiliza ferramentas', styles['Normal']), Paragraph(evaluation.planning_tools or 'N/A', styles['Normal'])],
-            [Paragraph('Portal Educacional', styles['Normal']), Paragraph(evaluation.planning_educational_portal or 'N/A', styles['Normal'])],
+            [Paragraph('Portal Educacional', criteria_style), Paragraph(evaluation.planning_educational_portal or 'N/A', criteria_style)],
         ]
     
-    planning_table = Table(planning_criteria, colWidths=[4*inch, 2*inch])
+    planning_table = Table(planning_criteria, colWidths=[4.2*inch, 1.8*inch], splitByRow=1)
     planning_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -774,8 +781,8 @@ def generate_evaluation_report(evaluation):
     
     for item in class_items:
         class_criteria.append([
-            Paragraph(item.label, styles['Normal']), 
-            Paragraph(item.value or 'N/A', styles['Normal'])
+            Paragraph(item.label, criteria_style), 
+            Paragraph(item.value or 'N/A', criteria_style)
         ])
     
     # Fallback to hardcoded criteria if no dynamic items exist
@@ -798,10 +805,10 @@ def generate_evaluation_report(evaluation):
             [Paragraph('Mantém disciplina', styles['Normal']), Paragraph(evaluation.class_discipline or 'N/A', styles['Normal'])],
             [Paragraph('Estratégias de ensino', styles['Normal']), Paragraph(evaluation.class_teaching_strategies or 'N/A', styles['Normal'])],
             [Paragraph('Orienta utilização de equipamentos', styles['Normal']), Paragraph(evaluation.class_machines_equipment or 'N/A', styles['Normal'])],
-            [Paragraph('Procedimentos de segurança', styles['Normal']), Paragraph(evaluation.class_safety_procedures or 'N/A', styles['Normal'])],
+            [Paragraph('Procedimentos de segurança', criteria_style), Paragraph(evaluation.class_safety_procedures or 'N/A', criteria_style)],
         ]
     
-    class_table = Table(class_criteria, colWidths=[4*inch, 2*inch])
+    class_table = Table(class_criteria, colWidths=[4.2*inch, 1.8*inch], splitByRow=1)
     class_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
