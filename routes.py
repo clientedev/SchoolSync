@@ -2963,33 +2963,44 @@ def update_checklist_label():
                 return jsonify({'success': True, 'message': 'Rótulo atualizado com sucesso'})
 
         # Priority 2: Update "Global Template" (the most recent evaluation)
+        # First try evaluations with checklist items
         latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.updated_at)).first()
         
+        # Fallback: try ANY recent evaluation
+        if not latest_eval:
+            latest_eval = Evaluation.query.order_by(desc(Evaluation.updated_at)).first()
+            
         if latest_eval:
             # Update similar item in latest_eval or add it
+            # Normalize label for search
+            target_label = new_label.strip()
             existing_item = EvaluationChecklistItem.query.filter_by(
                 evaluation_id=latest_eval.id,
                 category=category,
-                label=new_label.strip()
+                label=target_label
             ).first()
             
             if not existing_item:
                 new_item = EvaluationChecklistItem()
                 new_item.evaluation_id = latest_eval.id
-                new_item.label = new_label.strip()
+                new_item.label = target_label
                 new_item.category = category
                 new_item.is_default = True
                 new_item.display_order = 999
                 db.session.add(new_item)
+                msg = 'Rótulo adicionado ao modelo global'
+            else:
+                existing_item.label = target_label # In case of slight normalization
+                msg = 'Rótulo atualizado no modelo global'
             
             latest_eval.updated_at = datetime.utcnow()
             db.session.commit()
-            return jsonify({'success': True, 'message': 'Rótulo fixado como novo padrão global'})
+            return jsonify({'success': True, 'message': msg})
             
-        return jsonify({'success': False, 'message': 'Nenhuma avaliação encontrada para servir de modelo.'}), 404
+        return jsonify({'success': False, 'message': 'Nenhuma avaliação encontrada para servir de modelo. Salve a avaliação principal primeiro pelo menos uma vez.'}), 404
             
     except Exception as e:
         db.session.rollback()
         import logging
-        logging.error(f"Erro ao atualizar rótulo via API: {str(e)}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        logging.error(f"Erro ao atualizar rótulo via API: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500

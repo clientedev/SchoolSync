@@ -1,14 +1,14 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}
 {% if view_only %}
-Visualizar AvaliaÃ§Ã£o - {{ super() }}
+Visualizar Avaliação - {{ super() }}
 {% elif edit_mode %}
-Editar AvaliaÃ§Ã£o - {{ super() }}
+Editar Avaliação - {{ super() }}
 {% elif evaluation %}
-AvaliaÃ§Ã£o - {{ super() }}
+Avaliação - {{ super() }}
 {% else %}
-Nova AvaliaÃ§Ã£o - {{ super() }}
+Nova Avaliação - {{ super() }}
 {% endif %}
 {% endblock %}
 
@@ -19,10 +19,10 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
         <!-- Evaluations List View -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="fas fa-clipboard-check me-2"></i>AvaliaÃ§Ãµes
+                <i class="fas fa-clipboard-check me-2"></i>Avaliações
             </h1>
             <a href="{{ url_for('new_evaluation') }}" class="btn btn-primary">
-                <i class="fas fa-plus me-1"></i>Nova AvaliaÃ§Ã£o
+                <i class="fas fa-plus me-1"></i>Nova Avaliação
             </a>
         </div>
 
@@ -36,11 +36,11 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                 <th>Data</th>
                                 <th>Docente</th>
                                 <th>Curso</th>
-                                <th>PerÃ­odo</th>
+                                <th>PerÍ­odo</th>
                                 <th>Planejamento</th>
-                                <th>ConduÃ§Ã£o</th>
+                                <th>Condução</th>
                                 <th>Status</th>
-                                <th>AÃ§Ãµes</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -95,7 +95,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
 
                 <!-- Pagination -->
                 {% if evaluations.pages > 1 %}
-                <nav aria-label="PaginaÃ§Ã£o">
+                <nav aria-label="Paginação">
                     <ul class="pagination justify-content-center">
                         {% if evaluations.has_prev %}
                         <li class="page-item">
@@ -125,7 +125,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                         {% if evaluations.has_next %}
                         <li class="page-item">
                             <a class="page-link"
-                                href="{{ url_for('evaluations', page=evaluations.next_num) }}">PrÃ³ximo</a>
+                                href="{{ url_for('evaluations', page=evaluations.next_num) }}">PrÍ³ximo</a>
                         </li>
                         {% endif %}
                     </ul>
@@ -134,8 +134,8 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                 {% else %}
                 <div class="text-center py-5">
                     <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">Nenhuma avaliaÃ§Ã£o encontrada</h5>
-                    <p class="text-muted">Clique em "Nova AvaliaÃ§Ã£o" para comeÃ§ar.</p>
+                    <h5 class="text-muted">Nenhuma avaliação encontrada</h5>
+                    <p class="text-muted">Clique em "Nova Avaliação" para começar.</p>
                 </div>
                 {% endif %}
             </div>
@@ -147,11 +147,11 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
             <h1>
                 <i class="fas fa-clipboard-check me-2"></i>
                 {% if view_only %}
-                Acompanhamento da AÃ§Ã£o Docente
+                Acompanhamento da Ação Docente
                 {% elif edit_mode %}
-                Editar AvaliaÃ§Ã£o
+                Editar Avaliação
                 {% else %}
-                Nova AvaliaÃ§Ã£o
+                Nova Avaliação
                 {% endif %}
             </h1>
             <div class="btn-group">
@@ -163,13 +163,13 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                     <i class="fas fa-edit me-1"></i>Editar
                 </a>
                 <a href="{{ url_for('complete_evaluation', id=evaluation.id) }}" class="btn btn-success"
-                    onclick="return confirm('Tem certeza que deseja finalizar esta avaliaÃ§Ã£o? Esta aÃ§Ã£o nÃ£o pode ser desfeita.')">
+                    onclick="return confirm('Tem certeza que deseja finalizar esta avaliação? Esta ação não pode ser desfeita.')">
                     <i class="fas fa-check me-1"></i>Finalizar
                 </a>
                 {% endif %}
                 {% if evaluation %}
                 <a href="{{ url_for('download_evaluation_report', id=evaluation.id) }}" class="btn btn-info">
-                    <i class="fas fa-file-pdf me-1"></i>RelatÃ³rio
+                    <i class="fas fa-file-pdf me-1"></i>RelatÍ³rio
                 </a>
                 {% endif %}
             </div>
@@ -179,7 +179,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
         <div class="card mb-4">
             <div class="card-header text-center bg-primary">
                 <h4 class="mb-0 text-white">
-                    <i class="fas fa-school me-2"></i>SENAI - ACOMPANHAMENTO DA AÃ‡ÃƒO DOCENTE
+                    <i class="fas fa-school me-2"></i>SENAI - ACOMPANHAMENTO DA AÍ‡ÍƒO DOCENTE
                 </h4>
             </div>
         </div>
@@ -195,7 +195,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-info-circle me-2"></i>InformaÃ§Ãµes BÃ¡sicas
+                        <i class="fas fa-info-circle me-2"></i>Informações BÍ¡sicas
                     </h5>
                 </div>
                 <div class="card-body">
@@ -220,12 +220,12 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                 {% if evaluation.curricular_unit %}
                                 {{ evaluation.curricular_unit.name }}
                                 {% else %}
-                                NÃ£o especificada
+                                Não especificada
                                 {% endif %}
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">PerÃ­odo:</label>
+                            <label class="form-label">PerÍ­odo:</label>
                             <div class="form-control-plaintext">{{ evaluation.period }}</div>
                         </div>
                     </div>
@@ -280,7 +280,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-tasks me-2"></i>Aspectos Observados no PerÃ­odo de Planejamento
+                        <i class="fas fa-tasks me-2"></i>Aspectos Observados no PerÍ­odo de Planejamento
                     </h5>
                     {% if not view_only %}
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChecklistItem('planning')">
@@ -295,10 +295,10 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                 <tr>
                                     <th width="{% if view_only %}60{% else %}55{% endif %}%">Aspecto</th>
                                     <th width="13%" class="text-center">Sim</th>
-                                    <th width="13%" class="text-center">NÃ£o</th>
-                                    <th width="14%" class="text-center">NÃ£o se aplica</th>
+                                    <th width="13%" class="text-center">Não</th>
+                                    <th width="14%" class="text-center">Não se aplica</th>
                                     {% if not view_only %}
-                                    <th width="5%" class="text-center">AÃ§Ã£o</th>
+                                    <th width="5%" class="text-center">Ação</th>
                                     {% endif %}
                                 </tr>
                             </thead>
@@ -318,7 +318,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                             value="{{ 'true' if item.is_default else 'false' }}">
                                         <textarea name="checklist_label[]"
                                             class="form-control form-control-sm auto-expand" rows="1"
-                                            placeholder="DescriÃ§Ã£o do item"
+                                            placeholder="Descrição do item"
                                             style="resize: none; overflow: hidden; min-height: 31px;"
                                             oninput="autoExpand(this)">{{ item.label }}</textarea>
                                         {% endif %}
@@ -330,12 +330,12 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if item.value == 'NÃ£o' %}
+                                        {% if item.value == 'Não' %}
                                         <i class="fas fa-times text-danger"></i>
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if item.value == 'NÃ£o se aplica' %}
+                                        {% if item.value == 'Não se aplica' %}
                                         <i class="fas fa-minus text-muted"></i>
                                         {% endif %}
                                     </td>
@@ -349,20 +349,20 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                             class="checklist-value-hidden">
                                     </td>
                                     <td class="text-center">
-                                        <input type="radio" name="checklist_value_{{ loop.index }}_planning" value="NÃ£o"
-                                            class="form-check-input checklist-radio" {% if item.value=='NÃ£o' %}checked{%
+                                        <input type="radio" name="checklist_value_{{ loop.index }}_planning" value="Não"
+                                            class="form-check-input checklist-radio" {% if item.value=='Não' %}checked{%
                                             endif %}>
                                     </td>
                                     <td class="text-center">
                                         <input type="radio" name="checklist_value_{{ loop.index }}_planning"
-                                            value="NÃ£o se aplica" class="form-check-input checklist-radio" {% if
-                                            item.value=='NÃ£o se aplica' %}checked{% endif %}>
+                                            value="Não se aplica" class="form-check-input checklist-radio" {% if
+                                            item.value=='Não se aplica' %}checked{% endif %}>
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-sm btn-outline-success border-0"
                                                 onclick="saveLabel(this, '{{ item.id if item.id else '' }}', 'planning')"
-                                                title="Salvar apenas este rÃ³tulo">
+                                                title="Salvar apenas este rótulo">
                                                 <i class="fas fa-save"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-danger border-0"
@@ -378,19 +378,19 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                 {% if evaluation %}
                                 {% set planning_fields = [
                                 (evaluation.planning_schedule, "Elabora cronograma de aula, replaneja quando
-                                necessÃ¡rio"),
-                                (evaluation.planning_lesson_plan, "Planeja a aula considerando estratÃ©gias de avaliaÃ§Ã£o
+                                necessÍ¡rio"),
+                                (evaluation.planning_lesson_plan, "Planeja a aula considerando estratÍ©gias de avaliação
                                 pertinentes aos objetivos da aula em conformidade com os documentos estruturantes (MSEP
                                 e Plano de Curso)"),
-                                (evaluation.planning_evaluation, "Planeja instrumentos de avaliaÃ§Ã£o diversificados ao
-                                longo do perÃ­odo letivo"),
+                                (evaluation.planning_evaluation, "Planeja instrumentos de avaliação diversificados ao
+                                longo do perÍ­odo letivo"),
                                 (evaluation.planning_documents, "Conhece os documentos estruturantes (MSEP e Plano de
                                 Curso)"),
                                 (evaluation.planning_diversified, "Utiliza instrumentos diversificados ao longo do
-                                perÃ­odo letivo"),
-                                (evaluation.planning_local_work, "Prepara previamente o local de trabalho, mÃ¡quinas,
+                                perÍ­odo letivo"),
+                                (evaluation.planning_local_work, "Prepara previamente o local de trabalho, mÍ¡quinas,
                                 equipamentos e ferramentas"),
-                                (evaluation.planning_tools, "Disponibiliza e acompanha a realizaÃ§Ã£o de atividades
+                                (evaluation.planning_tools, "Disponibiliza e acompanha a realização de atividades
                                 pertinentes no Portal Educacional")
                                 ] %}
                                 {% for field_value, description in planning_fields %}
@@ -402,12 +402,12 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if field_value == 'NÃ£o' %}
+                                        {% if field_value == 'Não' %}
                                         <i class="fas fa-times text-danger"></i>
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if field_value == 'NÃ£o se aplica' %}
+                                        {% if field_value == 'Não se aplica' %}
                                         <i class="fas fa-minus text-muted"></i>
                                         {% endif %}
                                     </td>
@@ -423,7 +423,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                     <div class="mt-3">
                         {% if view_only %}
                         {% if evaluation.planning_observations %}
-                        <label class="form-label"><strong>ObservaÃ§Ãµes:</strong></label>
+                        <label class="form-label"><strong>Observações:</strong></label>
                         <div class="form-control-plaintext">{{ evaluation.planning_observations }}</div>
                         {% endif %}
                         {% else %}
@@ -438,7 +438,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chalkboard-teacher me-2"></i>Aspectos Observados no PerÃ­odo da Aula
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Aspectos Observados no PerÍ­odo da Aula
                     </h5>
                     {% if not view_only %}
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChecklistItem('class')">
@@ -453,10 +453,10 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                 <tr>
                                     <th width="{% if view_only %}60{% else %}55{% endif %}%">Aspecto</th>
                                     <th width="13%" class="text-center">Sim</th>
-                                    <th width="13%" class="text-center">NÃ£o</th>
-                                    <th width="14%" class="text-center">NÃ£o se aplica</th>
+                                    <th width="13%" class="text-center">Não</th>
+                                    <th width="14%" class="text-center">Não se aplica</th>
                                     {% if not view_only %}
-                                    <th width="5%" class="text-center">AÃ§Ã£o</th>
+                                    <th width="5%" class="text-center">Ação</th>
                                     {% endif %}
                                 </tr>
                             </thead>
@@ -476,7 +476,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                             value="{{ 'true' if item.is_default else 'false' }}">
                                         <textarea name="checklist_label[]"
                                             class="form-control form-control-sm auto-expand" rows="1"
-                                            placeholder="DescriÃ§Ã£o do item"
+                                            placeholder="Descrição do item"
                                             style="resize: none; overflow: hidden; min-height: 31px;"
                                             oninput="autoExpand(this)">{{ item.label }}</textarea>
                                         {% endif %}
@@ -488,12 +488,12 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if item.value == 'NÃ£o' %}
+                                        {% if item.value == 'Não' %}
                                         <i class="fas fa-times text-danger"></i>
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if item.value == 'NÃ£o se aplica' %}
+                                        {% if item.value == 'Não se aplica' %}
                                         <i class="fas fa-minus text-muted"></i>
                                         {% endif %}
                                     </td>
@@ -507,20 +507,20 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                             class="checklist-value-hidden">
                                     </td>
                                     <td class="text-center">
-                                        <input type="radio" name="checklist_value_{{ loop.index }}_class" value="NÃ£o"
-                                            class="form-check-input checklist-radio" {% if item.value=='NÃ£o' %}checked{%
+                                        <input type="radio" name="checklist_value_{{ loop.index }}_class" value="Não"
+                                            class="form-check-input checklist-radio" {% if item.value=='Não' %}checked{%
                                             endif %}>
                                     </td>
                                     <td class="text-center">
                                         <input type="radio" name="checklist_value_{{ loop.index }}_class"
-                                            value="NÃ£o se aplica" class="form-check-input checklist-radio" {% if
-                                            item.value=='NÃ£o se aplica' %}checked{% endif %}>
+                                            value="Não se aplica" class="form-check-input checklist-radio" {% if
+                                            item.value=='Não se aplica' %}checked{% endif %}>
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-sm btn-outline-success border-0"
                                                 onclick="saveLabel(this, '{{ item.id if item.id else '' }}', 'planning')"
-                                                title="Salvar apenas este rÃ³tulo">
+                                                title="Salvar apenas este rótulo">
                                                 <i class="fas fa-save"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-danger border-0"
@@ -535,36 +535,36 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                 {% else %}
                                 {% if evaluation %}
                                 {% set class_fields = [
-                                (evaluation.class_presentation, "Demonstra apresentaÃ§Ã£o pessoal e postura adequadas"),
+                                (evaluation.class_presentation, "Demonstra apresentação pessoal e postura adequadas"),
                                 (evaluation.class_knowledge, "Demonstra conhecimento dos assuntos que ministra"),
                                 (evaluation.class_student_performance, "Acompanha o desempenho dos alunos e realiza os
-                                registros de ocorrÃªncias, quando necessÃ¡rio"),
-                                (evaluation.class_attendance, "Efetua registros de ocorrÃªncias, quando necessÃ¡rio"),
+                                registros de ocorrÍªncias, quando necessÍ¡rio"),
+                                (evaluation.class_attendance, "Efetua registros de ocorrÍªncias, quando necessÍ¡rio"),
                                 (evaluation.class_difficulties, "Realiza levantamento de dificuldades dos alunos quanto
-                                ao aprendizado teÃ³rico e prÃ¡tico, alinhado com SAEP"),
-                                (evaluation.class_theoretical_practical, "Relaciona o aprendizado teÃ³rico e prÃ¡tico,
+                                ao aprendizado teÍ³rico e prÍ¡tico, alinhado com SAEP"),
+                                (evaluation.class_theoretical_practical, "Relaciona o aprendizado teÍ³rico e prÍ¡tico,
                                 alinhado com SAEP"),
                                 (evaluation.class_previous_lesson, "Inicia a aula retomando a anterior, explicitando
                                 objetivos e associando-os ao projeto do curso"),
                                 (evaluation.class_objectives, "Explicita objetivos e associa-os ao projeto do curso"),
-                                (evaluation.class_questions, "PropÃµe questÃµes, previamente planejadas, que permite
-                                verificar se o conteÃºdo ministrado estÃ¡ sendo assimilado"),
-                                (evaluation.class_content_assimilation, "Verifica se o conteÃºdo ministrado estÃ¡ sendo
+                                (evaluation.class_questions, "Propõe questões, previamente planejadas, que permite
+                                verificar se o conteÍºdo ministrado estÍ¡ sendo assimilado"),
+                                (evaluation.class_content_assimilation, "Verifica se o conteÍºdo ministrado estÍ¡ sendo
                                 assimilado"),
-                                (evaluation.class_student_participation, "Estimula a participaÃ§Ã£o dos alunos durante a
+                                (evaluation.class_student_participation, "Estimula a participação dos alunos durante a
                                 aula"),
-                                (evaluation.class_recovery_process, "Promove o processo de recuperaÃ§Ã£o, atendendo Ã 
-                                Proposta PedagÃ³gica da escola"),
-                                (evaluation.class_learning_exercises, "Aplica exercÃ­cios de forma a estimular o
+                                (evaluation.class_recovery_process, "Promove o processo de recuperação, atendendo Í 
+                                Proposta PedagÍ³gica da escola"),
+                                (evaluation.class_learning_exercises, "Aplica exercÍ­cios de forma a estimular o
                                 aprendizado"),
-                                (evaluation.class_discipline, "MantÃ©m a disciplina na sala de aula, encaminhando
-                                ocorrÃªncias Ã  OrientaÃ§Ã£o Educacional"),
-                                (evaluation.class_teaching_strategies, "Aplica estratÃ©gias de ensino pertinentes aos
+                                (evaluation.class_discipline, "MantÍ©m a disciplina na sala de aula, encaminhando
+                                ocorrÍªncias Í  Orientação Educacional"),
+                                (evaluation.class_teaching_strategies, "Aplica estratÍ©gias de ensino pertinentes aos
                                 objetivos da aula"),
-                                (evaluation.class_machines_equipment, "Orienta a utilizaÃ§Ã£o de mÃ¡quinas, equipamentos e
+                                (evaluation.class_machines_equipment, "Orienta a utilização de mÍ¡quinas, equipamentos e
                                 ferramentas durante a aula"),
                                 (evaluation.class_safety_procedures, "Cumpre e faz cumprir normas e procedimentos de
-                                seguranÃ§a e uso dos EPI's/EPC's")
+                                segurança e uso dos EPI's/EPC's")
                                 ] %}
                                 {% for field_value, description in class_fields %}
                                 <tr>
@@ -575,12 +575,12 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if field_value == 'NÃ£o' %}
+                                        {% if field_value == 'Não' %}
                                         <i class="fas fa-times text-danger"></i>
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if field_value == 'NÃ£o se aplica' %}
+                                        {% if field_value == 'Não se aplica' %}
                                         <i class="fas fa-minus text-muted"></i>
                                         {% endif %}
                                     </td>
@@ -596,7 +596,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                     <div class="mt-3">
                         {% if view_only %}
                         {% if evaluation.class_observations %}
-                        <label class="form-label"><strong>ObservaÃ§Ãµes:</strong></label>
+                        <label class="form-label"><strong>Observações:</strong></label>
                         <div class="form-control-plaintext">{{ evaluation.class_observations }}</div>
                         {% endif %}
                         {% else %}
@@ -611,14 +611,14 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-comments me-2"></i>ObservaÃ§Ãµes Gerais e Anexos
+                        <i class="fas fa-comments me-2"></i>Observações Gerais e Anexos
                     </h5>
                 </div>
                 <div class="card-body">
                     {% if view_only %}
                     {% if evaluation.general_observations %}
                     <div class="mb-3">
-                        <label class="form-label"><strong>ObservaÃ§Ãµes Gerais:</strong></label>
+                        <label class="form-label"><strong>Observações Gerais:</strong></label>
                         <div class="form-control-plaintext">{{ evaluation.general_observations }}</div>
                     </div>
                     {% endif %}
@@ -653,8 +653,8 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                         <input type="file" name="attachments" id="fileInput" class="form-control" multiple
                             accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
                         <small class="form-text text-muted">
-                            Arquivos permitidos: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX (mÃ¡x. 16MB cada). VocÃª pode
-                            selecionar mÃºltiplos arquivos.
+                            Arquivos permitidos: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX (mÍ¡x. 16MB cada). VocÍª pode
+                            selecionar mÍºltiplos arquivos.
                         </small>
 
                         <!-- Preview of selected files -->
@@ -667,7 +667,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                     <!-- Show existing attachments in edit mode -->
                     {% if evaluation and evaluation.attachments %}
                     <div class="mb-3">
-                        <label class="form-label"><strong>Anexos jÃ¡ salvos:</strong></label>
+                        <label class="form-label"><strong>Anexos jÍ¡ salvos:</strong></label>
                         <ul class="list-group">
                             {% for attachment in evaluation.attachments %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -713,7 +713,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between">
-                                    <span>ConduÃ§Ã£o da aula:</span>
+                                    <span>Condução da aula:</span>
                                     <strong>{{ evaluation.calculate_class_percentage() }}% atendido</strong>
                                 </div>
                                 <div class="progress">
@@ -766,7 +766,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                         <i class="fas fa-times me-1"></i>Cancelar
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i>Salvar AvaliaÃ§Ã£o
+                        <i class="fas fa-save me-1"></i>Salvar Avaliação
                     </button>
                 </div>
             </div>
@@ -798,7 +798,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
         const evaluationId = "{{ evaluation.id if evaluation else '' }}";
 
         if (!label || !label.trim()) {
-            alert('O rÃ³tulo nÃ£o pode estar vazio.');
+            alert('O rótulo não pode estar vazio.');
             return;
         }
 
@@ -837,7 +837,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Erro na comunicaÃ§Ã£o com o servidor.');
+                alert('Erro na comunicação com o servidor.');
                 icon.className = originalClass;
                 button.disabled = false;
             });
@@ -860,7 +860,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
             <input type="hidden" name="checklist_category[]" value="${category}">
             <input type="hidden" name="checklist_is_default[]" value="false">
             <textarea name="checklist_label[]" class="form-control form-control-sm auto-expand" 
-                rows="1" placeholder="DescriÃ§Ã£o do novo item personalizado"
+                rows="1" placeholder="Descrição do novo item personalizado"
                 style="resize: none; overflow: hidden; min-height: 31px;"
                 oninput="autoExpand(this)"></textarea>
         </td>
@@ -869,15 +869,15 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
             <input type="hidden" name="checklist_value[]" value="" class="checklist-value-hidden">
         </td>
         <td class="text-center">
-            <input type="radio" name="checklist_value_${rowId}" value="NÃ£o" class="form-check-input checklist-radio">
+            <input type="radio" name="checklist_value_${rowId}" value="Não" class="form-check-input checklist-radio">
         </td>
         <td class="text-center">
-            <input type="radio" name="checklist_value_${rowId}" value="NÃ£o se aplica" class="form-check-input checklist-radio">
+            <input type="radio" name="checklist_value_${rowId}" value="Não se aplica" class="form-check-input checklist-radio">
         </td>
         <td class="text-center">
             <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-outline-success border-0" 
-                    onclick="saveLabel(this, '', '${category}')" title="Salvar apenas este rÃ³tulo">
+                    onclick="saveLabel(this, '', '${category}')" title="Salvar apenas este rótulo">
                     <i class="fas fa-save"></i>
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-danger border-0" 
@@ -922,9 +922,9 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                 row.classList.remove('table-success', 'table-danger', 'table-warning');
                 if (this.value === 'Sim') {
                     row.classList.add('table-success');
-                } else if (this.value === 'NÃ£o') {
+                } else if (this.value === 'Não') {
                     row.classList.add('table-danger');
-                } else if (this.value === 'NÃ£o se aplica') {
+                } else if (this.value === 'Não se aplica') {
                     row.classList.add('table-warning');
                 }
             });
@@ -981,9 +981,9 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                     row.classList.remove('table-success', 'table-danger', 'table-warning');
                     if (this.value === 'Sim') {
                         row.classList.add('table-success');
-                    } else if (this.value === 'NÃ£o') {
+                    } else if (this.value === 'Não') {
                         row.classList.add('table-danger');
-                    } else if (this.value === 'NÃ£o se aplica') {
+                    } else if (this.value === 'Não se aplica') {
                         row.classList.add('table-warning');
                     }
                 }
@@ -1057,7 +1057,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                         <i class="fas fa-exchange-alt me-1"></i>Trocar Arquivo(s)
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFileSelection();">
-                        <i class="fas fa-times me-1"></i>Limpar SeleÃ§Ã£o
+                        <i class="fas fa-times me-1"></i>Limpar Seleção
                     </button>
                 `;
                     fileList.appendChild(changeLi);
@@ -1067,7 +1067,7 @@ Nova AvaliaÃ§Ã£o - {{ super() }}
                         warningLi.className = 'list-group-item list-group-item-danger';
                         warningLi.innerHTML = `
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>AtenÃ§Ã£o:</strong> Arquivos maiores que 16MB nÃ£o serÃ£o enviados.
+                        <strong>Atenção:</strong> Arquivos maiores que 16MB não serão enviados.
                     `;
                         fileList.insertBefore(warningLi, fileList.firstChild);
                     }
