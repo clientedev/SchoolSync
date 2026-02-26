@@ -12,6 +12,47 @@ Nova Avaliação - {{ super() }}
 {% endif %}
 {% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Simplify borders as requested */
+    #planning-checklist-table,
+    #class-checklist-table {
+        border: 1px solid var(--bs-border-color) !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+    }
+
+    #planning-checklist-table th,
+    #planning-checklist-table td,
+    #class-checklist-table th,
+    #class-checklist-table td {
+        border: none !important;
+    }
+
+    /* Add subtle separator row if needed */
+    .checklist-row:not(:last-child) {
+        border-bottom: 1px solid rgba(var(--bs-border-color-rgb), 0.1) !important;
+    }
+
+    /* Remove borders from textareas inside these tables for a cleaner look */
+    #planning-checklist-table textarea.auto-expand,
+    #class-checklist-table textarea.auto-expand {
+        border: none !important;
+        background: transparent !important;
+        padding: 0.5rem 0 !important;
+        box-shadow: none !important;
+    }
+
+    #planning-checklist-table textarea.auto-expand:focus,
+    #class-checklist-table textarea.auto-expand:focus {
+        background: rgba(var(--bs-primary-rgb), 0.05) !important;
+    }
+</style>
+{% endblock %}
+
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -1085,7 +1126,7 @@ Nova Avaliação - {{ super() }}
         if (fileInput) {
             fileInput.value = '';
             const filePreview = document.getElementById('filePreview');
-            if (filePreview) filePreview.style.display = 'none';
+            if (filePreview) filePreview.= 'none';
         }
     }
 </script>
