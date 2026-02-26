@@ -728,20 +728,23 @@ def generate_evaluation_report(evaluation):
     planning_items.sort(key=lambda x: x.display_order if x.display_order is not None else 0)
     
     for item in planning_items:
-        planning_criteria.append([item.label, item.value or 'N/A'])
+        planning_criteria.append([
+            Paragraph(item.label, styles['Normal']), 
+            Paragraph(item.value or 'N/A', styles['Normal'])
+        ])
     
     # Fallback to hardcoded criteria if no dynamic items exist (for very old evaluations)
     if not planning_items:
         planning_criteria = [
             ['Critério', 'Resposta'],
-            ['Elabora cronograma de aula', evaluation.planning_schedule or 'N/A'],
-            ['Planeja a aula', evaluation.planning_lesson_plan or 'N/A'],
-            ['Planeja instrumentos de avaliação', evaluation.planning_evaluation or 'N/A'],
-            ['Conhece documentos estruturantes', evaluation.planning_documents or 'N/A'],
-            ['Utiliza instrumentos diversificados', evaluation.planning_diversified or 'N/A'],
-            ['Prepara previamente o local', evaluation.planning_local_work or 'N/A'],
-            ['Disponibiliza ferramentas', evaluation.planning_tools or 'N/A'],
-            ['Portal Educacional', evaluation.planning_educational_portal or 'N/A'],
+            [Paragraph('Elabora cronograma de aula', styles['Normal']), Paragraph(evaluation.planning_schedule or 'N/A', styles['Normal'])],
+            [Paragraph('Planeja a aula', styles['Normal']), Paragraph(evaluation.planning_lesson_plan or 'N/A', styles['Normal'])],
+            [Paragraph('Planeja instrumentos de avaliação', styles['Normal']), Paragraph(evaluation.planning_evaluation or 'N/A', styles['Normal'])],
+            [Paragraph('Conhece documentos estruturantes', styles['Normal']), Paragraph(evaluation.planning_documents or 'N/A', styles['Normal'])],
+            [Paragraph('Utiliza instrumentos diversificados', styles['Normal']), Paragraph(evaluation.planning_diversified or 'N/A', styles['Normal'])],
+            [Paragraph('Prepara previamente o local', styles['Normal']), Paragraph(evaluation.planning_local_work or 'N/A', styles['Normal'])],
+            [Paragraph('Disponibiliza ferramentas', styles['Normal']), Paragraph(evaluation.planning_tools or 'N/A', styles['Normal'])],
+            [Paragraph('Portal Educacional', styles['Normal']), Paragraph(evaluation.planning_educational_portal or 'N/A', styles['Normal'])],
         ]
     
     planning_table = Table(planning_criteria, colWidths=[4*inch, 2*inch])
@@ -749,10 +752,12 @@ def generate_evaluation_report(evaluation):
         ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 0), (-1, -1), 9),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
@@ -768,29 +773,32 @@ def generate_evaluation_report(evaluation):
     class_items.sort(key=lambda x: x.display_order if x.display_order is not None else 0)
     
     for item in class_items:
-        class_criteria.append([item.label, item.value or 'N/A'])
+        class_criteria.append([
+            Paragraph(item.label, styles['Normal']), 
+            Paragraph(item.value or 'N/A', styles['Normal'])
+        ])
     
     # Fallback to hardcoded criteria if no dynamic items exist
     if not class_items:
         class_criteria = [
             ['Critério', 'Resposta'],
-            ['Apresentação pessoal', evaluation.class_presentation or 'N/A'],
-            ['Conhecimento dos assuntos', evaluation.class_knowledge or 'N/A'],
-            ['Acompanha desempenho', evaluation.class_student_performance or 'N/A'],
-            ['Registra ocorrências', evaluation.class_attendance or 'N/A'],
-            ['Realiza levantamento de dificuldades', evaluation.class_difficulties or 'N/A'],
-            ['Aprendizado teórico e prático', evaluation.class_theoretical_practical or 'N/A'],
-            ['Retoma aula anterior', evaluation.class_previous_lesson or 'N/A'],
-            ['Explicita objetivos', evaluation.class_objectives or 'N/A'],
-            ['Propõe questões', evaluation.class_questions or 'N/A'],
-            ['Verifica assimilação', evaluation.class_content_assimilation or 'N/A'],
-            ['Estimula participação', evaluation.class_student_participation or 'N/A'],
-            ['Processo de recuperação', evaluation.class_recovery_process or 'N/A'],
-            ['Exercícios para estimular', evaluation.class_learning_exercises or 'N/A'],
-            ['Mantém disciplina', evaluation.class_discipline or 'N/A'],
-            ['Estratégias de ensino', evaluation.class_teaching_strategies or 'N/A'],
-            ['Orienta utilização de equipamentos', evaluation.class_machines_equipment or 'N/A'],
-            ['Procedimentos de segurança', evaluation.class_safety_procedures or 'N/A'],
+            [Paragraph('Apresentação pessoal', styles['Normal']), Paragraph(evaluation.class_presentation or 'N/A', styles['Normal'])],
+            [Paragraph('Conhecimento dos assuntos', styles['Normal']), Paragraph(evaluation.class_knowledge or 'N/A', styles['Normal'])],
+            [Paragraph('Acompanha desempenho', styles['Normal']), Paragraph(evaluation.class_student_performance or 'N/A', styles['Normal'])],
+            [Paragraph('Registra ocorrências', styles['Normal']), Paragraph(evaluation.class_attendance or 'N/A', styles['Normal'])],
+            [Paragraph('Realiza levantamento de dificuldades', styles['Normal']), Paragraph(evaluation.class_difficulties or 'N/A', styles['Normal'])],
+            [Paragraph('Aprendizado teórico e prático', styles['Normal']), Paragraph(evaluation.class_theoretical_practical or 'N/A', styles['Normal'])],
+            [Paragraph('Retoma aula anterior', styles['Normal']), Paragraph(evaluation.class_previous_lesson or 'N/A', styles['Normal'])],
+            [Paragraph('Explicita objetivos', styles['Normal']), Paragraph(evaluation.class_objectives or 'N/A', styles['Normal'])],
+            [Paragraph('Propõe questões', styles['Normal']), Paragraph(evaluation.class_questions or 'N/A', styles['Normal'])],
+            [Paragraph('Verifica assimilação', styles['Normal']), Paragraph(evaluation.class_content_assimilation or 'N/A', styles['Normal'])],
+            [Paragraph('Estimula participação', styles['Normal']), Paragraph(evaluation.class_student_participation or 'N/A', styles['Normal'])],
+            [Paragraph('Processo de recuperação', styles['Normal']), Paragraph(evaluation.class_recovery_process or 'N/A', styles['Normal'])],
+            [Paragraph('Exercícios para estimular', styles['Normal']), Paragraph(evaluation.class_learning_exercises or 'N/A', styles['Normal'])],
+            [Paragraph('Mantém disciplina', styles['Normal']), Paragraph(evaluation.class_discipline or 'N/A', styles['Normal'])],
+            [Paragraph('Estratégias de ensino', styles['Normal']), Paragraph(evaluation.class_teaching_strategies or 'N/A', styles['Normal'])],
+            [Paragraph('Orienta utilização de equipamentos', styles['Normal']), Paragraph(evaluation.class_machines_equipment or 'N/A', styles['Normal'])],
+            [Paragraph('Procedimentos de segurança', styles['Normal']), Paragraph(evaluation.class_safety_procedures or 'N/A', styles['Normal'])],
         ]
     
     class_table = Table(class_criteria, colWidths=[4*inch, 2*inch])
@@ -798,10 +806,12 @@ def generate_evaluation_report(evaluation):
         ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 0), (-1, -1), 9),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
