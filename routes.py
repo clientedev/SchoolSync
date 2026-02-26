@@ -1514,9 +1514,21 @@ def new_evaluation():
             for error in errors:
                 flash(f'Erro no campo {field}: {error}', 'error')
     
-    # Prepare default checklist items for the template
-    default_planning_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['planning']]
-    default_class_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['class']]
+    # Prepare default checklist items for the template, trying to use the latest evaluation as template
+    from sqlalchemy import desc
+    try:
+        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.created_at)).first()
+        if latest_eval and latest_eval.checklist_items:
+            default_planning_items = [{'label': item.label, 'is_default': True, 'value': None} 
+                                     for item in latest_eval.checklist_items if item.category == 'planning']
+            default_class_items = [{'label': item.label, 'is_default': True, 'value': None} 
+                                  for item in latest_eval.checklist_items if item.category == 'class']
+        else:
+            default_planning_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['planning']]
+            default_class_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['class']]
+    except:
+        default_planning_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['planning']]
+        default_class_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['class']]
     
     return render_template('evaluation_form.html', form=form, 
                          default_planning_items=default_planning_items,
@@ -2308,9 +2320,21 @@ def new_evaluation_from_schedule(schedule_id):
             for error in errors:
                 flash(f'Erro no campo {field}: {error}', 'error')
     
-    # Create default checklist items for the form
-    default_planning_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['planning']]
-    default_class_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['class']]
+    # Create default checklist items for the form, using latest evaluation as template
+    from sqlalchemy import desc
+    try:
+        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.created_at)).first()
+        if latest_eval and latest_eval.checklist_items:
+            default_planning_items = [{'label': item.label, 'is_default': True, 'value': None} 
+                                     for item in latest_eval.checklist_items if item.category == 'planning']
+            default_class_items = [{'label': item.label, 'is_default': True, 'value': None} 
+                                  for item in latest_eval.checklist_items if item.category == 'class']
+        else:
+            default_planning_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['planning']]
+            default_class_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['class']]
+    except:
+        default_planning_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['planning']]
+        default_class_items = [{'label': label, 'is_default': True, 'value': None} for label in DEFAULT_CHECKLIST_ITEMS['class']]
     
     return render_template('evaluation_form.html', form=form, scheduled=scheduled, title="Nova Avaliação - Agendamento",
                          default_planning_items=default_planning_items,

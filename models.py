@@ -400,9 +400,32 @@ DEFAULT_CHECKLIST_ITEMS = {
 
 
 def create_default_checklist_items(evaluation_id):
-    """Create default checklist items for a new evaluation"""
+    """Create default checklist items for a new evaluation, using the most recent evaluation as a template"""
+    from sqlalchemy import desc
+    
     items = []
     
+    # Try to find the most recent evaluation to use it as a template
+    try:
+        from models import Evaluation
+        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.created_at)).first()
+        
+        if latest_eval and latest_eval.checklist_items:
+            # Copy items from the latest evaluation
+            for item_template in latest_eval.checklist_items:
+                item = EvaluationChecklistItem()
+                item.evaluation_id = evaluation_id
+                item.label = item_template.label
+                item.category = item_template.category
+                item.is_default = True
+                item.display_order = item_template.display_order
+                items.append(item)
+            return items
+    except Exception as e:
+        # If anything fails (e.g. no evaluations), fallback to hardcoded defaults
+        pass
+
+    # Fallback to hardcoded defaults
     # Planning items
     for order, label in enumerate(DEFAULT_CHECKLIST_ITEMS['planning']):
         item = EvaluationChecklistItem()
