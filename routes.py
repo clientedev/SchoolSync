@@ -2948,6 +2948,7 @@ def update_checklist_label():
     try:
         from models import Evaluation, EvaluationChecklistItem
         from datetime import datetime
+        from sqlalchemy import desc
         
         # Priority 1: Update existing item in the specific evaluation
         if item_id and item_id.strip():
