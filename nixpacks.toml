@@ -1,0 +1,8 @@
+[variables]
+NIXPACKS_UV_VERSION = "0.4.15"
+
+[phases.install]
+dependsOn = ["setup"]
+cmds = [
+    "python -m venv --copies /opt/venv && . /opt/venv/bin/activate && pip install uv==0.4.15 && uv sync --frozen"
+]
