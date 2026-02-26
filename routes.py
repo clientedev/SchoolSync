@@ -1686,9 +1686,9 @@ def edit_evaluation(id):
                         item.display_order = i
                         db.session.add(item)
             
-            # Delete removed custom items (only non-default items can be deleted)
+            # Delete removed items (allow deleting any item that was in the checklist but is no longer in the form)
             for item in evaluation.checklist_items:
-                if item.id not in existing_item_ids and not item.is_default:
+                if item.id not in existing_item_ids:
                     db.session.delete(item)
         
         db.session.commit()
