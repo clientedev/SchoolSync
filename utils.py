@@ -721,17 +721,28 @@ def generate_evaluation_report(evaluation):
     # Detailed Evaluation Criteria - Planning
     story.append(Paragraph("<b>CRITÉRIOS DE AVALIAÇÃO - PLANEJAMENTO</b>", styles['Heading3']))
     
-    planning_criteria = [
-        ['Critério', 'Resposta'],
-        ['Elabora cronograma de aula', evaluation.planning_schedule or 'N/A'],
-        ['Planeja a aula', evaluation.planning_lesson_plan or 'N/A'],
-        ['Planeja instrumentos de avaliação', evaluation.planning_evaluation or 'N/A'],
-        ['Conhece documentos estruturantes', evaluation.planning_documents or 'N/A'],
-        ['Utiliza instrumentos diversificados', evaluation.planning_diversified or 'N/A'],
-        ['Prepara previamente o local', evaluation.planning_local_work or 'N/A'],
-        ['Disponibiliza ferramentas', evaluation.planning_tools or 'N/A'],
-        ['Portal Educacional', evaluation.planning_educational_portal or 'N/A'],
-    ]
+    planning_criteria = [['Critério', 'Resposta']]
+    planning_items = [item for item in evaluation.checklist_items if item.category == 'planning']
+    
+    # Sort items - relationship already has order_by but explicit sort is safer
+    planning_items.sort(key=lambda x: x.display_order if x.display_order is not None else 0)
+    
+    for item in planning_items:
+        planning_criteria.append([item.label, item.value or 'N/A'])
+    
+    # Fallback to hardcoded criteria if no dynamic items exist (for very old evaluations)
+    if not planning_items:
+        planning_criteria = [
+            ['Critério', 'Resposta'],
+            ['Elabora cronograma de aula', evaluation.planning_schedule or 'N/A'],
+            ['Planeja a aula', evaluation.planning_lesson_plan or 'N/A'],
+            ['Planeja instrumentos de avaliação', evaluation.planning_evaluation or 'N/A'],
+            ['Conhece documentos estruturantes', evaluation.planning_documents or 'N/A'],
+            ['Utiliza instrumentos diversificados', evaluation.planning_diversified or 'N/A'],
+            ['Prepara previamente o local', evaluation.planning_local_work or 'N/A'],
+            ['Disponibiliza ferramentas', evaluation.planning_tools or 'N/A'],
+            ['Portal Educacional', evaluation.planning_educational_portal or 'N/A'],
+        ]
     
     planning_table = Table(planning_criteria, colWidths=[4*inch, 2*inch])
     planning_table.setStyle(TableStyle([
@@ -752,26 +763,35 @@ def generate_evaluation_report(evaluation):
     # Detailed Evaluation Criteria - Classroom
     story.append(Paragraph("<b>CRITÉRIOS DE AVALIAÇÃO - CONDUÇÃO DA AULA</b>", styles['Heading3']))
     
-    class_criteria = [
-        ['Critério', 'Resposta'],
-        ['Apresentação pessoal', evaluation.class_presentation or 'N/A'],
-        ['Conhecimento dos assuntos', evaluation.class_knowledge or 'N/A'],
-        ['Acompanha desempenho', evaluation.class_student_performance or 'N/A'],
-        ['Registra ocorrências', evaluation.class_attendance or 'N/A'],
-        ['Realiza levantamento de dificuldades', evaluation.class_difficulties or 'N/A'],
-        ['Aprendizado teórico e prático', evaluation.class_theoretical_practical or 'N/A'],
-        ['Retoma aula anterior', evaluation.class_previous_lesson or 'N/A'],
-        ['Explicita objetivos', evaluation.class_objectives or 'N/A'],
-        ['Propõe questões', evaluation.class_questions or 'N/A'],
-        ['Verifica assimilação', evaluation.class_content_assimilation or 'N/A'],
-        ['Estimula participação', evaluation.class_student_participation or 'N/A'],
-        ['Processo de recuperação', evaluation.class_recovery_process or 'N/A'],
-        ['Exercícios para estimular', evaluation.class_learning_exercises or 'N/A'],
-        ['Mantém disciplina', evaluation.class_discipline or 'N/A'],
-        ['Estratégias de ensino', evaluation.class_teaching_strategies or 'N/A'],
-        ['Orienta utilização de equipamentos', evaluation.class_machines_equipment or 'N/A'],
-        ['Procedimentos de segurança', evaluation.class_safety_procedures or 'N/A'],
-    ]
+    class_criteria = [['Critério', 'Resposta']]
+    class_items = [item for item in evaluation.checklist_items if item.category == 'class']
+    class_items.sort(key=lambda x: x.display_order if x.display_order is not None else 0)
+    
+    for item in class_items:
+        class_criteria.append([item.label, item.value or 'N/A'])
+    
+    # Fallback to hardcoded criteria if no dynamic items exist
+    if not class_items:
+        class_criteria = [
+            ['Critério', 'Resposta'],
+            ['Apresentação pessoal', evaluation.class_presentation or 'N/A'],
+            ['Conhecimento dos assuntos', evaluation.class_knowledge or 'N/A'],
+            ['Acompanha desempenho', evaluation.class_student_performance or 'N/A'],
+            ['Registra ocorrências', evaluation.class_attendance or 'N/A'],
+            ['Realiza levantamento de dificuldades', evaluation.class_difficulties or 'N/A'],
+            ['Aprendizado teórico e prático', evaluation.class_theoretical_practical or 'N/A'],
+            ['Retoma aula anterior', evaluation.class_previous_lesson or 'N/A'],
+            ['Explicita objetivos', evaluation.class_objectives or 'N/A'],
+            ['Propõe questões', evaluation.class_questions or 'N/A'],
+            ['Verifica assimilação', evaluation.class_content_assimilation or 'N/A'],
+            ['Estimula participação', evaluation.class_student_participation or 'N/A'],
+            ['Processo de recuperação', evaluation.class_recovery_process or 'N/A'],
+            ['Exercícios para estimular', evaluation.class_learning_exercises or 'N/A'],
+            ['Mantém disciplina', evaluation.class_discipline or 'N/A'],
+            ['Estratégias de ensino', evaluation.class_teaching_strategies or 'N/A'],
+            ['Orienta utilização de equipamentos', evaluation.class_machines_equipment or 'N/A'],
+            ['Procedimentos de segurança', evaluation.class_safety_procedures or 'N/A'],
+        ]
     
     class_table = Table(class_criteria, colWidths=[4*inch, 2*inch])
     class_table.setStyle(TableStyle([

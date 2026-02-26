@@ -1,191 +1,194 @@
 {% extends "base.html" %}
 
 {% block title %}
-    {% if view_only %}
-        Visualizar Avaliação - {{ super() }}
-    {% elif edit_mode %}
-        Editar Avaliação - {{ super() }}
-    {% elif evaluation %}
-        Avaliação - {{ super() }}
-    {% else %}
-        Nova Avaliação - {{ super() }}
-    {% endif %}
+{% if view_only %}
+Visualizar Avaliação - {{ super() }}
+{% elif edit_mode %}
+Editar Avaliação - {{ super() }}
+{% elif evaluation %}
+Avaliação - {{ super() }}
+{% else %}
+Nova Avaliação - {{ super() }}
+{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         {% if evaluations %}
-            <!-- Evaluations List View -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1>
-                    <i class="fas fa-clipboard-check me-2"></i>Avaliações
-                </h1>
-                <a href="{{ url_for('new_evaluation') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i>Nova Avaliação
-                </a>
-            </div>
+        <!-- Evaluations List View -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-clipboard-check me-2"></i>Avaliações
+            </h1>
+            <a href="{{ url_for('new_evaluation') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Nova Avaliação
+            </a>
+        </div>
 
-            <div class="card">
-                <div class="card-body">
-                    {% if evaluations.items %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Docente</th>
-                                        <th>Curso</th>
-                                        <th>Período</th>
-                                        <th>Planejamento</th>
-                                        <th>Condução</th>
-                                        <th>Status</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for eval in evaluations.items %}
-                                        <tr>
-                                            <td>{{ eval.evaluation_date.strftime('%d/%m/%Y') }}</td>
-                                            <td>{{ eval.teacher.name }}</td>
-                                            <td>
-                                                <small>{{ eval.course.name }}</small>
-                                            </td>
-                                            <td>{{ eval.period }}</td>
-                                            <td>
-                                                <span class="badge bg-info">{{ eval.calculate_planning_percentage() }}%</span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-success">{{ eval.calculate_class_percentage() }}%</span>
-                                            </td>
-                                            <td>
-                                                {% if eval.is_completed %}
-                                                    <span class="badge bg-success">
-                                                        <i class="fas fa-check"></i> Finalizada
-                                                    </span>
-                                                {% else %}
-                                                    <span class="badge bg-warning">
-                                                        <i class="fas fa-clock"></i> Em andamento
-                                                    </span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <a href="{{ url_for('view_evaluation', id=eval.id) }}" 
-                                                       class="btn btn-outline-primary">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    {% if not eval.is_completed %}
-                                                        <a href="{{ url_for('edit_evaluation', id=eval.id) }}" 
-                                                           class="btn btn-outline-secondary">
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
-                                                    {% endif %}
-                                                    <a href="{{ url_for('download_evaluation_report', id=eval.id) }}" 
-                                                       class="btn btn-outline-info">
-                                                        <i class="fas fa-file-pdf"></i>
-                                                    </a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Pagination -->
-                        {% if evaluations.pages > 1 %}
-                            <nav aria-label="Paginação">
-                                <ul class="pagination justify-content-center">
-                                    {% if evaluations.has_prev %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ url_for('evaluations', page=evaluations.prev_num) }}">Anterior</a>
-                                        </li>
+        <div class="card">
+            <div class="card-body">
+                {% if evaluations.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Docente</th>
+                                <th>Curso</th>
+                                <th>Período</th>
+                                <th>Planejamento</th>
+                                <th>Condução</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eval in evaluations.items %}
+                            <tr>
+                                <td>{{ eval.evaluation_date.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ eval.teacher.name }}</td>
+                                <td>
+                                    <small>{{ eval.course.name }}</small>
+                                </td>
+                                <td>{{ eval.period }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ eval.calculate_planning_percentage() }}%</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">{{ eval.calculate_class_percentage() }}%</span>
+                                </td>
+                                <td>
+                                    {% if eval.is_completed %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check"></i> Finalizada
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-clock"></i> Em andamento
+                                    </span>
                                     {% endif %}
-                                    
-                                    {% for page_num in evaluations.iter_pages() %}
-                                        {% if page_num %}
-                                            {% if page_num != evaluations.page %}
-                                                <li class="page-item">
-                                                    <a class="page-link" href="{{ url_for('evaluations', page=page_num) }}">{{ page_num }}</a>
-                                                </li>
-                                            {% else %}
-                                                <li class="page-item active">
-                                                    <span class="page-link">{{ page_num }}</span>
-                                                </li>
-                                            {% endif %}
-                                        {% else %}
-                                            <li class="page-item disabled">
-                                                <span class="page-link">…</span>
-                                            </li>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('view_evaluation', id=eval.id) }}"
+                                            class="btn btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if not eval.is_completed %}
+                                        <a href="{{ url_for('edit_evaluation', id=eval.id) }}"
+                                            class="btn btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
                                         {% endif %}
-                                    {% endfor %}
-                                    
-                                    {% if evaluations.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ url_for('evaluations', page=evaluations.next_num) }}">Próximo</a>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </nav>
-                        {% endif %}
-                    {% else %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">Nenhuma avaliação encontrada</h5>
-                            <p class="text-muted">Clique em "Nova Avaliação" para começar.</p>
-                        </div>
-                    {% endif %}
+                                        <a href="{{ url_for('download_evaluation_report', id=eval.id) }}"
+                                            class="btn btn-outline-info">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
+
+                <!-- Pagination -->
+                {% if evaluations.pages > 1 %}
+                <nav aria-label="Paginação">
+                    <ul class="pagination justify-content-center">
+                        {% if evaluations.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="{{ url_for('evaluations', page=evaluations.prev_num) }}">Anterior</a>
+                        </li>
+                        {% endif %}
+
+                        {% for page_num in evaluations.iter_pages() %}
+                        {% if page_num %}
+                        {% if page_num != evaluations.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('evaluations', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if evaluations.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="{{ url_for('evaluations', page=evaluations.next_num) }}">Próximo</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Nenhuma avaliação encontrada</h5>
+                    <p class="text-muted">Clique em "Nova Avaliação" para começar.</p>
+                </div>
+                {% endif %}
             </div>
+        </div>
 
         {% else %}
-            <!-- Single Evaluation Form/View -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1>
-                    <i class="fas fa-clipboard-check me-2"></i>
-                    {% if view_only %}
-                        Acompanhamento da Ação Docente
-                    {% elif edit_mode %}
-                        Editar Avaliação
-                    {% else %}
-                        Nova Avaliação
-                    {% endif %}
-                </h1>
-                <div class="btn-group">
-                    <a href="{{ url_for('evaluations') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-1"></i>Voltar
-                    </a>
-                    {% if view_only and evaluation and not evaluation.is_completed %}
-                        <a href="{{ url_for('edit_evaluation', id=evaluation.id) }}" class="btn btn-primary">
-                            <i class="fas fa-edit me-1"></i>Editar
-                        </a>
-                        <a href="{{ url_for('complete_evaluation', id=evaluation.id) }}" 
-                           class="btn btn-success"
-                           onclick="return confirm('Tem certeza que deseja finalizar esta avaliação? Esta ação não pode ser desfeita.')">
-                            <i class="fas fa-check me-1"></i>Finalizar
-                        </a>
-                    {% endif %}
-                    {% if evaluation %}
-                        <a href="{{ url_for('download_evaluation_report', id=evaluation.id) }}" class="btn btn-info">
-                            <i class="fas fa-file-pdf me-1"></i>Relatório
-                        </a>
-                    {% endif %}
-                </div>
+        <!-- Single Evaluation Form/View -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-clipboard-check me-2"></i>
+                {% if view_only %}
+                Acompanhamento da Ação Docente
+                {% elif edit_mode %}
+                Editar Avaliação
+                {% else %}
+                Nova Avaliação
+                {% endif %}
+            </h1>
+            <div class="btn-group">
+                <a href="{{ url_for('evaluations') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Voltar
+                </a>
+                {% if view_only and evaluation and not evaluation.is_completed %}
+                <a href="{{ url_for('edit_evaluation', id=evaluation.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit me-1"></i>Editar
+                </a>
+                <a href="{{ url_for('complete_evaluation', id=evaluation.id) }}" class="btn btn-success"
+                    onclick="return confirm('Tem certeza que deseja finalizar esta avaliação? Esta ação não pode ser desfeita.')">
+                    <i class="fas fa-check me-1"></i>Finalizar
+                </a>
+                {% endif %}
+                {% if evaluation %}
+                <a href="{{ url_for('download_evaluation_report', id=evaluation.id) }}" class="btn btn-info">
+                    <i class="fas fa-file-pdf me-1"></i>Relatório
+                </a>
+                {% endif %}
             </div>
+        </div>
 
-            <!-- SENAI Header -->
-            <div class="card mb-4">
-                <div class="card-header text-center bg-primary">
-                    <h4 class="mb-0 text-white">
-                        <i class="fas fa-school me-2"></i>SENAI - ACOMPANHAMENTO DA AÇÃO DOCENTE
-                    </h4>
-                </div>
+        <!-- SENAI Header -->
+        <div class="card mb-4">
+            <div class="card-header text-center bg-primary">
+                <h4 class="mb-0 text-white">
+                    <i class="fas fa-school me-2"></i>SENAI - ACOMPANHAMENTO DA AÇÃO DOCENTE
+                </h4>
             </div>
+        </div>
 
-            {% if not view_only %}
-                <form method="POST" action="{% if edit_mode %}{{ url_for('edit_evaluation', id=evaluation.id) }}{% elif scheduled %}{{ url_for('new_evaluation_from_schedule', schedule_id=scheduled.id) }}{% else %}{{ url_for('new_evaluation') }}{% endif %}" enctype="multipart/form-data">
-                    {{ form.hidden_tag() }}
+        {% if not view_only %}
+        <form method="POST"
+            action="{% if edit_mode %}{{ url_for('edit_evaluation', id=evaluation.id) }}{% elif scheduled %}{{ url_for('new_evaluation_from_schedule', schedule_id=scheduled.id) }}{% else %}{{ url_for('new_evaluation') }}{% endif %}"
+            enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
             {% endif %}
 
             <!-- Basic Information -->
@@ -197,77 +200,78 @@
                 </div>
                 <div class="card-body">
                     {% if view_only %}
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Docente:</label>
-                                <div class="form-control-plaintext">{{ evaluation.teacher.name }}</div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Curso/Turma:</label>
-                                <div class="form-control-plaintext">{{ evaluation.course.name }} - {{ evaluation.course.period }}</div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Componente/Unidade Curricular:</label>
-                                <div class="form-control-plaintext">{{ evaluation.course.curriculum_component }}</div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Unidade Curricular:</label>
-                                <div class="form-control-plaintext">
-                                    {% if evaluation.curricular_unit %}
-                                        {{ evaluation.curricular_unit.name }}
-                                    {% else %}
-                                        Não especificada
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Período:</label>
-                                <div class="form-control-plaintext">{{ evaluation.period }}</div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Docente:</label>
+                            <div class="form-control-plaintext">{{ evaluation.teacher.name }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Curso/Turma:</label>
+                            <div class="form-control-plaintext">{{ evaluation.course.name }} - {{
+                                evaluation.course.period }}</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Componente/Unidade Curricular:</label>
+                            <div class="form-control-plaintext">{{ evaluation.course.curriculum_component }}</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Unidade Curricular:</label>
+                            <div class="form-control-plaintext">
+                                {% if evaluation.curricular_unit %}
+                                {{ evaluation.curricular_unit.name }}
+                                {% else %}
+                                Não especificada
+                                {% endif %}
                             </div>
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Período:</label>
+                            <div class="form-control-plaintext">{{ evaluation.period }}</div>
+                        </div>
+                    </div>
                     {% else %}
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.teacher_id.label(class="form-label") }}
-                                {{ form.teacher_id(class="form-select") }}
-                                {% if form.teacher_id.errors %}
-                                    <div class="text-danger small">
-                                        {% for error in form.teacher_id.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.teacher_id.label(class="form-label") }}
+                            {{ form.teacher_id(class="form-select") }}
+                            {% if form.teacher_id.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.teacher_id.errors %}{{ error }}{% endfor %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                {{ form.course_id.label(class="form-label") }}
-                                {{ form.course_id(class="form-select", id="course_id") }}
-                                {% if form.course_id.errors %}
-                                    <div class="text-danger small">
-                                        {% for error in form.course_id.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                {{ form.curricular_unit_id.label(class="form-label") }}
-                                {{ form.curricular_unit_id(class="form-select", id="curricular_unit_id") }}
-                                {% if form.curricular_unit_id.errors %}
-                                    <div class="text-danger small">
-                                        {% for error in form.curricular_unit_id.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                {{ form.period.label(class="form-label") }}
-                                {{ form.period(class="form-select") }}
-                                {% if form.period.errors %}
-                                    <div class="text-danger small">
-                                        {% for error in form.period.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                {{ form.class_time.label(class="form-label") }}
-                                {{ form.class_time(class="form-control") }}
-                            </div>
+                            {% endif %}
                         </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.course_id.label(class="form-label") }}
+                            {{ form.course_id(class="form-select", id="course_id") }}
+                            {% if form.course_id.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.course_id.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.curricular_unit_id.label(class="form-label") }}
+                            {{ form.curricular_unit_id(class="form-select", id="curricular_unit_id") }}
+                            {% if form.curricular_unit_id.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.curricular_unit_id.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.period.label(class="form-label") }}
+                            {{ form.period(class="form-select") }}
+                            {% if form.period.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.period.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.class_time.label(class="form-label") }}
+                            {{ form.class_time(class="form-control") }}
+                        </div>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -300,103 +304,112 @@
                             </thead>
                             <tbody id="planning-checklist-body">
                                 {% if default_planning_items %}
-                                    {% for item in default_planning_items %}
-                                    <tr class="checklist-row" data-is-default="{{ 'true' if item.is_default else 'false' }}">
-                                        <td>
-                                            {% if view_only %}
-                                                {{ item.label }}
-                                                {% if not item.is_default %}
-                                                <span class="badge bg-info ms-1">Personalizado</span>
-                                                {% endif %}
-                                            {% else %}
-                                                <input type="hidden" name="checklist_id[]" value="{{ item.id if item.id else '' }}">
-                                                <input type="hidden" name="checklist_category[]" value="planning">
-                                                <input type="hidden" name="checklist_is_default[]" value="{{ 'true' if item.is_default else 'false' }}">
-                                                {% if item.is_default %}
-                                                    <input type="hidden" name="checklist_label[]" value="{{ item.label }}">
-                                                    {{ item.label }}
-                                                {% else %}
-                                                    <input type="text" name="checklist_label[]" value="{{ item.label }}" class="form-control form-control-sm" placeholder="Descrição do item">
-                                                    <span class="badge bg-info mt-1">Personalizado</span>
-                                                {% endif %}
-                                            {% endif %}
-                                        </td>
+                                {% for item in default_planning_items %}
+                                <tr class="checklist-row"
+                                    data-is-default="{{ 'true' if item.is_default else 'false' }}">
+                                    <td>
                                         {% if view_only %}
-                                            <td class="text-center">
-                                                {% if item.value == 'Sim' %}
-                                                    <i class="fas fa-check text-success"></i>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                {% if item.value == 'Não' %}
-                                                    <i class="fas fa-times text-danger"></i>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                {% if item.value == 'Não se aplica' %}
-                                                    <i class="fas fa-minus text-muted"></i>
-                                                {% endif %}
-                                            </td>
-                                        {% else %}
-                                            <td class="text-center">
-                                                <input type="radio" name="checklist_value_{{ loop.index }}_planning" value="Sim" class="form-check-input checklist-radio"
-                                                       {% if item.value == 'Sim' %}checked{% endif %}>
-                                                <input type="hidden" name="checklist_value[]" value="{{ item.value if item.value else '' }}" class="checklist-value-hidden">
-                                            </td>
-                                            <td class="text-center">
-                                                <input type="radio" name="checklist_value_{{ loop.index }}_planning" value="Não" class="form-check-input checklist-radio"
-                                                       {% if item.value == 'Não' %}checked{% endif %}>
-                                            </td>
-                                            <td class="text-center">
-                                                <input type="radio" name="checklist_value_{{ loop.index }}_planning" value="Não se aplica" class="form-check-input checklist-radio"
-                                                       {% if item.value == 'Não se aplica' %}checked{% endif %}>
-                                            </td>
-                                            <td class="text-center">
-                                                {% if not item.is_default %}
-                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeChecklistItem(this)">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                                {% else %}
-                                                <span class="text-muted" title="Itens padrão não podem ser removidos">
-                                                    <i class="fas fa-lock"></i>
-                                                </span>
-                                                {% endif %}
-                                            </td>
+                                        {{ item.label }}
+                                        {% if not item.is_default %}
+                                        <span class="badge bg-info ms-1">Personalizado</span>
                                         {% endif %}
-                                    </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    {% if evaluation %}
-                                        {% set planning_fields = [
-                                            (evaluation.planning_schedule, "Elabora cronograma de aula, replaneja quando necessário"),
-                                            (evaluation.planning_lesson_plan, "Planeja a aula considerando estratégias de avaliação pertinentes aos objetivos da aula em conformidade com os documentos estruturantes (MSEP e Plano de Curso)"),
-                                            (evaluation.planning_evaluation, "Planeja instrumentos de avaliação diversificados ao longo do período letivo"),
-                                            (evaluation.planning_documents, "Conhece os documentos estruturantes (MSEP e Plano de Curso)"),
-                                            (evaluation.planning_diversified, "Utiliza instrumentos diversificados ao longo do período letivo"),
-                                            (evaluation.planning_local_work, "Prepara previamente o local de trabalho, máquinas, equipamentos e ferramentas"),
-                                            (evaluation.planning_tools, "Disponibiliza e acompanha a realização de atividades pertinentes no Portal Educacional")
-                                        ] %}
-                                        {% for field_value, description in planning_fields %}
-                                        <tr>
-                                            <td>{{ description }}</td>
-                                            <td class="text-center">
-                                                {% if field_value == 'Sim' %}
-                                                    <i class="fas fa-check text-success"></i>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                {% if field_value == 'Não' %}
-                                                    <i class="fas fa-times text-danger"></i>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                {% if field_value == 'Não se aplica' %}
-                                                    <i class="fas fa-minus text-muted"></i>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
+                                        {% else %}
+                                        <input type="hidden" name="checklist_id[]"
+                                            value="{{ item.id if item.id else '' }}">
+                                        <input type="hidden" name="checklist_category[]" value="planning">
+                                        <input type="hidden" name="checklist_is_default[]"
+                                            value="{{ 'true' if item.is_default else 'false' }}">
+                                        <input type="text" name="checklist_label[]" value="{{ item.label }}"
+                                            class="form-control form-control-sm" placeholder="Descrição do item">
+                                        {% if not item.is_default %}
+                                        <span class="badge bg-info mt-1">Personalizado</span>
+                                        {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    {% if view_only %}
+                                    <td class="text-center">
+                                        {% if item.value == 'Sim' %}
+                                        <i class="fas fa-check text-success"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.value == 'Não' %}
+                                        <i class="fas fa-times text-danger"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.value == 'Não se aplica' %}
+                                        <i class="fas fa-minus text-muted"></i>
+                                        {% endif %}
+                                    </td>
+                                    {% else %}
+                                    <td class="text-center">
+                                        <input type="radio" name="checklist_value_{{ loop.index }}_planning" value="Sim"
+                                            class="form-check-input checklist-radio" {% if item.value=='Sim' %}checked{%
+                                            endif %}>
+                                        <input type="hidden" name="checklist_value[]"
+                                            value="{{ item.value if item.value else '' }}"
+                                            class="checklist-value-hidden">
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="radio" name="checklist_value_{{ loop.index }}_planning" value="Não"
+                                            class="form-check-input checklist-radio" {% if item.value=='Não' %}checked{%
+                                            endif %}>
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="radio" name="checklist_value_{{ loop.index }}_planning"
+                                            value="Não se aplica" class="form-check-input checklist-radio" {% if
+                                            item.value=='Não se aplica' %}checked{% endif %}>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            onclick="removeChecklistItem(this)" title="Remover este item">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
                                     {% endif %}
+                                </tr>
+                                {% endfor %}
+                                {% else %}
+                                {% if evaluation %}
+                                {% set planning_fields = [
+                                (evaluation.planning_schedule, "Elabora cronograma de aula, replaneja quando
+                                necessário"),
+                                (evaluation.planning_lesson_plan, "Planeja a aula considerando estratégias de avaliação
+                                pertinentes aos objetivos da aula em conformidade com os documentos estruturantes (MSEP
+                                e Plano de Curso)"),
+                                (evaluation.planning_evaluation, "Planeja instrumentos de avaliação diversificados ao
+                                longo do período letivo"),
+                                (evaluation.planning_documents, "Conhece os documentos estruturantes (MSEP e Plano de
+                                Curso)"),
+                                (evaluation.planning_diversified, "Utiliza instrumentos diversificados ao longo do
+                                período letivo"),
+                                (evaluation.planning_local_work, "Prepara previamente o local de trabalho, máquinas,
+                                equipamentos e ferramentas"),
+                                (evaluation.planning_tools, "Disponibiliza e acompanha a realização de atividades
+                                pertinentes no Portal Educacional")
+                                ] %}
+                                {% for field_value, description in planning_fields %}
+                                <tr>
+                                    <td>{{ description }}</td>
+                                    <td class="text-center">
+                                        {% if field_value == 'Sim' %}
+                                        <i class="fas fa-check text-success"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if field_value == 'Não' %}
+                                        <i class="fas fa-times text-danger"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if field_value == 'Não se aplica' %}
+                                        <i class="fas fa-minus text-muted"></i>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
                                 {% endif %}
                             </tbody>
                         </table>
@@ -405,13 +418,13 @@
                     <!-- Planning Observations -->
                     <div class="mt-3">
                         {% if view_only %}
-                            {% if evaluation.planning_observations %}
-                                <label class="form-label"><strong>Observações:</strong></label>
-                                <div class="form-control-plaintext">{{ evaluation.planning_observations }}</div>
-                            {% endif %}
+                        {% if evaluation.planning_observations %}
+                        <label class="form-label"><strong>Observações:</strong></label>
+                        <div class="form-control-plaintext">{{ evaluation.planning_observations }}</div>
+                        {% endif %}
                         {% else %}
-                            {{ form.planning_observations.label(class="form-label") }}
-                            {{ form.planning_observations(class="form-control", rows="3") }}
+                        {{ form.planning_observations.label(class="form-label") }}
+                        {{ form.planning_observations(class="form-control", rows="3") }}
                         {% endif %}
                     </div>
                 </div>
@@ -445,113 +458,127 @@
                             </thead>
                             <tbody id="class-checklist-body">
                                 {% if default_class_items %}
-                                    {% for item in default_class_items %}
-                                    <tr class="checklist-row" data-is-default="{{ 'true' if item.is_default else 'false' }}">
-                                        <td>
-                                            {% if view_only %}
-                                                {{ item.label }}
-                                                {% if not item.is_default %}
-                                                <span class="badge bg-info ms-1">Personalizado</span>
-                                                {% endif %}
-                                            {% else %}
-                                                <input type="hidden" name="checklist_id[]" value="{{ item.id if item.id else '' }}">
-                                                <input type="hidden" name="checklist_category[]" value="class">
-                                                <input type="hidden" name="checklist_is_default[]" value="{{ 'true' if item.is_default else 'false' }}">
-                                                {% if item.is_default %}
-                                                    <input type="hidden" name="checklist_label[]" value="{{ item.label }}">
-                                                    {{ item.label }}
-                                                {% else %}
-                                                    <input type="text" name="checklist_label[]" value="{{ item.label }}" class="form-control form-control-sm" placeholder="Descrição do item">
-                                                    <span class="badge bg-info mt-1">Personalizado</span>
-                                                {% endif %}
-                                            {% endif %}
-                                        </td>
+                                {% for item in default_class_items %}
+                                <tr class="checklist-row"
+                                    data-is-default="{{ 'true' if item.is_default else 'false' }}">
+                                    <td>
                                         {% if view_only %}
-                                            <td class="text-center">
-                                                {% if item.value == 'Sim' %}
-                                                    <i class="fas fa-check text-success"></i>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                {% if item.value == 'Não' %}
-                                                    <i class="fas fa-times text-danger"></i>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                {% if item.value == 'Não se aplica' %}
-                                                    <i class="fas fa-minus text-muted"></i>
-                                                {% endif %}
-                                            </td>
-                                        {% else %}
-                                            <td class="text-center">
-                                                <input type="radio" name="checklist_value_{{ loop.index }}_class" value="Sim" class="form-check-input checklist-radio"
-                                                       {% if item.value == 'Sim' %}checked{% endif %}>
-                                                <input type="hidden" name="checklist_value[]" value="{{ item.value if item.value else '' }}" class="checklist-value-hidden">
-                                            </td>
-                                            <td class="text-center">
-                                                <input type="radio" name="checklist_value_{{ loop.index }}_class" value="Não" class="form-check-input checklist-radio"
-                                                       {% if item.value == 'Não' %}checked{% endif %}>
-                                            </td>
-                                            <td class="text-center">
-                                                <input type="radio" name="checklist_value_{{ loop.index }}_class" value="Não se aplica" class="form-check-input checklist-radio"
-                                                       {% if item.value == 'Não se aplica' %}checked{% endif %}>
-                                            </td>
-                                            <td class="text-center">
-                                                {% if not item.is_default %}
-                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeChecklistItem(this)">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                                {% else %}
-                                                <span class="text-muted" title="Itens padrão não podem ser removidos">
-                                                    <i class="fas fa-lock"></i>
-                                                </span>
-                                                {% endif %}
-                                            </td>
+                                        {{ item.label }}
+                                        {% if not item.is_default %}
+                                        <span class="badge bg-info ms-1">Personalizado</span>
                                         {% endif %}
-                                    </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    {% if evaluation %}
-                                        {% set class_fields = [
-                                            (evaluation.class_presentation, "Demonstra apresentação pessoal e postura adequadas"),
-                                            (evaluation.class_knowledge, "Demonstra conhecimento dos assuntos que ministra"),
-                                            (evaluation.class_student_performance, "Acompanha o desempenho dos alunos e realiza os registros de ocorrências, quando necessário"),
-                                            (evaluation.class_attendance, "Efetua registros de ocorrências, quando necessário"),
-                                            (evaluation.class_difficulties, "Realiza levantamento de dificuldades dos alunos quanto ao aprendizado teórico e prático, alinhado com SAEP"),
-                                            (evaluation.class_theoretical_practical, "Relaciona o aprendizado teórico e prático, alinhado com SAEP"),
-                                            (evaluation.class_previous_lesson, "Inicia a aula retomando a anterior, explicitando objetivos e associando-os ao projeto do curso"),
-                                            (evaluation.class_objectives, "Explicita objetivos e associa-os ao projeto do curso"),
-                                            (evaluation.class_questions, "Propõe questões, previamente planejadas, que permite verificar se o conteúdo ministrado está sendo assimilado"),
-                                            (evaluation.class_content_assimilation, "Verifica se o conteúdo ministrado está sendo assimilado"),
-                                            (evaluation.class_student_participation, "Estimula a participação dos alunos durante a aula"),
-                                            (evaluation.class_recovery_process, "Promove o processo de recuperação, atendendo à Proposta Pedagógica da escola"),
-                                            (evaluation.class_learning_exercises, "Aplica exercícios de forma a estimular o aprendizado"),
-                                            (evaluation.class_discipline, "Mantém a disciplina na sala de aula, encaminhando ocorrências à Orientação Educacional"),
-                                            (evaluation.class_teaching_strategies, "Aplica estratégias de ensino pertinentes aos objetivos da aula"),
-                                            (evaluation.class_machines_equipment, "Orienta a utilização de máquinas, equipamentos e ferramentas durante a aula"),
-                                            (evaluation.class_safety_procedures, "Cumpre e faz cumprir normas e procedimentos de segurança e uso dos EPI's/EPC's")
-                                        ] %}
-                                        {% for field_value, description in class_fields %}
-                                        <tr>
-                                            <td>{{ description }}</td>
-                                            <td class="text-center">
-                                                {% if field_value == 'Sim' %}
-                                                    <i class="fas fa-check text-success"></i>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                {% if field_value == 'Não' %}
-                                                    <i class="fas fa-times text-danger"></i>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                {% if field_value == 'Não se aplica' %}
-                                                    <i class="fas fa-minus text-muted"></i>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
+                                        {% else %}
+                                        <input type="hidden" name="checklist_id[]"
+                                            value="{{ item.id if item.id else '' }}">
+                                        <input type="hidden" name="checklist_category[]" value="class">
+                                        <input type="hidden" name="checklist_is_default[]"
+                                            value="{{ 'true' if item.is_default else 'false' }}">
+                                        <input type="text" name="checklist_label[]" value="{{ item.label }}"
+                                            class="form-control form-control-sm" placeholder="Descrição do item">
+                                        {% if not item.is_default %}
+                                        <span class="badge bg-info mt-1">Personalizado</span>
+                                        {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    {% if view_only %}
+                                    <td class="text-center">
+                                        {% if item.value == 'Sim' %}
+                                        <i class="fas fa-check text-success"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.value == 'Não' %}
+                                        <i class="fas fa-times text-danger"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.value == 'Não se aplica' %}
+                                        <i class="fas fa-minus text-muted"></i>
+                                        {% endif %}
+                                    </td>
+                                    {% else %}
+                                    <td class="text-center">
+                                        <input type="radio" name="checklist_value_{{ loop.index }}_class" value="Sim"
+                                            class="form-check-input checklist-radio" {% if item.value=='Sim' %}checked{%
+                                            endif %}>
+                                        <input type="hidden" name="checklist_value[]"
+                                            value="{{ item.value if item.value else '' }}"
+                                            class="checklist-value-hidden">
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="radio" name="checklist_value_{{ loop.index }}_class" value="Não"
+                                            class="form-check-input checklist-radio" {% if item.value=='Não' %}checked{%
+                                            endif %}>
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="radio" name="checklist_value_{{ loop.index }}_class"
+                                            value="Não se aplica" class="form-check-input checklist-radio" {% if
+                                            item.value=='Não se aplica' %}checked{% endif %}>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            onclick="removeChecklistItem(this)" title="Remover este item">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
                                     {% endif %}
+                                </tr>
+                                {% endfor %}
+                                {% else %}
+                                {% if evaluation %}
+                                {% set class_fields = [
+                                (evaluation.class_presentation, "Demonstra apresentação pessoal e postura adequadas"),
+                                (evaluation.class_knowledge, "Demonstra conhecimento dos assuntos que ministra"),
+                                (evaluation.class_student_performance, "Acompanha o desempenho dos alunos e realiza os
+                                registros de ocorrências, quando necessário"),
+                                (evaluation.class_attendance, "Efetua registros de ocorrências, quando necessário"),
+                                (evaluation.class_difficulties, "Realiza levantamento de dificuldades dos alunos quanto
+                                ao aprendizado teórico e prático, alinhado com SAEP"),
+                                (evaluation.class_theoretical_practical, "Relaciona o aprendizado teórico e prático,
+                                alinhado com SAEP"),
+                                (evaluation.class_previous_lesson, "Inicia a aula retomando a anterior, explicitando
+                                objetivos e associando-os ao projeto do curso"),
+                                (evaluation.class_objectives, "Explicita objetivos e associa-os ao projeto do curso"),
+                                (evaluation.class_questions, "Propõe questões, previamente planejadas, que permite
+                                verificar se o conteúdo ministrado está sendo assimilado"),
+                                (evaluation.class_content_assimilation, "Verifica se o conteúdo ministrado está sendo
+                                assimilado"),
+                                (evaluation.class_student_participation, "Estimula a participação dos alunos durante a
+                                aula"),
+                                (evaluation.class_recovery_process, "Promove o processo de recuperação, atendendo à
+                                Proposta Pedagógica da escola"),
+                                (evaluation.class_learning_exercises, "Aplica exercícios de forma a estimular o
+                                aprendizado"),
+                                (evaluation.class_discipline, "Mantém a disciplina na sala de aula, encaminhando
+                                ocorrências à Orientação Educacional"),
+                                (evaluation.class_teaching_strategies, "Aplica estratégias de ensino pertinentes aos
+                                objetivos da aula"),
+                                (evaluation.class_machines_equipment, "Orienta a utilização de máquinas, equipamentos e
+                                ferramentas durante a aula"),
+                                (evaluation.class_safety_procedures, "Cumpre e faz cumprir normas e procedimentos de
+                                segurança e uso dos EPI's/EPC's")
+                                ] %}
+                                {% for field_value, description in class_fields %}
+                                <tr>
+                                    <td>{{ description }}</td>
+                                    <td class="text-center">
+                                        {% if field_value == 'Sim' %}
+                                        <i class="fas fa-check text-success"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if field_value == 'Não' %}
+                                        <i class="fas fa-times text-danger"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if field_value == 'Não se aplica' %}
+                                        <i class="fas fa-minus text-muted"></i>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
                                 {% endif %}
                             </tbody>
                         </table>
@@ -560,13 +587,13 @@
                     <!-- Class Observations -->
                     <div class="mt-3">
                         {% if view_only %}
-                            {% if evaluation.class_observations %}
-                                <label class="form-label"><strong>Observações:</strong></label>
-                                <div class="form-control-plaintext">{{ evaluation.class_observations }}</div>
-                            {% endif %}
+                        {% if evaluation.class_observations %}
+                        <label class="form-label"><strong>Observações:</strong></label>
+                        <div class="form-control-plaintext">{{ evaluation.class_observations }}</div>
+                        {% endif %}
                         {% else %}
-                            {{ form.class_observations.label(class="form-label") }}
-                            {{ form.class_observations(class="form-control", rows="3") }}
+                        {{ form.class_observations.label(class="form-label") }}
+                        {{ form.class_observations(class="form-control", rows="3") }}
                         {% endif %}
                     </div>
                 </div>
@@ -581,156 +608,162 @@
                 </div>
                 <div class="card-body">
                     {% if view_only %}
-                        {% if evaluation.general_observations %}
-                            <div class="mb-3">
-                                <label class="form-label"><strong>Observações Gerais:</strong></label>
-                                <div class="form-control-plaintext">{{ evaluation.general_observations }}</div>
-                            </div>
-                        {% endif %}
-                        
-                        {% if evaluation.attachments %}
-                            <div class="mb-3">
-                                <label class="form-label"><strong>Anexos:</strong></label>
-                                <ul class="list-group">
-                                    {% for attachment in evaluation.attachments %}
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <a href="{{ url_for('download_attachment', attachment_id=attachment.id) }}" class="text-decoration-none">
-                                                <i class="fas fa-file-download me-2"></i>
-                                                {{ attachment.original_filename }}
-                                            </a>
-                                            <small class="text-muted">
-                                                {{ (attachment.file_size / 1024) | round(1) }} KB
-                                            </small>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
+                    {% if evaluation.general_observations %}
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Observações Gerais:</strong></label>
+                        <div class="form-control-plaintext">{{ evaluation.general_observations }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if evaluation.attachments %}
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Anexos:</strong></label>
+                        <ul class="list-group">
+                            {% for attachment in evaluation.attachments %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a href="{{ url_for('download_attachment', attachment_id=attachment.id) }}"
+                                    class="text-decoration-none">
+                                    <i class="fas fa-file-download me-2"></i>
+                                    {{ attachment.original_filename }}
+                                </a>
+                                <small class="text-muted">
+                                    {{ (attachment.file_size / 1024) | round(1) }} KB
+                                </small>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
                     {% else %}
-                        <div class="mb-3">
-                            {{ form.general_observations.label(class="form-label") }}
-                            {{ form.general_observations(class="form-control", rows="4") }}
+                    <div class="mb-3">
+                        {{ form.general_observations.label(class="form-label") }}
+                        {{ form.general_observations(class="form-control", rows="4") }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.attachments.label(class="form-label") }}
+                        <input type="file" name="attachments" id="fileInput" class="form-control" multiple
+                            accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
+                        <small class="form-text text-muted">
+                            Arquivos permitidos: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX (máx. 16MB cada). Você pode
+                            selecionar múltiplos arquivos.
+                        </small>
+
+                        <!-- Preview of selected files -->
+                        <div id="filePreview" class="mt-3" style="display: none;">
+                            <label class="form-label"><strong>Arquivos selecionados:</strong></label>
+                            <ul id="fileList" class="list-group"></ul>
                         </div>
-                        
-                        <div class="mb-3">
-                            {{ form.attachments.label(class="form-label") }}
-                            <input type="file" name="attachments" id="fileInput" class="form-control" multiple 
-                                   accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
-                            <small class="form-text text-muted">
-                                Arquivos permitidos: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX (máx. 16MB cada). Você pode selecionar múltiplos arquivos.
-                            </small>
-                            
-                            <!-- Preview of selected files -->
-                            <div id="filePreview" class="mt-3" style="display: none;">
-                                <label class="form-label"><strong>Arquivos selecionados:</strong></label>
-                                <ul id="fileList" class="list-group"></ul>
-                            </div>
-                        </div>
-                        
-                        <!-- Show existing attachments in edit mode -->
-                        {% if evaluation and evaluation.attachments %}
-                            <div class="mb-3">
-                                <label class="form-label"><strong>Anexos já salvos:</strong></label>
-                                <ul class="list-group">
-                                    {% for attachment in evaluation.attachments %}
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <a href="{{ url_for('download_attachment', attachment_id=attachment.id) }}" class="text-decoration-none">
-                                                <i class="fas fa-file-download me-2"></i>
-                                                {{ attachment.original_filename }}
-                                            </a>
-                                            <small class="text-muted">
-                                                {{ (attachment.file_size / 1024) | round(1) }} KB
-                                            </small>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
+                    </div>
+
+                    <!-- Show existing attachments in edit mode -->
+                    {% if evaluation and evaluation.attachments %}
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Anexos já salvos:</strong></label>
+                        <ul class="list-group">
+                            {% for attachment in evaluation.attachments %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a href="{{ url_for('download_attachment', attachment_id=attachment.id) }}"
+                                    class="text-decoration-none">
+                                    <i class="fas fa-file-download me-2"></i>
+                                    {{ attachment.original_filename }}
+                                </a>
+                                <small class="text-muted">
+                                    {{ (attachment.file_size / 1024) | round(1) }} KB
+                                </small>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
                     {% endif %}
                 </div>
             </div>
 
             <!-- Performance Summary (View Only) -->
             {% if view_only and evaluation %}
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-chart-pie me-2"></i>Resumo de Desempenho
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between">
-                                        <span>Planejamento:</span>
-                                        <strong>{{ evaluation.calculate_planning_percentage() }}% atendido</strong>
-                                    </div>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-info" style="width: {{ evaluation.calculate_planning_percentage() }}%"></div>
-                                    </div>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Resumo de Desempenho
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Planejamento:</span>
+                                    <strong>{{ evaluation.calculate_planning_percentage() }}% atendido</strong>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-info"
+                                        style="width: {{ evaluation.calculate_planning_percentage() }}%"></div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between">
-                                        <span>Condução da aula:</span>
-                                        <strong>{{ evaluation.calculate_class_percentage() }}% atendido</strong>
-                                    </div>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-success" style="width: {{ evaluation.calculate_class_percentage() }}%"></div>
-                                    </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Condução da aula:</span>
+                                    <strong>{{ evaluation.calculate_class_percentage() }}% atendido</strong>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success"
+                                        style="width: {{ evaluation.calculate_class_percentage() }}%"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
             {% endif %}
 
             <!-- Signatures Section (View Only) -->
             {% if view_only and evaluation %}
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-signature me-2"></i>Assinaturas
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="text-center">
-                                    <div class="signature-box p-4 mb-2">
-                                        {% if evaluation.teacher_signature_date %}
-                                            <i class="fas fa-check-circle text-success fa-2x"></i>
-                                            <p class="mb-0">Assinado em {{ evaluation.teacher_signature_date.strftime('%d/%m/%Y') }}</p>
-                                        {% else %}
-                                            <i class="fas fa-pen text-muted fa-2x"></i>
-                                            <p class="mb-0 text-muted">Aguardando assinatura</p>
-                                        {% endif %}
-                                    </div>
-                                    <p class="mb-0"><strong>Rubrica do docente:</strong></p>
-                                    <p class="text-muted">{{ evaluation.teacher.name }}</p>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-signature me-2"></i>Assinaturas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <div class="signature-box p-4 mb-2">
+                                    {% if evaluation.teacher_signature_date %}
+                                    <i class="fas fa-check-circle text-success fa-2x"></i>
+                                    <p class="mb-0">Assinado em {{
+                                        evaluation.teacher_signature_date.strftime('%d/%m/%Y') }}</p>
+                                    {% else %}
+                                    <i class="fas fa-pen text-muted fa-2x"></i>
+                                    <p class="mb-0 text-muted">Aguardando assinatura</p>
+                                    {% endif %}
                                 </div>
+                                <p class="mb-0"><strong>Rubrica do docente:</strong></p>
+                                <p class="text-muted">{{ evaluation.teacher.name }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
             {% endif %}
 
             {% if not view_only %}
-                <!-- Form Actions -->
-                <div class="card">
-                    <div class="card-body text-center">
-                        <button type="button" onclick="history.back()" class="btn btn-secondary me-2">
-                            <i class="fas fa-times me-1"></i>Cancelar
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i>Salvar Avaliação
-                        </button>
-                    </div>
+            <!-- Form Actions -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <button type="button" onclick="history.back()" class="btn btn-secondary me-2">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Salvar Avaliação
+                    </button>
                 </div>
-                </form>
-            {% endif %}
+            </div>
+        </form>
+        {% endif %}
         {% endif %}
     </div>
 </div>
@@ -738,21 +771,21 @@
 
 {% block extra_scripts %}
 <script>
-// Counter for unique row IDs
-let checklistRowCounter = 1000;
+    // Counter for unique row IDs
+    let checklistRowCounter = 1000;
 
-// Add a new custom checklist item
-function addChecklistItem(category) {
-    const tbody = document.getElementById(category + '-checklist-body');
-    if (!tbody) return;
-    
-    checklistRowCounter++;
-    const rowId = 'new_' + checklistRowCounter;
-    
-    const tr = document.createElement('tr');
-    tr.className = 'checklist-row';
-    tr.setAttribute('data-is-default', 'false');
-    tr.innerHTML = `
+    // Add a new custom checklist item
+    function addChecklistItem(category) {
+        const tbody = document.getElementById(category + '-checklist-body');
+        if (!tbody) return;
+
+        checklistRowCounter++;
+        const rowId = 'new_' + checklistRowCounter;
+
+        const tr = document.createElement('tr');
+        tr.className = 'checklist-row';
+        tr.setAttribute('data-is-default', 'false');
+        tr.innerHTML = `
         <td>
             <input type="hidden" name="checklist_id[]" value="">
             <input type="hidden" name="checklist_category[]" value="${category}">
@@ -776,96 +809,38 @@ function addChecklistItem(category) {
             </button>
         </td>
     `;
-    
-    tbody.appendChild(tr);
-    
-    // Focus on the new input
-    const input = tr.querySelector('input[type="text"]');
-    if (input) input.focus();
-    
-    // Add event listeners to new radio buttons
-    setupRadioListeners(tr);
-}
 
-// Remove a custom checklist item
-function removeChecklistItem(button) {
-    const row = button.closest('tr');
-    if (row) {
-        const isDefault = row.getAttribute('data-is-default') === 'true';
-        if (isDefault) {
-            alert('Itens padrão não podem ser removidos.');
-            return;
-        }
-        row.remove();
+        tbody.appendChild(tr);
+
+        // Focus on the new input
+        const input = tr.querySelector('input[type="text"]');
+        if (input) input.focus();
+
+        // Add event listeners to new radio buttons
+        setupRadioListeners(tr);
     }
-}
 
-// Setup radio button listeners for a row
-function setupRadioListeners(row) {
-    const radios = row.querySelectorAll('input[type="radio"].checklist-radio');
-    const hiddenInput = row.querySelector('input.checklist-value-hidden');
-    
-    radios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            // Update hidden input with selected value
-            if (hiddenInput) {
-                hiddenInput.value = this.value;
-            }
-            
-            // Update row styling
-            row.classList.remove('table-success', 'table-danger', 'table-warning');
-            if (this.value === 'Sim') {
-                row.classList.add('table-success');
-            } else if (this.value === 'Não') {
-                row.classList.add('table-danger');
-            } else if (this.value === 'Não se aplica') {
-                row.classList.add('table-warning');
-            }
-        });
-    });
-}
+    // Remove a custom checklist item
+    function removeChecklistItem(button) {
+        const row = button.closest('tr');
+        if (row) {
+            row.remove();
+        }
+    }
 
-// Form enhancement for evaluation criteria
-document.addEventListener('DOMContentLoaded', function() {
-    // Setup all existing checklist rows
-    document.querySelectorAll('.checklist-row').forEach(row => {
-        setupRadioListeners(row);
-        
-        // Initialize hidden input value from checked radio on page load
-        const checkedRadio = row.querySelector('input[type="radio"].checklist-radio:checked');
+    // Setup radio button listeners for a row
+    function setupRadioListeners(row) {
+        const radios = row.querySelectorAll('input[type="radio"].checklist-radio');
         const hiddenInput = row.querySelector('input.checklist-value-hidden');
-        if (hiddenInput && checkedRadio) {
-            hiddenInput.value = checkedRadio.value;
-        }
-        
-        // Initialize row styling for already-checked radios
-        if (checkedRadio) {
-            checkedRadio.dispatchEvent(new Event('change'));
-        }
-    });
-    
-    // Form submit handler to sync all radio values to hidden inputs
-    const form = document.querySelector('form');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            // Sync all radio values before submit
-            document.querySelectorAll('.checklist-row').forEach(row => {
-                const hiddenInput = row.querySelector('input.checklist-value-hidden');
-                
+
+        radios.forEach(radio => {
+            radio.addEventListener('change', function () {
+                // Update hidden input with selected value
                 if (hiddenInput) {
-                    const checkedRadio = row.querySelector('input[type="radio"].checklist-radio:checked');
-                    hiddenInput.value = checkedRadio ? checkedRadio.value : '';
+                    hiddenInput.value = this.value;
                 }
-            });
-        });
-    }
-    
-    // Add visual feedback for radio button selection (for old-style form fields)
-    const radioButtons = document.querySelectorAll('input[type="radio"]:not(.checklist-radio)');
-    radioButtons.forEach(radio => {
-        radio.addEventListener('change', function() {
-            const row = this.closest('tr');
-            if (row) {
+
+                // Update row styling
                 row.classList.remove('table-success', 'table-danger', 'table-warning');
                 if (this.value === 'Sim') {
                     row.classList.add('table-success');
@@ -874,73 +849,126 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (this.value === 'Não se aplica') {
                     row.classList.add('table-warning');
                 }
+            });
+        });
+    }
+
+    // Form enhancement for evaluation criteria
+    document.addEventListener('DOMContentLoaded', function () {
+        // Setup all existing checklist rows
+        document.querySelectorAll('.checklist-row').forEach(row => {
+            setupRadioListeners(row);
+
+            // Initialize hidden input value from checked radio on page load
+            const checkedRadio = row.querySelector('input[type="radio"].checklist-radio:checked');
+            const hiddenInput = row.querySelector('input.checklist-value-hidden');
+            if (hiddenInput && checkedRadio) {
+                hiddenInput.value = checkedRadio.value;
+            }
+
+            // Initialize row styling for already-checked radios
+            if (checkedRadio) {
+                checkedRadio.dispatchEvent(new Event('change'));
             }
         });
-    });
 
-    // Initialize existing selections
-    radioButtons.forEach(radio => {
-        if (radio.checked) {
-            radio.dispatchEvent(new Event('change'));
+        // Form submit handler to sync all radio values to hidden inputs
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                // Sync all radio values before submit
+                document.querySelectorAll('.checklist-row').forEach(row => {
+                    const hiddenInput = row.querySelector('input.checklist-value-hidden');
+
+                    if (hiddenInput) {
+                        const checkedRadio = row.querySelector('input[type="radio"].checklist-radio:checked');
+                        hiddenInput.value = checkedRadio ? checkedRadio.value : '';
+                    }
+                });
+            });
         }
-    });
-    
-    // File upload preview functionality with change button
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) {
-        fileInput.addEventListener('change', function(e) {
-            const filePreview = document.getElementById('filePreview');
-            const fileList = document.getElementById('fileList');
-            
-            if (this.files.length > 0) {
-                filePreview.style.display = 'block';
-                fileList.innerHTML = '';
-                
-                const maxSize = 16 * 1024 * 1024;
-                let totalSize = 0;
-                let hasError = false;
-                
-                Array.from(this.files).forEach((file, index) => {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                    
-                    if (file.size > maxSize) {
-                        li.innerHTML = `
+
+        // Add visual feedback for radio button selection (for old-style form fields)
+        const radioButtons = document.querySelectorAll('input[type="radio"]:not(.checklist-radio)');
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', function () {
+                const row = this.closest('tr');
+                if (row) {
+                    row.classList.remove('table-success', 'table-danger', 'table-warning');
+                    if (this.value === 'Sim') {
+                        row.classList.add('table-success');
+                    } else if (this.value === 'Não') {
+                        row.classList.add('table-danger');
+                    } else if (this.value === 'Não se aplica') {
+                        row.classList.add('table-warning');
+                    }
+                }
+            });
+        });
+
+        // Initialize existing selections
+        radioButtons.forEach(radio => {
+            if (radio.checked) {
+                radio.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // File upload preview functionality with change button
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) {
+            fileInput.addEventListener('change', function (e) {
+                const filePreview = document.getElementById('filePreview');
+                const fileList = document.getElementById('fileList');
+
+                if (this.files.length > 0) {
+                    filePreview.style.display = 'block';
+                    fileList.innerHTML = '';
+
+                    const maxSize = 16 * 1024 * 1024;
+                    let totalSize = 0;
+                    let hasError = false;
+
+                    Array.from(this.files).forEach((file, index) => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+                        if (file.size > maxSize) {
+                            li.innerHTML = `
                             <span class="text-danger">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 ${file.name}
                             </span>
                             <small class="text-danger">Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(2)} MB)</small>
                         `;
-                        hasError = true;
-                    } else {
-                        li.innerHTML = `
+                            hasError = true;
+                        } else {
+                            li.innerHTML = `
                             <span>
                                 <i class="fas fa-file me-2"></i>
                                 ${file.name}
                             </span>
                             <small class="text-muted">${(file.size / 1024).toFixed(1)} KB</small>
                         `;
-                        totalSize += file.size;
-                    }
-                    
-                    fileList.appendChild(li);
-                });
-                
-                if (!hasError && this.files.length > 1) {
-                    const totalLi = document.createElement('li');
-                    totalLi.className = 'list-group-item bg-light';
-                    totalLi.innerHTML = `
+                            totalSize += file.size;
+                        }
+
+                        fileList.appendChild(li);
+                    });
+
+                    if (!hasError && this.files.length > 1) {
+                        const totalLi = document.createElement('li');
+                        totalLi.className = 'list-group-item bg-light';
+                        totalLi.innerHTML = `
                         <strong>Total: ${this.files.length} arquivo(s)</strong>
                         <span class="float-end">${(totalSize / 1024).toFixed(1)} KB</span>
                     `;
-                    fileList.appendChild(totalLi);
-                }
-                
-                // Add change file button
-                const changeLi = document.createElement('li');
-                changeLi.className = 'list-group-item bg-light text-center';
-                changeLi.innerHTML = `
+                        fileList.appendChild(totalLi);
+                    }
+
+                    // Add change file button
+                    const changeLi = document.createElement('li');
+                    changeLi.className = 'list-group-item bg-light text-center';
+                    changeLi.innerHTML = `
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('fileInput').click();">
                         <i class="fas fa-exchange-alt me-1"></i>Trocar Arquivo(s)
                     </button>
@@ -948,32 +976,32 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-times me-1"></i>Limpar Seleção
                     </button>
                 `;
-                fileList.appendChild(changeLi);
-                
-                if (hasError) {
-                    const warningLi = document.createElement('li');
-                    warningLi.className = 'list-group-item list-group-item-danger';
-                    warningLi.innerHTML = `
+                    fileList.appendChild(changeLi);
+
+                    if (hasError) {
+                        const warningLi = document.createElement('li');
+                        warningLi.className = 'list-group-item list-group-item-danger';
+                        warningLi.innerHTML = `
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         <strong>Atenção:</strong> Arquivos maiores que 16MB não serão enviados.
                     `;
-                    fileList.insertBefore(warningLi, fileList.firstChild);
+                        fileList.insertBefore(warningLi, fileList.firstChild);
+                    }
+                } else {
+                    filePreview.style.display = 'none';
                 }
-            } else {
-                filePreview.style.display = 'none';
-            }
-        });
-    }
-});
+            });
+        }
+    });
 
-// Clear file selection
-function clearFileSelection() {
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) {
-        fileInput.value = '';
-        const filePreview = document.getElementById('filePreview');
-        if (filePreview) filePreview.style.display = 'none';
+    // Clear file selection
+    function clearFileSelection() {
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) {
+            fileInput.value = '';
+            const filePreview = document.getElementById('filePreview');
+            if (filePreview) filePreview.style.display = 'none';
+        }
     }
-}
 </script>
 {% endblock %}

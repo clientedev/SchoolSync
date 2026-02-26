@@ -1658,9 +1658,8 @@ def edit_evaluation(id):
                         # Update existing item
                         item = EvaluationChecklistItem.query.get(int(item_id))
                         if item and item.evaluation_id == evaluation.id:
-                            # Only allow editing label for non-default items
-                            if not item.is_default:
-                                item.label = label.strip()
+                            # Allow editing label for all items, including default ones
+                            item.label = label.strip()
                             item.value = checklist_values[i] if i < len(checklist_values) and checklist_values[i] else None
                             item.display_order = i
                             existing_item_ids.add(item.id)
