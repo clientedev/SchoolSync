@@ -310,9 +310,6 @@ Nova Avaliação - {{ super() }}
                                     <td>
                                         {% if view_only %}
                                         {{ item.label }}
-                                        {% if not item.is_default %}
-                                        <span class="badge bg-info ms-1">Personalizado</span>
-                                        {% endif %}
                                         {% else %}
                                         <input type="hidden" name="checklist_id[]"
                                             value="{{ item.id if item.id else '' }}">
@@ -324,8 +321,6 @@ Nova Avaliação - {{ super() }}
                                             placeholder="Descrição do item"
                                             style="resize: none; overflow: hidden; min-height: 31px;"
                                             oninput="autoExpand(this)">{{ item.label }}</textarea>
-                                        {% if not item.is_default %}
-                                        <span class="badge bg-info mt-1">Personalizado</span>
                                         {% endif %}
                                         {% endif %}
                                     </td>
@@ -367,7 +362,7 @@ Nova Avaliação - {{ super() }}
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-sm btn-outline-success border-0"
-                                                onclick="saveLabel(this, '{{ item.id if item.id else '' }}')"
+                                                onclick="saveLabel(this, '{{ item.id if item.id else '' }}', 'planning')"
                                                 title="Salvar apenas este rótulo">
                                                 <i class="fas fa-save"></i>
                                             </button>
@@ -474,9 +469,6 @@ Nova Avaliação - {{ super() }}
                                     <td>
                                         {% if view_only %}
                                         {{ item.label }}
-                                        {% if not item.is_default %}
-                                        <span class="badge bg-info ms-1">Personalizado</span>
-                                        {% endif %}
                                         {% else %}
                                         <input type="hidden" name="checklist_id[]"
                                             value="{{ item.id if item.id else '' }}">
@@ -488,8 +480,6 @@ Nova Avaliação - {{ super() }}
                                             placeholder="Descrição do item"
                                             style="resize: none; overflow: hidden; min-height: 31px;"
                                             oninput="autoExpand(this)">{{ item.label }}</textarea>
-                                        {% if not item.is_default %}
-                                        <span class="badge bg-info mt-1">Personalizado</span>
                                         {% endif %}
                                         {% endif %}
                                     </td>
@@ -531,7 +521,7 @@ Nova Avaliação - {{ super() }}
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-sm btn-outline-success border-0"
-                                                onclick="saveLabel(this, '{{ item.id if item.id else '' }}')"
+                                                onclick="saveLabel(this, '{{ item.id if item.id else '' }}', 'planning')"
                                                 title="Salvar apenas este rótulo">
                                                 <i class="fas fa-save"></i>
                                             </button>
@@ -803,7 +793,7 @@ Nova Avaliação - {{ super() }}
     }
 
     // Save label via AJAX
-    function saveLabel(button, itemId) {
+    function saveLabel(button, itemId, category) {
         const row = button.closest('tr');
         const textarea = row.querySelector('textarea[name="checklist_label[]"]');
         const label = textarea.value;
@@ -811,11 +801,6 @@ Nova Avaliação - {{ super() }}
 
         if (!label || !label.trim()) {
             alert('O rótulo não pode estar vazio.');
-            return;
-        }
-
-        if (!itemId) {
-            alert('Por favor, salve a avaliação primeiro para criar este item no banco de dados antes de atualizar seu rótulo individualmente.');
             return;
         }
 
@@ -832,7 +817,8 @@ Nova Avaliação - {{ super() }}
             body: JSON.stringify({
                 item_id: itemId,
                 label: label.trim(),
-                evaluation_id: evaluationId
+                evaluation_id: evaluationId,
+                category: category
             })
         })
             .then(response => response.json())
@@ -879,7 +865,6 @@ Nova Avaliação - {{ super() }}
                 rows="1" placeholder="Descrição do novo item personalizado"
                 style="resize: none; overflow: hidden; min-height: 31px;"
                 oninput="autoExpand(this)"></textarea>
-            <span class="badge bg-info mt-1">Personalizado</span>
         </td>
         <td class="text-center">
             <input type="radio" name="checklist_value_${rowId}" value="Sim" class="form-check-input checklist-radio">
@@ -894,7 +879,7 @@ Nova Avaliação - {{ super() }}
         <td class="text-center">
             <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-outline-success border-0" 
-                    onclick="saveLabel(this, '')" title="Salvar apenas este rótulo">
+                    onclick="saveLabel(this, '', '${category}')" title="Salvar apenas este rótulo">
                     <i class="fas fa-save"></i>
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-danger border-0" 

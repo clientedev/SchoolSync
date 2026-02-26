@@ -1517,7 +1517,7 @@ def new_evaluation():
     # Prepare default checklist items for the template, trying to use the latest evaluation as template
     from sqlalchemy import desc
     try:
-        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.created_at)).first()
+        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.updated_at)).first()
         if latest_eval and latest_eval.checklist_items:
             default_planning_items = [{'label': item.label, 'is_default': True, 'value': None} 
                                      for item in latest_eval.checklist_items if item.category == 'planning']
@@ -2323,7 +2323,7 @@ def new_evaluation_from_schedule(schedule_id):
     # Create default checklist items for the form, using latest evaluation as template
     from sqlalchemy import desc
     try:
-        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.created_at)).first()
+        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.updated_at)).first()
         if latest_eval and latest_eval.checklist_items:
             default_planning_items = [{'label': item.label, 'is_default': True, 'value': None} 
                                      for item in latest_eval.checklist_items if item.category == 'planning']
@@ -2932,7 +2932,7 @@ def teacher_evaluations():
 @app.route('/api/update_checklist_label', methods=['POST'])
 @login_required
 def update_checklist_label():
-    """API endpoint to update a checklist item label from the form"""
+    """API endpoint to update a checklist item label globally or individually"""
     data = request.get_json()
     if not data:
         return jsonify({'success': False, 'message': 'Nenhum dado fornecido'}), 400
@@ -2940,30 +2940,53 @@ def update_checklist_label():
     item_id = data.get('item_id')
     new_label = data.get('label')
     evaluation_id = data.get('evaluation_id')
+    category = data.get('category', 'planning')
     
     if not new_label or not new_label.strip():
         return jsonify({'success': False, 'message': 'Rótulo não pode ser vazio'}), 400
         
     try:
-        from models import EvaluationChecklistItem
+        from models import Evaluation, EvaluationChecklistItem
         from datetime import datetime
-        if item_id:
-            # Update existing item
+        
+        # Priority 1: Update existing item in the specific evaluation
+        if item_id and item_id.strip():
             item = EvaluationChecklistItem.query.get(int(item_id))
-            if not item:
-                return jsonify({'success': False, 'message': 'Item não encontrado'}), 404
-            
-            # Security check
-            if evaluation_id and item.evaluation_id != int(evaluation_id):
-                return jsonify({'success': False, 'message': 'Acesso negado'}), 403
+            if item:
+                # Security check
+                if evaluation_id and str(item.evaluation_id) != str(evaluation_id):
+                    return jsonify({'success': False, 'message': 'Acesso negado'}), 403
                 
-            item.label = new_label.strip()
-            # Also update the parent evaluation's updated_at to make it the latest template
-            item.evaluation.updated_at = datetime.utcnow()
+                item.label = new_label.strip()
+                item.evaluation.updated_at = datetime.utcnow()
+                db.session.commit()
+                return jsonify({'success': True, 'message': 'Rótulo atualizado com sucesso'})
+
+        # Priority 2: Update "Global Template" (the most recent evaluation)
+        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.updated_at)).first()
+        
+        if latest_eval:
+            # Update similar item in latest_eval or add it
+            existing_item = EvaluationChecklistItem.query.filter_by(
+                evaluation_id=latest_eval.id,
+                category=category,
+                label=new_label.strip()
+            ).first()
+            
+            if not existing_item:
+                new_item = EvaluationChecklistItem()
+                new_item.evaluation_id = latest_eval.id
+                new_item.label = new_label.strip()
+                new_item.category = category
+                new_item.is_default = True
+                new_item.display_order = 999
+                db.session.add(new_item)
+            
+            latest_eval.updated_at = datetime.utcnow()
             db.session.commit()
-            return jsonify({'success': True, 'message': 'Rótulo atualizado com sucesso'})
-        else:
-            return jsonify({'success': False, 'message': 'Item ainda não salvo no banco. Salve a avaliação por completo.'}), 400
+            return jsonify({'success': True, 'message': 'Rótulo fixado como novo padrão global'})
+            
+        return jsonify({'success': False, 'message': 'Nenhuma avaliação encontrada para servir de modelo.'}), 404
             
     except Exception as e:
         db.session.rollback()
