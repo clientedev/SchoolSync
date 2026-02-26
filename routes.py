@@ -9,6 +9,7 @@ from production_app import csrf
 from datetime import datetime, timedelta
 from production_app import app
 from models import db
+from sqlalchemy import desc
 from models import Teacher, Course, Evaluator, Evaluation, EvaluationAttachment, User, Semester, CurricularUnit, ScheduledEvaluation, DigitalSignature, TemporaryCredential, EvaluationChecklistItem, create_default_checklist_items, DEFAULT_CHECKLIST_ITEMS
 from forms import TeacherForm, CourseForm, EvaluationForm, LoginForm, UserForm, UserEditForm, ChangePasswordForm
 from utils import save_uploaded_file, send_evaluation_email, generate_evaluation_report, generate_consolidated_report, generate_teachers_excel_template, process_teachers_excel_import, generate_courses_excel_template, process_courses_excel_import, generate_curricular_units_excel_template, process_curricular_units_excel_import, get_or_create_current_semester
@@ -2941,6 +2942,7 @@ def update_checklist_label():
     new_label = data.get('label')
     evaluation_id = data.get('evaluation_id')
     category = data.get('category', 'planning')
+    item_index = data.get('index')  # The order index of the item in the list
     
     if not new_label or not new_label.strip():
         return jsonify({'success': False, 'message': 'Rótulo não pode ser vazio'}), 400
@@ -2948,7 +2950,6 @@ def update_checklist_label():
     try:
         from models import Evaluation, EvaluationChecklistItem
         from datetime import datetime
-        from sqlalchemy import desc
         
         # Priority 1: Update existing item in the specific evaluation
         if item_id and item_id.strip():
@@ -2972,27 +2973,42 @@ def update_checklist_label():
             latest_eval = Evaluation.query.order_by(desc(Evaluation.updated_at)).first()
             
         if latest_eval:
-            # Update similar item in latest_eval or add it
-            # Normalize label for search
             target_label = new_label.strip()
-            existing_item = EvaluationChecklistItem.query.filter_by(
-                evaluation_id=latest_eval.id,
-                category=category,
-                label=target_label
-            ).first()
+            item_in_template = None
+
+            # If we have an index, try to find the item in that position in the template
+            if item_index is not None:
+                # Get items of the same category in the template, ordered by display_order
+                template_items = EvaluationChecklistItem.query.filter_by(
+                    evaluation_id=latest_eval.id,
+                    category=category
+                ).order_by(EvaluationChecklistItem.display_order).all()
+                
+                if item_index < len(template_items):
+                    item_in_template = template_items[item_index]
             
-            if not existing_item:
+            # If not found by index, try to find by original label (if possible) or same label
+            if not item_in_template:
+                item_in_template = EvaluationChecklistItem.query.filter_by(
+                    evaluation_id=latest_eval.id,
+                    category=category,
+                    label=target_label
+                ).first()
+            
+            if item_in_template:
+                # Update the template item
+                item_in_template.label = target_label
+                msg = 'Rótulo atualizado no modelo global'
+            else:
+                # Add a new item to the template
                 new_item = EvaluationChecklistItem()
                 new_item.evaluation_id = latest_eval.id
                 new_item.label = target_label
                 new_item.category = category
                 new_item.is_default = True
-                new_item.display_order = 999
+                new_item.display_order = item_index if item_index is not None else 999
                 db.session.add(new_item)
                 msg = 'Rótulo adicionado ao modelo global'
-            else:
-                existing_item.label = target_label # In case of slight normalization
-                msg = 'Rótulo atualizado no modelo global'
             
             latest_eval.updated_at = datetime.utcnow()
             db.session.commit()

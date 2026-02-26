@@ -36,7 +36,7 @@ Nova Avaliação - {{ super() }}
                                 <th>Data</th>
                                 <th>Docente</th>
                                 <th>Curso</th>
-                                <th>PerÍ­odo</th>
+                                <th>Período</th>
                                 <th>Planejamento</th>
                                 <th>Condução</th>
                                 <th>Status</th>
@@ -179,7 +179,7 @@ Nova Avaliação - {{ super() }}
         <div class="card mb-4">
             <div class="card-header text-center bg-primary">
                 <h4 class="mb-0 text-white">
-                    <i class="fas fa-school me-2"></i>SENAI - ACOMPANHAMENTO DA AÍ‡ÍƒO DOCENTE
+                    <i class="fas fa-school me-2"></i>SENAI - ACOMPANHAMENTO DA A&Ccedil;&Atilde;O DOCENTE
                 </h4>
             </div>
         </div>
@@ -195,7 +195,7 @@ Nova Avaliação - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-info-circle me-2"></i>Informações BÍ¡sicas
+                        <i class="fas fa-info-circle me-2"></i>Informações Básicas
                     </h5>
                 </div>
                 <div class="card-body">
@@ -225,7 +225,7 @@ Nova Avaliação - {{ super() }}
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">PerÍ­odo:</label>
+                            <label class="form-label">Período:</label>
                             <div class="form-control-plaintext">{{ evaluation.period }}</div>
                         </div>
                     </div>
@@ -280,7 +280,7 @@ Nova Avaliação - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-tasks me-2"></i>Aspectos Observados no PerÍ­odo de Planejamento
+                        <i class="fas fa-tasks me-2"></i>Aspectos Observados no Período de Planejamento
                     </h5>
                     {% if not view_only %}
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChecklistItem('planning')">
@@ -361,7 +361,7 @@ Nova Avaliação - {{ super() }}
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-sm btn-outline-success border-0"
-                                                onclick="saveLabel(this, '{{ item.id if item.id else '' }}', 'planning')"
+                                                onclick="saveLabel(this, '{{ item.id if item.id else '' }}', 'planning', {{ loop.index0 }})"
                                                 title="Salvar apenas este rótulo">
                                                 <i class="fas fa-save"></i>
                                             </button>
@@ -378,17 +378,17 @@ Nova Avaliação - {{ super() }}
                                 {% if evaluation %}
                                 {% set planning_fields = [
                                 (evaluation.planning_schedule, "Elabora cronograma de aula, replaneja quando
-                                necessÍ¡rio"),
-                                (evaluation.planning_lesson_plan, "Planeja a aula considerando estratÍ©gias de avaliação
+                                necessário"),
+                                (evaluation.planning_lesson_plan, "Planeja a aula considerando estratégias de avaliação
                                 pertinentes aos objetivos da aula em conformidade com os documentos estruturantes (MSEP
                                 e Plano de Curso)"),
                                 (evaluation.planning_evaluation, "Planeja instrumentos de avaliação diversificados ao
-                                longo do perÍ­odo letivo"),
+                                longo do período letivo"),
                                 (evaluation.planning_documents, "Conhece os documentos estruturantes (MSEP e Plano de
                                 Curso)"),
                                 (evaluation.planning_diversified, "Utiliza instrumentos diversificados ao longo do
-                                perÍ­odo letivo"),
-                                (evaluation.planning_local_work, "Prepara previamente o local de trabalho, mÍ¡quinas,
+                                período letivo"),
+                                (evaluation.planning_local_work, "Prepara previamente o local de trabalho, máquinas,
                                 equipamentos e ferramentas"),
                                 (evaluation.planning_tools, "Disponibiliza e acompanha a realização de atividades
                                 pertinentes no Portal Educacional")
@@ -438,7 +438,7 @@ Nova Avaliação - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chalkboard-teacher me-2"></i>Aspectos Observados no PerÍ­odo da Aula
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Aspectos Observados no Período da Aula
                     </h5>
                     {% if not view_only %}
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChecklistItem('class')">
@@ -519,7 +519,7 @@ Nova Avaliação - {{ super() }}
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-sm btn-outline-success border-0"
-                                                onclick="saveLabel(this, '{{ item.id if item.id else '' }}', 'planning')"
+                                                onclick="saveLabel(this, '{{ item.id if item.id else '' }}', 'class', {{ loop.index0 }})"
                                                 title="Salvar apenas este rótulo">
                                                 <i class="fas fa-save"></i>
                                             </button>
@@ -538,11 +538,11 @@ Nova Avaliação - {{ super() }}
                                 (evaluation.class_presentation, "Demonstra apresentação pessoal e postura adequadas"),
                                 (evaluation.class_knowledge, "Demonstra conhecimento dos assuntos que ministra"),
                                 (evaluation.class_student_performance, "Acompanha o desempenho dos alunos e realiza os
-                                registros de ocorrÍªncias, quando necessÍ¡rio"),
-                                (evaluation.class_attendance, "Efetua registros de ocorrÍªncias, quando necessÍ¡rio"),
+                                registros de ocorrências, quando necessário"),
+                                (evaluation.class_attendance, "Efetua registros de ocorrências, quando necessário"),
                                 (evaluation.class_difficulties, "Realiza levantamento de dificuldades dos alunos quanto
-                                ao aprendizado teÍ³rico e prÍ¡tico, alinhado com SAEP"),
-                                (evaluation.class_theoretical_practical, "Relaciona o aprendizado teÍ³rico e prÍ¡tico,
+                                ao aprendizado teórico e prático, alinhado com SAEP"),
+                                (evaluation.class_theoretical_practical, "Relaciona o aprendizado teórico e prático,
                                 alinhado com SAEP"),
                                 (evaluation.class_previous_lesson, "Inicia a aula retomando a anterior, explicitando
                                 objetivos e associando-os ao projeto do curso"),
@@ -553,15 +553,15 @@ Nova Avaliação - {{ super() }}
                                 assimilado"),
                                 (evaluation.class_student_participation, "Estimula a participação dos alunos durante a
                                 aula"),
-                                (evaluation.class_recovery_process, "Promove o processo de recuperação, atendendo Í 
-                                Proposta PedagÍ³gica da escola"),
-                                (evaluation.class_learning_exercises, "Aplica exercÍ­cios de forma a estimular o
+                                (evaluation.class_recovery_process, "Promove o processo de recuperação, atendendo à
+                                Proposta Pedagógica da escola"),
+                                (evaluation.class_learning_exercises, "Aplica exercícios de forma a estimular o
                                 aprendizado"),
-                                (evaluation.class_discipline, "MantÍ©m a disciplina na sala de aula, encaminhando
-                                ocorrÍªncias Í  Orientação Educacional"),
-                                (evaluation.class_teaching_strategies, "Aplica estratÍ©gias de ensino pertinentes aos
+                                (evaluation.class_discipline, "Mantém a disciplina na sala de aula, encaminhando
+                                ocorrências à Orientação Educacional"),
+                                (evaluation.class_teaching_strategies, "Aplica estratégias de ensino pertinentes aos
                                 objetivos da aula"),
-                                (evaluation.class_machines_equipment, "Orienta a utilização de mÍ¡quinas, equipamentos e
+                                (evaluation.class_machines_equipment, "Orienta a utilização de máquinas, equipamentos e
                                 ferramentas durante a aula"),
                                 (evaluation.class_safety_procedures, "Cumpre e faz cumprir normas e procedimentos de
                                 segurança e uso dos EPI's/EPC's")
@@ -791,7 +791,7 @@ Nova Avaliação - {{ super() }}
     }
 
     // Save label via AJAX
-    function saveLabel(button, itemId, category) {
+    function saveLabel(button, itemId, category, index) {
         const row = button.closest('tr');
         const textarea = row.querySelector('textarea[name="checklist_label[]"]');
         const label = textarea.value;
@@ -816,7 +816,8 @@ Nova Avaliação - {{ super() }}
                 item_id: itemId,
                 label: label.trim(),
                 evaluation_id: evaluationId,
-                category: category
+                category: category,
+                index: index
             })
         })
             .then(response => response.json())
