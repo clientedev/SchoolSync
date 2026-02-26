@@ -31,6 +31,14 @@ Nova Avaliação - {{ super() }}
         border: none !important;
     }
 
+    /* Restore vertical border after the Aspecto column */
+    #planning-checklist-table th:first-child,
+    #planning-checklist-table td:first-child,
+    #class-checklist-table th:first-child,
+    #class-checklist-table td:first-child {
+        border-right: 1px solid var(--bs-border-color) !important;
+    }
+
     /* Add subtle separator row if needed */
     .checklist-row:not(:last-child) {
         border-bottom: 1px solid rgba(var(--bs-border-color-rgb), 0.1) !important;
@@ -1014,8 +1022,8 @@ Nova Avaliação - {{ super() }}
             });
         }
 
-        // Add visual feedback for radio button selection (for old-style form fields)
-        const radioButtons = document.querySelectorAll('input[type="radio"]:not(.checklist-radio)');
+        // Add visual feedback for radio button selection
+        const radioButtons = document.querySelectorAll('input[type="radio"]');
         radioButtons.forEach(radio => {
             radio.addEventListener('change', function () {
                 const row = this.closest('tr');
@@ -1126,7 +1134,7 @@ Nova Avaliação - {{ super() }}
         if (fileInput) {
             fileInput.value = '';
             const filePreview = document.getElementById('filePreview');
-            if (filePreview) filePreview.= 'none';
+            if (filePreview) filePreview.style.display = 'none';
         }
     }
 </script>
