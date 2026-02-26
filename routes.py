@@ -3021,3 +3021,65 @@ def update_checklist_label():
         import logging
         logging.error(f"Erro ao atualizar rótulo via API: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500
+
+@app.route('/api/delete_checklist_item', methods=['POST'])
+@login_required
+def delete_checklist_item():
+    """API endpoint to delete a checklist item globally or individually"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'message': 'Nenhum dado fornecido'}), 400
+    
+    item_id = data.get('item_id')
+    evaluation_id = data.get('evaluation_id')
+    category = data.get('category', 'planning')
+    item_index = data.get('index')
+    
+    try:
+        from models import Evaluation, EvaluationChecklistItem
+        from datetime import datetime
+        
+        # 1. Delete specific item if ID exists
+        if item_id and item_id.strip():
+            item = EvaluationChecklistItem.query.get(int(item_id))
+            if item:
+                # Security check
+                if evaluation_id and str(item.evaluation_id) != str(evaluation_id):
+                    return jsonify({'success': False, 'message': 'Acesso negado'}), 403
+                
+                db.session.delete(item)
+                db.session.commit()
+
+        # 2. Sync with "Global Template" (remove from the most recent evaluation)
+        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.updated_at)).first()
+        if not latest_eval:
+            latest_eval = Evaluation.query.order_by(desc(Evaluation.updated_at)).first()
+
+        if latest_eval:
+            item_to_delete = None
+            
+            # Find in template by index
+            if item_index is not None:
+                template_items = EvaluationChecklistItem.query.filter_by(
+                    evaluation_id=latest_eval.id,
+                    category=category
+                ).order_by(EvaluationChecklistItem.display_order).all()
+                
+                if item_index < len(template_items):
+                    item_to_delete = template_items[item_index]
+            
+            if item_to_delete:
+                db.session.delete(item_to_delete)
+                latest_eval.updated_at = datetime.utcnow()
+                db.session.commit()
+                return jsonify({'success': True, 'message': 'Item removido globalmente'})
+            
+            return jsonify({'success': True, 'message': 'Item removido da avaliação atual (não encontrado no modelo)'})
+
+        return jsonify({'success': True, 'message': 'Item removido'})
+
+    except Exception as e:
+        db.session.rollback()
+        import logging
+        logging.error(f"Erro ao excluir item via API: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500

@@ -29,6 +29,7 @@ Nova Avaliação - {{ super() }}
     #class-checklist-table th,
     #class-checklist-table td {
         border: none !important;
+        border-bottom: 1px solid var(--bs-border-color) !important;
     }
 
     /* Restore vertical border after the Aspecto column */
@@ -39,9 +40,10 @@ Nova Avaliação - {{ super() }}
         border-right: 1px solid var(--bs-border-color) !important;
     }
 
-    /* Add subtle separator row if needed */
-    .checklist-row:not(:last-child) {
-        border-bottom: 1px solid rgba(var(--bs-border-color-rgb), 0.1) !important;
+    /* Clean up the last row border to keep the rounded card look */
+    #planning-checklist-table tr:last-child td,
+    #class-checklist-table tr:last-child td {
+        border-bottom: none !important;
     }
 
     /* Remove borders from textareas inside these tables for a cleaner look */
@@ -948,12 +950,48 @@ Nova Avaliação - {{ super() }}
         setupRadioListeners(tr);
     }
 
-    // Remove a custom checklist item
+    // Remove a checklist item globally
     function removeChecklistItem(button) {
+        if (!confirm('Tem certeza que deseja remover este item? Ele será removido deste formulário e não aparecerá em novos.')) return;
+
         const row = button.closest('tr');
-        if (row) {
-            row.remove();
-        }
+        const itemId = row.querySelector('input[name="checklist_id[]"]')?.value;
+        const categoryInput = row.querySelector('input[name="checklist_category[]"]');
+        const category = categoryInput ? categoryInput.value : 'planning';
+        const evaluationId = "{{ evaluation.id if evaluation else '' }}";
+
+        // Find index of this row within its tbody
+        const tbody = row.closest('tbody');
+        const index = Array.from(tbody.querySelectorAll('.checklist-row')).indexOf(row);
+
+        // Call backend to remove globally
+        fetch('/api/delete_checklist_item', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                item_id: itemId,
+                evaluation_id: evaluationId,
+                category: category,
+                index: index
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    row.remove();
+                } else {
+                    alert('Erro ao excluir item: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Fallback: just remove from UI if API fails or for new unsaved items?
+                // Better to keep it if it's an existing item that failed to delete.
+                if (!itemId) row.remove();
+                else alert('Erro na comunicação com o servidor.');
+            });
     }
 
     // Setup radio button listeners for a row
