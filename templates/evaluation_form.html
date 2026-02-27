@@ -846,6 +846,7 @@ Nova Avaliação - {{ super() }}
         const row = button.closest('tr');
         const textarea = row.querySelector('textarea[name="checklist_label[]"]');
         const label = textarea.value;
+        const oldLabel = textarea.getAttribute('data-original-value') || ''; // Track original value
         const evaluationId = "{{ evaluation.id if evaluation else '' }}";
 
         if (!label || !label.trim()) {
@@ -866,6 +867,7 @@ Nova Avaliação - {{ super() }}
             body: JSON.stringify({
                 item_id: itemId,
                 label: label.trim(),
+                old_label: oldLabel.trim(),
                 evaluation_id: evaluationId,
                 category: category,
                 index: index
@@ -874,6 +876,7 @@ Nova Avaliação - {{ super() }}
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    textarea.setAttribute('data-original-value', label.trim()); // Update original value
                     icon.className = 'fas fa-check';
                     button.classList.replace('btn-outline-success', 'btn-success');
                     setTimeout(() => {
@@ -896,6 +899,7 @@ Nova Avaliação - {{ super() }}
     }
 
     // Existing functions...
+    // Add a new custom checklist item
     function addChecklistItem(category) {
         const tbody = document.getElementById(category + '-checklist-body');
         if (!tbody) return;
@@ -914,7 +918,8 @@ Nova Avaliação - {{ super() }}
             <textarea name="checklist_label[]" class="form-control form-control-sm auto-expand" 
                 rows="1" placeholder="Descrição do novo item personalizado"
                 style="resize: none; overflow: hidden; min-height: 31px;"
-                oninput="autoExpand(this)"></textarea>
+                oninput="autoExpand(this)"
+                data-original-value=""></textarea>
         </td>
         <td class="text-center">
             <input type="radio" name="checklist_value_${rowId}" value="Sim" class="form-check-input checklist-radio">
@@ -956,6 +961,7 @@ Nova Avaliação - {{ super() }}
 
         const row = button.closest('tr');
         const itemId = row.querySelector('input[name="checklist_id[]"]')?.value;
+        const label = row.querySelector('textarea[name="checklist_label[]"]')?.value || '';
         const categoryInput = row.querySelector('input[name="checklist_category[]"]');
         const category = categoryInput ? categoryInput.value : 'planning';
         const evaluationId = "{{ evaluation.id if evaluation else '' }}";
@@ -972,6 +978,7 @@ Nova Avaliação - {{ super() }}
             },
             body: JSON.stringify({
                 item_id: itemId,
+                label: label,
                 evaluation_id: evaluationId,
                 category: category,
                 index: index
@@ -1029,6 +1036,8 @@ Nova Avaliação - {{ super() }}
             const textarea = row.querySelector('textarea.auto-expand');
             if (textarea) {
                 autoExpand(textarea);
+                // Set original value for label change tracking
+                textarea.setAttribute('data-original-value', textarea.value);
             }
 
             // Initialize hidden input value from checked radio on page load

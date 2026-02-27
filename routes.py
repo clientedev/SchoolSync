@@ -2940,9 +2940,10 @@ def update_checklist_label():
     
     item_id = data.get('item_id')
     new_label = data.get('label')
+    old_label = data.get('old_label') # Added for better matching
     evaluation_id = data.get('evaluation_id')
     category = data.get('category', 'planning')
-    item_index = data.get('index')  # The order index of the item in the list
+    item_index = data.get('index')
     
     if not new_label or not new_label.strip():
         return jsonify({'success': False, 'message': 'Rótulo não pode ser vazio'}), 400
@@ -2952,23 +2953,19 @@ def update_checklist_label():
         from datetime import datetime
         
         # Priority 1: Update existing item in the specific evaluation
-        if item_id and item_id.strip():
+        if item_id and (isinstance(item_id, int) or (isinstance(item_id, str) and item_id.strip())):
             item = EvaluationChecklistItem.query.get(int(item_id))
             if item:
-                # Security check
                 if evaluation_id and str(item.evaluation_id) != str(evaluation_id):
                     return jsonify({'success': False, 'message': 'Acesso negado'}), 403
                 
                 item.label = new_label.strip()
                 item.evaluation.updated_at = datetime.utcnow()
                 db.session.commit()
-                return jsonify({'success': True, 'message': 'Rótulo atualizado com sucesso'})
-
-        # Priority 2: Update "Global Template" (the most recent evaluation)
-        # First try evaluations with checklist items
-        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.updated_at)).first()
+                # Continue to update template below
         
-        # Fallback: try ANY recent evaluation
+        # Priority 2: Update "Global Template" (the most recent evaluation)
+        latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.updated_at)).first()
         if not latest_eval:
             latest_eval = Evaluation.query.order_by(desc(Evaluation.updated_at)).first()
             
@@ -2976,9 +2973,16 @@ def update_checklist_label():
             target_label = new_label.strip()
             item_in_template = None
 
-            # If we have an index, try to find the item in that position in the template
-            if item_index is not None:
-                # Get items of the same category in the template, ordered by display_order
+            # Try to find by old label first (most reliable for global rename)
+            if old_label:
+                item_in_template = EvaluationChecklistItem.query.filter_by(
+                    evaluation_id=latest_eval.id,
+                    category=category,
+                    label=old_label.strip()
+                ).first()
+
+            # If not found, try by index
+            if not item_in_template and item_index is not None:
                 template_items = EvaluationChecklistItem.query.filter_by(
                     evaluation_id=latest_eval.id,
                     category=category
@@ -2987,7 +2991,7 @@ def update_checklist_label():
                 if item_index < len(template_items):
                     item_in_template = template_items[item_index]
             
-            # If not found by index, try to find by original label (if possible) or same label
+            # If still not found, try by same label
             if not item_in_template:
                 item_in_template = EvaluationChecklistItem.query.filter_by(
                     evaluation_id=latest_eval.id,
@@ -2996,11 +3000,9 @@ def update_checklist_label():
                 ).first()
             
             if item_in_template:
-                # Update the template item
                 item_in_template.label = target_label
                 msg = 'Rótulo atualizado no modelo global'
             else:
-                # Add a new item to the template
                 new_item = EvaluationChecklistItem()
                 new_item.evaluation_id = latest_eval.id
                 new_item.label = target_label
@@ -3014,7 +3016,7 @@ def update_checklist_label():
             db.session.commit()
             return jsonify({'success': True, 'message': msg})
             
-        return jsonify({'success': False, 'message': 'Nenhuma avaliação encontrada para servir de modelo. Salve a avaliação principal primeiro pelo menos uma vez.'}), 404
+        return jsonify({'success': False, 'message': 'Nenhuma avaliação encontrada para servir de modelo.'}), 404
             
     except Exception as e:
         db.session.rollback()
@@ -3031,6 +3033,7 @@ def delete_checklist_item():
         return jsonify({'success': False, 'message': 'Nenhum dado fornecido'}), 400
     
     item_id = data.get('item_id')
+    label = data.get('label') # Added for better matching
     evaluation_id = data.get('evaluation_id')
     category = data.get('category', 'planning')
     item_index = data.get('index')
@@ -3040,16 +3043,15 @@ def delete_checklist_item():
         from datetime import datetime
         
         # 1. Delete specific item if ID exists
-        if item_id and item_id.strip():
+        if item_id and (isinstance(item_id, int) or (isinstance(item_id, str) and item_id.strip())):
             item = EvaluationChecklistItem.query.get(int(item_id))
             if item:
-                # Security check
                 if evaluation_id and str(item.evaluation_id) != str(evaluation_id):
                     return jsonify({'success': False, 'message': 'Acesso negado'}), 403
                 
                 db.session.delete(item)
-                db.session.commit()
-
+                # Don't commit yet, wait for template sync
+        
         # 2. Sync with "Global Template" (remove from the most recent evaluation)
         latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.updated_at)).first()
         if not latest_eval:
@@ -3058,8 +3060,16 @@ def delete_checklist_item():
         if latest_eval:
             item_to_delete = None
             
-            # Find in template by index
-            if item_index is not None:
+            # Try to find by label first (most reliable for global deletion)
+            if label:
+                item_to_delete = EvaluationChecklistItem.query.filter_by(
+                    evaluation_id=latest_eval.id,
+                    category=category,
+                    label=label.strip()
+                ).first()
+
+            # Find in template by index if not found by label
+            if not item_to_delete and item_index is not None:
                 template_items = EvaluationChecklistItem.query.filter_by(
                     evaluation_id=latest_eval.id,
                     category=category
@@ -3074,8 +3084,10 @@ def delete_checklist_item():
                 db.session.commit()
                 return jsonify({'success': True, 'message': 'Item removido globalmente'})
             
-            return jsonify({'success': True, 'message': 'Item removido da avaliação atual (não encontrado no modelo)'})
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Item removido da avaliação atual'})
 
+        db.session.commit()
         return jsonify({'success': True, 'message': 'Item removido'})
 
     except Exception as e:
