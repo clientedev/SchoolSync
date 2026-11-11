@@ -4,27 +4,22 @@
 {% include "_head.html" %}
     <title>Entrar | Acompanhamento da Ação Docente | SENAI</title>
 </head>
-<body>
-    <div class="login-page">
-        <section class="login-aside" aria-hidden="true">
-            <div></div>
-            <div>
-                <h1>Acompanhamento da ação docente</h1>
-                <p>Registro das observações de aula, planejamento e assinatura das avaliações entre coordenação e docentes.</p>
-                <ul>
-                    <li>Agendamento das observações por semestre</li>
-                    <li>Checklist de planejamento e condução da aula</li>
-                    <li>Assinatura digital e relatório em PDF</li>
-                </ul>
+<body class="login-body">
+    <div class="senai-topbar" aria-hidden="true"></div>
+
+    <header class="login-header">
+        <div class="container-xl d-flex align-items-center justify-content-between">
+            <img src="{{ url_for('static', filename='img/senai-logo.png') }}" alt="SENAI" class="login-header-logo">
+            <span class="login-header-title">Acompanhamento da Ação Docente</span>
+        </div>
+    </header>
+
+    <main class="login-stage">
+        <section class="login-card" aria-labelledby="tituloLogin">
+            <div class="login-card-head">
+                <h1 id="tituloLogin">Acesse sua conta</h1>
+                <p>Coordenação e docentes entram com o usuário e a senha fornecidos pela escola.</p>
             </div>
-            <small class="text-white-50">SENAI</small>
-        </section>
-
-        <main class="login-panel">
-            <img class="logo" src="{{ url_for('static', filename='img/senai-logo.png') }}" alt="SENAI">
-
-            <h2>Entrar</h2>
-            <p class="text-muted mb-4">Use o usuário e a senha fornecidos pela coordenação.</p>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% for category, message in messages %}
@@ -40,30 +35,56 @@
 
                 <div class="mb-3">
                     <label class="form-label" for="{{ form.username.id }}">Usuário</label>
-                    {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), autocomplete="username", autofocus=True) }}
+                    {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), autocomplete="username", autofocus=True, placeholder="ex.: nome.sobrenome") }}
                     {% for error in form.username.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
                 </div>
 
                 <div class="mb-4">
                     <label class="form-label" for="{{ form.password.id }}">Senha</label>
-                    {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="current-password") }}
-                    {% for error in form.password.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    <div class="input-group">
+                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="current-password") }}
+                        <button class="btn btn-outline-secondary btn-toggle-pass" type="button" id="togglePass" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
+                    </div>
+                    {% for error in form.password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 py-2" id="btnEntrar">Entrar</button>
+                <button type="submit" class="btn btn-primary btn-pill w-100" id="btnEntrar">Entrar</button>
             </form>
 
-            <p class="text-muted small mt-4 mb-0">Esqueceu a senha? Solicite a redefinição à coordenação.</p>
-        </main>
-    </div>
+            <p class="login-help">Esqueceu a senha? Solicite a redefinição à coordenação do seu curso.</p>
+        </section>
+    </main>
+
+    <footer class="senai-footer">
+        <div class="senai-footer-band">
+            <div class="container-xl">Sistema de Acompanhamento da Ação Docente</div>
+        </div>
+        <div class="senai-footer-base">
+            <div class="container-xl d-flex flex-wrap justify-content-between gap-2">
+                <span>SENAI · Serviço Nacional de Aprendizagem Industrial</span>
+                <span>&copy; {{ current_year or 2026 }}</span>
+            </div>
+        </div>
+    </footer>
 
     <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script>
-        document.querySelector('form').addEventListener('submit', function () {
-            const btn = document.getElementById('btnEntrar');
-            btn.disabled = true;
-            btn.textContent = 'Entrando…';
-        });
+        (function () {
+            const pass = document.getElementById('{{ form.password.id }}');
+            const toggle = document.getElementById('togglePass');
+            toggle.addEventListener('click', function () {
+                const show = pass.type === 'password';
+                pass.type = show ? 'text' : 'password';
+                toggle.textContent = show ? 'Ocultar' : 'Mostrar';
+                toggle.setAttribute('aria-pressed', show);
+                toggle.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+            });
+            document.querySelector('form').addEventListener('submit', function () {
+                const btn = document.getElementById('btnEntrar');
+                btn.disabled = true;
+                btn.textContent = 'Entrando…';
+            });
+        })();
     </script>
 </body>
 </html>

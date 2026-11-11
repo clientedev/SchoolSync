@@ -12,11 +12,13 @@
     --muted: #5E6B7A;
     --line: #DADFE6;
     --line-soft: #E9ECF0;
-    --canvas: #F4F5F7;
+    --canvas: #E6E6E6;
+    --senai-wine: #B91D32;
+    --footer-gray: #E5E9EA;
     --surface: #FFFFFF;
 
-    --bs-body-font-family: "Barlow", "Segoe UI", Roboto, Arial, sans-serif;
-    --bs-body-font-size: 0.95rem;
+    --bs-body-font-family: "Montserrat", "Segoe UI", Roboto, Arial, sans-serif;
+    --bs-body-font-size: 0.9rem;
     --bs-body-color: var(--ink);
     --bs-body-bg: var(--canvas);
     --bs-border-color: var(--line);
@@ -45,13 +47,13 @@ main { flex: 1 0 auto; }
 
 h1, h2, h3, h4, h5, h6,
 .h1, .h2, .h3, .h4, .h5, .h6 {
-    font-family: "Barlow Semi Condensed", "Barlow", sans-serif;
-    font-weight: 600;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 700;
     color: var(--ink);
     letter-spacing: 0;
 }
 
-h1, .h1 { font-size: 1.75rem; }
+h1, .h1 { font-size: 1.6rem; font-weight: 800; }
 h2, .h2 { font-size: 1.5rem; }
 h3, .h3 { font-size: 1.3rem; }
 h4, .h4 { font-size: 1.15rem; }
@@ -62,10 +64,15 @@ h6, .h6 { font-size: 0.95rem; }
 
 /* ----- Cabeçalho ---------------------------------------------------------- */
 
+.senai-topbar {
+    height: 8px;
+    background: var(--senai-red);
+}
+
 .app-header {
     background: var(--surface);
-    border-top: 4px solid var(--senai-red);
-    border-bottom: 1px solid var(--line);
+    border-top: 8px solid var(--senai-red);
+    border-bottom: 2px solid var(--senai-red);
 }
 
 .app-header .navbar { padding-top: 0; padding-bottom: 0; }
@@ -85,7 +92,7 @@ h6, .h6 { font-size: 0.95rem; }
     border-left: 1px solid var(--line);
     padding-left: 0.9rem;
     color: var(--ink);
-    font-family: "Barlow Semi Condensed", sans-serif;
+    font-family: "Montserrat", sans-serif;
     font-weight: 600;
     font-size: 1rem;
     line-height: 1.15;
@@ -93,18 +100,19 @@ h6, .h6 { font-size: 0.95rem; }
 
 .brand-name small {
     display: block;
-    font-family: "Barlow", sans-serif;
+    font-family: "Montserrat", sans-serif;
     font-weight: 400;
     font-size: 0.78rem;
     color: var(--muted);
 }
 
 .app-header .nav-link {
-    color: var(--ink-2);
+    color: #333333;
     font-weight: 500;
+    font-size: 0.85rem;
     padding: 1.15rem 0.85rem !important;
     border-bottom: 3px solid transparent;
-    margin-bottom: -1px;
+    margin-bottom: -2px;
 }
 
 .app-header .nav-link:hover,
@@ -162,14 +170,31 @@ h6, .h6 { font-size: 0.95rem; }
 
 /* ----- Rodapé ------------------------------------------------------------- */
 
-.app-footer {
+.app-footer, .senai-footer {
     flex-shrink: 0;
-    border-top: 1px solid var(--line);
-    background: var(--surface);
-    color: var(--muted);
-    font-size: 0.85rem;
-    padding: 1rem 0;
     margin-top: 3rem;
+    font-size: 0.8rem;
+}
+
+.app-footer {
+    background: var(--senai-wine);
+    color: rgba(255, 255, 255, 0.85);
+    border-top: 6px solid var(--senai-red);
+    padding: 1rem 0;
+}
+
+.senai-footer-band {
+    background: var(--senai-red);
+    color: #fff;
+    font-weight: 600;
+    padding: 0.75rem 0;
+}
+
+.senai-footer-base {
+    border-top: 6px solid var(--senai-red);
+    background: var(--senai-wine);
+    color: rgba(255, 255, 255, 0.85);
+    padding: 1rem 0;
 }
 
 /* ----- Cabeçalho de página ----------------------------------------------- */
@@ -292,7 +317,7 @@ main h2 > i.fas, main h2 > i.fa,
 }
 
 .kpi-value {
-    font-family: "Barlow Semi Condensed", sans-serif;
+    font-family: "Montserrat", sans-serif;
     font-size: 2rem;
     font-weight: 600;
     line-height: 1.1;
@@ -322,7 +347,17 @@ main h2 > i.fas, main h2 > i.fa,
 
 /* ----- Botões ------------------------------------------------------------- */
 
-.btn { font-weight: 500; border-radius: var(--bs-border-radius); }
+.btn {
+    font-weight: 600;
+    border-radius: 40px;
+    padding-left: 1.1rem;
+    padding-right: 1.1rem;
+}
+.btn-sm { padding-left: 0.8rem; padding-right: 0.8rem; }
+.btn-group > .btn, .input-group > .btn { border-radius: 0; }
+.btn-group > .btn:first-child { border-top-left-radius: 40px; border-bottom-left-radius: 40px; }
+.btn-group > .btn:last-child, .btn-group > .dropdown-toggle-split { border-top-right-radius: 40px; border-bottom-right-radius: 40px; }
+.btn-pill { text-transform: uppercase; letter-spacing: 0.03em; padding-top: 0.7rem; padding-bottom: 0.7rem; }
 
 .btn-primary {
     --bs-btn-bg: var(--senai-red);
@@ -356,6 +391,7 @@ main h2 > i.fas, main h2 > i.fa,
 }
 
 .btn-outline-secondary {
+    --bs-btn-bg: var(--surface);
     --bs-btn-color: var(--ink-2);
     --bs-btn-border-color: var(--line);
     --bs-btn-hover-bg: var(--canvas);
@@ -384,6 +420,7 @@ main h2 > i.fas, main h2 > i.fa,
 }
 
 .form-control:focus, .form-select:focus {
+    background-color: var(--surface);
     border-color: var(--senai-red);
     box-shadow: 0 0 0 0.2rem var(--bs-focus-ring-color);
 }
@@ -508,62 +545,73 @@ code { color: var(--ink-2); font-size: 0.875em; }
 
 /* ----- Login -------------------------------------------------------------- */
 
-.login-page {
-    min-height: 100vh;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(360px, 480px);
-    background: var(--canvas);
-}
+.login-body { background: var(--canvas); }
 
-.login-aside {
-    background: var(--ink);
-    color: #E6EAEE;
-    padding: 3rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    position: relative;
-    overflow: hidden;
-}
-
-.login-aside::before {
-    content: "";
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 6px;
-    background: var(--senai-red);
-}
-
-.login-aside h1 {
-    color: #fff;
-    font-size: 2.4rem;
-    line-height: 1.1;
-    max-width: 16ch;
-    margin: 0 0 1rem;
-}
-
-.login-aside p { color: #B7C1CC; max-width: 46ch; font-size: 1.05rem; }
-
-.login-aside ul { list-style: none; padding: 0; margin: 2rem 0 0; color: #D3DAE1; }
-.login-aside li { padding: 0.55rem 0; border-top: 1px solid rgba(255,255,255,0.1); }
-
-.login-panel {
+.login-header {
     background: var(--surface);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 3rem;
-    border-left: 1px solid var(--line);
+    border-bottom: 2px solid var(--senai-red);
+    padding: 0.9rem 0;
 }
 
-.login-panel .logo { height: 44px; width: auto; align-self: flex-start; margin-bottom: 2.5rem; }
-.login-panel h2 { font-size: 1.5rem; margin-bottom: 0.25rem; }
-.login-panel .form-control { padding: 0.65rem 0.8rem; }
+.login-header-logo { height: 34px; width: auto; display: block; }
 
-@media (max-width: 991.98px) {
-    .login-page { grid-template-columns: 1fr; }
-    .login-aside { display: none; }
-    .login-panel { border-left: 0; padding: 2rem 1.25rem; min-height: 100vh; }
+.login-header-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #333333;
+}
+
+.login-stage {
+    flex: 1 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--surface);
+    border-radius: 12px;
+    border-top: 6px solid var(--senai-red);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 2.25rem 2rem 2rem;
+}
+
+.login-card-head { margin-bottom: 1.5rem; }
+
+.login-card-head h1 {
+    font-size: 1.45rem;
+    font-weight: 800;
+    margin: 0 0 0.4rem;
+}
+
+.login-card-head p { color: var(--muted); margin: 0; font-size: 0.875rem; line-height: 1.5; }
+
+.login-card .form-control { padding: 0.7rem 0.9rem; }
+
+.login-card .btn-toggle-pass {
+    border-color: var(--line);
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-top-right-radius: var(--bs-border-radius) !important;
+    border-bottom-right-radius: var(--bs-border-radius) !important;
+}
+
+.login-help {
+    margin: 1.5rem 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: center;
+}
+
+.login-body .senai-footer { margin-top: 0; }
+
+@media (max-width: 575.98px) {
+    .login-header-title { display: none; }
+    .login-card { padding: 1.75rem 1.25rem; }
+    .login-stage { padding: 2rem 1rem; }
 }
 
 /* ----- Utilidades herdadas ----------------------------------------------- */

@@ -53,10 +53,12 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="app-footer">
-        <div class="container-xl d-flex flex-wrap justify-content-between gap-2">
-            <span>Sistema de Acompanhamento da Ação Docente do SENAI</span>
-            <span>&copy; {{ current_year or 2026 }}</span>
+    <footer class="senai-footer">
+        <div class="senai-footer-base">
+            <div class="container-xl d-flex flex-wrap justify-content-between gap-2">
+                <span>SENAI · Sistema de Acompanhamento da Ação Docente</span>
+                <span>&copy; {{ current_year or 2026 }}</span>
+            </div>
         </div>
     </footer>
 
