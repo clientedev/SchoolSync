@@ -58,7 +58,7 @@ def send_signature_notification_evaluator(evaluation):
     
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h1 style="color: #2e7d32;">Avaliação Assinada</h1>
+        <h1 style="color: #1F2933;">Avaliação Assinada</h1>
         <p>Olá <strong>{evaluation.evaluator.name}</strong>,</p>
         <p>O docente <strong>{evaluation.teacher.name}</strong> acabou de assinar digitalmente a avaliação realizada em {evaluation.evaluation_date.strftime('%d/%m/%Y')}.</p>
         
@@ -74,7 +74,7 @@ def send_signature_notification_evaluator(evaluation):
         <p>A avaliação agora está formalmente concluída com ambas as assinaturas.</p>
 
         <p style="color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
-            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI Morvan Figueiredo.
+            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI.
         </p>
     </div>
     """
@@ -140,7 +140,7 @@ def send_evaluation_notification_resend(evaluation):
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h1 style="color: #1976d2;">Finalização de Avaliação - Assinatura Necessária</h1>
+        <h1 style="color: #B8050F;">Finalização de Avaliação - Assinatura Necessária</h1>
         <p>Olá <strong>{evaluation.teacher.name}</strong>,</p>
         <p>Uma nova avaliação foi concluída para você e <strong>necessita de sua assinatura digital</strong>.</p>
         
@@ -153,8 +153,8 @@ def send_evaluation_notification_resend(evaluation):
             </ul>
         </div>
 
-        <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Acesso ao Sistema:</h2>
+        <div style="background-color: #FDECEE; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="margin-top: 0; font-size: 18px; color: #B8050F;">Acesso ao Sistema:</h2>
             <p>Suas credenciais de acesso (Login e Senha) estão no <strong>PDF em anexo</strong> a este e-mail.</p>
             <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
         </div>
@@ -168,7 +168,7 @@ def send_evaluation_notification_resend(evaluation):
         </ol>
 
         <p style="color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
-            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI Morvan Figueiredo.
+            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI.
         </p>
     </div>
     """
@@ -232,7 +232,7 @@ def send_scheduling_notification_resend(scheduled):
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h1 style="color: #1976d2;">Novo Agendamento de Avaliação</h1>
+        <h1 style="color: #B8050F;">Novo Agendamento de Avaliação</h1>
         <p>Olá <strong>{scheduled.teacher.name}</strong>,</p>
         <p>Um novo agendamento de avaliação foi criado para você.</p>
         
@@ -244,8 +244,8 @@ def send_scheduling_notification_resend(scheduled):
             </ul>
         </div>
 
-        <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h2 style="margin-top: 0; font-size: 18px; color: #1976d2;">Acesso ao Sistema:</h2>
+        <div style="background-color: #FDECEE; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="margin-top: 0; font-size: 18px; color: #B8050F;">Acesso ao Sistema:</h2>
             <p>Suas credenciais de acesso (Login e Senha) estão no <strong>PDF em anexo</strong> a este e-mail.</p>
             <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
         </div>
@@ -253,7 +253,7 @@ def send_scheduling_notification_resend(scheduled):
         <p>Acesse o sistema para mais informações e para se preparar para a avaliação.</p>
 
         <p style="color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
-            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI Morvan Figueiredo.
+            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI.
         </p>
     </div>
     """
@@ -343,7 +343,7 @@ def send_credentials_email(teacher_email, teacher_data, password):
         msg.body = f"""
 Prezado(a) {teacher_data['teacher_name']},
 
-Bem-vindo(a) ao Sistema de Avaliação Docente do SENAI Morvan Figueiredo!
+Bem-vindo(a) ao Sistema de Avaliação Docente do SENAI!
 
 Suas credenciais de acesso foram criadas com sucesso:
 
@@ -369,7 +369,7 @@ IMPORTANTE:
 
 Atenciosamente,
 Coordenação Pedagógica
-SENAI Morvan Figueiredo
+SENAI
 
 ---
 Este é um email automático. Por favor, não responda.
@@ -378,25 +378,25 @@ Este é um email automático. Por favor, não responda.
         # Send email via SMTP (working on paid Railway)
         try:
             # Force immediate send and log everything
-            current_app.logger.info(f"🔄 Iniciando envio de credenciais para {teacher_email}")
-            current_app.logger.info(f"🔧 SMTP Server: {current_app.config.get('MAIL_SERVER')}:{current_app.config.get('MAIL_PORT')}")
+            current_app.logger.info(f"Iniciando envio de credenciais para {teacher_email}")
+            current_app.logger.info(f"SMTP Server: {current_app.config.get('MAIL_SERVER')}:{current_app.config.get('MAIL_PORT')}")
             
             mail.send(msg)
             
-            current_app.logger.info(f"✅ Credentials email sent successfully via SMTP to {teacher_email}")
+            current_app.logger.info(f"Credentials email sent successfully via SMTP to {teacher_email}")
             return True
         except Exception as smtp_error:
-            current_app.logger.error(f"❌ SMTP failed for credentials to {teacher_email}. Detailed error: {str(smtp_error)}")
-            current_app.logger.error(f"🔍 Error type: {type(smtp_error).__name__}")
+            current_app.logger.error(f"SMTP failed for credentials to {teacher_email}. Detailed error: {str(smtp_error)}")
+            current_app.logger.error(f"Error type: {type(smtp_error).__name__}")
             
             # Log specific Gmail errors
             error_str = str(smtp_error).lower()
             if '534' in error_str or 'password' in error_str:
-                current_app.logger.error("🚨 Gmail authentication error - App password needed")
+                current_app.logger.error("Gmail authentication error - App password needed")
             elif '535' in error_str:
-                current_app.logger.error("🚨 Gmail credentials invalid")
+                current_app.logger.error("Gmail credentials invalid")
             elif 'connection' in error_str and 'refused' in error_str:
-                current_app.logger.error("🚨 SMTP connection refused - possible Railway blocking")
+                current_app.logger.error("SMTP connection refused - possible Railway blocking")
             
             return False
         
@@ -501,7 +501,7 @@ IMPORTANTE: Esta avaliação precisa ser assinada no sistema para ser finalizada
 
 Atenciosamente,
 Coordenação Pedagógica
-SENAI Morvan Figueiredo
+SENAI
 
 ---
 Este é um e-mail automático do Sistema de Avaliação Docente.
@@ -620,7 +620,7 @@ IMPORTANTE:
 
 Atenciosamente,
 Coordenação Pedagógica
-SENAI Morvan Figueiredo
+SENAI
 
 ---
 Este é um email automático. Por favor, não responda.
@@ -629,25 +629,25 @@ Este é um email automático. Por favor, não responda.
         # Send email via SMTP (working on paid Railway)
         try:
             # Force immediate send and log everything
-            current_app.logger.info(f"🔄 Iniciando envio de avaliação para {teacher_email}")
-            current_app.logger.info(f"🔧 SMTP Server: {current_app.config.get('MAIL_SERVER')}:{current_app.config.get('MAIL_PORT')}")
+            current_app.logger.info(f"Iniciando envio de avaliação para {teacher_email}")
+            current_app.logger.info(f"SMTP Server: {current_app.config.get('MAIL_SERVER')}:{current_app.config.get('MAIL_PORT')}")
             
             mail.send(msg)
             
-            current_app.logger.info(f"✅ Evaluation email sent successfully via SMTP to {teacher_email}")
+            current_app.logger.info(f"Evaluation email sent successfully via SMTP to {teacher_email}")
             return True
         except Exception as smtp_error:
-            current_app.logger.error(f"❌ SMTP failed for evaluation to {teacher_email}. Detailed error: {str(smtp_error)}")
-            current_app.logger.error(f"🔍 Error type: {type(smtp_error).__name__}")
+            current_app.logger.error(f"SMTP failed for evaluation to {teacher_email}. Detailed error: {str(smtp_error)}")
+            current_app.logger.error(f"Error type: {type(smtp_error).__name__}")
             
             # Log specific Gmail errors
             error_str = str(smtp_error).lower()
             if '534' in error_str or 'password' in error_str:
-                current_app.logger.error("🚨 Gmail authentication error - App password needed")
+                current_app.logger.error("Gmail authentication error - App password needed")
             elif '535' in error_str:
-                current_app.logger.error("🚨 Gmail credentials invalid") 
+                current_app.logger.error("Gmail credentials invalid") 
             elif 'connection' in error_str and 'refused' in error_str:
-                current_app.logger.error("🚨 SMTP connection refused - possible Railway blocking")
+                current_app.logger.error("SMTP connection refused - possible Railway blocking")
                 
             return False
             
@@ -661,6 +661,10 @@ def generate_evaluation_report(evaluation):
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     styles = getSampleStyleSheet()
     story = []
+    _logo = _senai_logo()
+    if _logo is not None:
+        story.append(_logo)
+        story.append(Spacer(1, 12))
     
     # Title
     title_style = ParagraphStyle('CustomTitle', parent=styles['Title'], 
@@ -685,13 +689,13 @@ def generate_evaluation_report(evaluation):
     
     basic_table = Table(basic_info, colWidths=[2*inch, 4*inch])
     basic_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.grey),
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#3E4C59')),
         ('TEXTCOLOR', (0, 0), (0, -1), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('BACKGROUND', (1, 0), (1, -1), colors.beige),
+        ('BACKGROUND', (1, 0), (1, -1), colors.HexColor('#F4F5F7')),
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ]))
     
@@ -710,7 +714,7 @@ def generate_evaluation_report(evaluation):
     
     results_table = Table(results, colWidths=[2*inch, 4*inch])
     results_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F2933')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('BACKGROUND', (0, 1), (0, -1), colors.grey),
         ('TEXTCOLOR', (0, 1), (0, -1), colors.whitesmoke),
@@ -718,7 +722,7 @@ def generate_evaluation_report(evaluation):
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('BACKGROUND', (1, 1), (1, -1), colors.beige),
+        ('BACKGROUND', (1, 1), (1, -1), colors.HexColor('#F4F5F7')),
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ]))
     
@@ -756,7 +760,7 @@ def generate_evaluation_report(evaluation):
     
     planning_table = Table(planning_criteria, colWidths=[4.2*inch, 1.8*inch], splitByRow=1)
     planning_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F2933')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -810,7 +814,7 @@ def generate_evaluation_report(evaluation):
     
     class_table = Table(class_criteria, colWidths=[4.2*inch, 1.8*inch], splitByRow=1)
     class_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F2933')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -909,6 +913,19 @@ def generate_evaluation_report(evaluation):
     buffer.seek(0)
     return buffer
 
+
+def _senai_logo(width_cm=4.2):
+    """Logo SENAI para cabeçalho dos PDFs (retorna None se o arquivo não existir)."""
+    import os
+    from reportlab.platypus import Image as RLImage
+    from reportlab.lib.units import cm
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'img', 'senai-logo.png')
+    if not os.path.exists(path):
+        return None
+    img = RLImage(path, width=width_cm * cm, height=width_cm * cm * 308 / 1200)
+    img.hAlign = 'LEFT'
+    return img
+
 def generate_consolidated_report(teacher_id, start_date=None, end_date=None):
     """Generate consolidated report for a teacher"""
     from models import Evaluation, Teacher
@@ -932,6 +949,10 @@ def generate_consolidated_report(teacher_id, start_date=None, end_date=None):
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     styles = getSampleStyleSheet()
     story = []
+    _logo = _senai_logo()
+    if _logo is not None:
+        story.append(_logo)
+        story.append(Spacer(1, 12))
     
     # Title
     title_style = ParagraphStyle('CustomTitle', parent=styles['Title'], 
@@ -943,19 +964,19 @@ def generate_consolidated_report(teacher_id, start_date=None, end_date=None):
     teacher_info = [
         ['Docente:', teacher.name],
         ['Área:', teacher.area],
-        ['Disciplinas:', teacher.subjects or 'Não informado'],
+        ['NIF:', teacher.nif or 'Não informado'],
         ['Total de Acompanhamentos:', str(len(evaluations))]
     ]
     
     teacher_table = Table(teacher_info, colWidths=[2*inch, 4*inch])
     teacher_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.grey),
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#3E4C59')),
         ('TEXTCOLOR', (0, 0), (0, -1), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('BACKGROUND', (1, 0), (1, -1), colors.beige),
+        ('BACKGROUND', (1, 0), (1, -1), colors.HexColor('#F4F5F7')),
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ]))
     
@@ -975,7 +996,7 @@ def generate_consolidated_report(teacher_id, start_date=None, end_date=None):
     
     evolution_table = Table(evolution_data, colWidths=[1.5*inch, 2*inch, 1.2*inch, 1.3*inch])
     evolution_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F2933')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -1002,7 +1023,7 @@ def generate_consolidated_report(teacher_id, start_date=None, end_date=None):
     
     avg_table = Table(avg_data, colWidths=[2*inch, 4*inch])
     avg_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F2933')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('BACKGROUND', (0, 1), (0, -1), colors.grey),
         ('TEXTCOLOR', (0, 1), (0, -1), colors.whitesmoke),
@@ -1010,7 +1031,7 @@ def generate_consolidated_report(teacher_id, start_date=None, end_date=None):
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('BACKGROUND', (1, 1), (1, -1), colors.beige),
+        ('BACKGROUND', (1, 1), (1, -1), colors.HexColor('#F4F5F7')),
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ]))
     
@@ -1596,18 +1617,22 @@ def generate_teacher_credentials_pdf(teacher_name, teacher_nif, username, passwo
                            leftMargin=0.75*inch, rightMargin=0.75*inch)
     styles = getSampleStyleSheet()
     story = []
+    _logo = _senai_logo()
+    if _logo is not None:
+        story.append(_logo)
+        story.append(Spacer(1, 12))
     
     # Title - More compact
     title_style = ParagraphStyle('CustomTitle', parent=styles['Title'], 
                                 fontSize=16, spaceAfter=15, alignment=TA_CENTER,
-                                textColor=colors.darkblue)
+                                textColor=colors.HexColor('#1F2933'))
     story.append(Paragraph("CREDENCIAIS DE ACESSO", title_style))
     
     # Institution info - Combined with subtitle
     institution_style = ParagraphStyle('Institution', parent=styles['Normal'],
                                      fontSize=12, spaceAfter=20, alignment=TA_CENTER,
                                      textColor=colors.darkgrey)
-    story.append(Paragraph("Sistema de Avaliação Docente - SENAI Morvan Figueiredo", institution_style))
+    story.append(Paragraph("Sistema de Avaliação Docente - SENAI", institution_style))
     
     # Credentials Box - Compact version without empty rows
     credentials_data = [
@@ -1621,7 +1646,7 @@ def generate_teacher_credentials_pdf(teacher_name, teacher_nif, username, passwo
     credentials_table = Table(credentials_data, colWidths=[2.3*inch, 3.7*inch])
     credentials_table.setStyle(TableStyle([
         # Header styling
-        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F2933')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 13),
@@ -1629,14 +1654,14 @@ def generate_teacher_credentials_pdf(teacher_name, teacher_nif, username, passwo
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         
         # Data labels styling
-        ('BACKGROUND', (0, 1), (0, 4), colors.lightblue),
+        ('BACKGROUND', (0, 1), (0, 4), colors.HexColor('#F4F5F7')),
         ('FONTNAME', (0, 1), (0, 4), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 11),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         
         # Data values styling
-        ('BACKGROUND', (1, 1), (1, 4), colors.beige),
+        ('BACKGROUND', (1, 1), (1, 4), colors.HexColor('#F4F5F7')),
         ('FONTNAME', (1, 4), (1, 4), 'Helvetica-Bold'),  # Password in bold
         ('TEXTCOLOR', (1, 4), (1, 4), colors.red),  # Password in red
         
@@ -1681,7 +1706,7 @@ def generate_teacher_credentials_pdf(teacher_name, teacher_nif, username, passwo
                                  borderPadding=8,
                                  spaceAfter=15)
     
-    story.append(Paragraph("<b>⚠️ ATENÇÃO: Esta senha é temporária e deve ser alterada no primeiro acesso!</b>", warning_style))
+    story.append(Paragraph("<b>Atenção: Esta senha é temporária e deve ser alterada no primeiro acesso!</b>", warning_style))
     
     # Footer - Compact
     footer_style = ParagraphStyle('Footer', parent=styles['Normal'],
@@ -1691,7 +1716,7 @@ def generate_teacher_credentials_pdf(teacher_name, teacher_nif, username, passwo
     
     current_date = datetime.now().strftime("%d/%m/%Y às %H:%M")
     story.append(Paragraph(f"Credenciais geradas em {current_date}", footer_style))
-    story.append(Paragraph("Sistema de Avaliação Docente - SENAI Morvan Figueiredo", footer_style))
+    story.append(Paragraph("Sistema de Avaliação Docente - SENAI", footer_style))
     
     # Build PDF
     doc.build(story)

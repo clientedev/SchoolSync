@@ -1,182 +1,98 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - {{ super() }}{% endblock %}
+{% block title %}Painel | {{ super() }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">
-            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-        </h1>
+<div class="page-header">
+    <div>
+        <h1>Painel</h1>
+        {% if current_semester %}
+        <p>Semestre {{ current_semester.name }}, de {{ current_semester.start_date.strftime('%d/%m/%Y') }} a {{ current_semester.end_date.strftime('%d/%m/%Y') }}</p>
+        {% else %}
+        <p>Nenhum semestre ativo. Cadastre um semestre para acompanhar os agendamentos.</p>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('scheduling') }}" class="btn btn-outline-secondary">Agendar observação</a>
+        <a href="{{ url_for('new_evaluation') }}" class="btn btn-primary">Nova avaliação</a>
     </div>
 </div>
 
-<!-- Semester Overview -->
-{% if current_semester %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="alert alert-info">
-            <i class="fas fa-calendar-alt me-2"></i>
-            <strong>Semestre Ativo:</strong> {{ current_semester.name }} 
-            ({{ current_semester.start_date.strftime('%d/%m/%Y') }} - {{ current_semester.end_date.strftime('%d/%m/%Y') }})
-        </div>
+<div class="kpi-strip">
+    <div class="kpi">
+        <span class="kpi-label">Observações agendadas</span>
+        <span class="kpi-value">{{ semester_scheduled }}</span>
+        <span class="kpi-note">no semestre</span>
     </div>
-</div>
-{% endif %}
-
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-user-tie fa-2x mb-2"></i>
-                <h3>{{ total_teachers }}</h3>
-                <p class="card-text">Docentes</p>
-            </div>
-        </div>
+    <div class="kpi">
+        <span class="kpi-label">Realizadas</span>
+        <span class="kpi-value">{{ semester_completed }}</span>
+        <span class="kpi-note">{% if semester_scheduled > 0 %}{{ '%.0f'|format(semester_completed / semester_scheduled * 100) }}% do agendado{% else %}sem agendamentos{% endif %}</span>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-success text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-clipboard-check fa-2x mb-2"></i>
-                <h3>{{ semester_completed }}</h3>
-                <p class="card-text">Realizadas</p>
-            </div>
-        </div>
+    <div class="kpi {% if overdue_alerts %}kpi--alert{% endif %}">
+        <span class="kpi-label">A realizar</span>
+        <span class="kpi-value">{{ semester_pending }}</span>
+        <span class="kpi-note">{% if overdue_alerts %}{{ overdue_alerts|length }} em atraso{% else %}nenhuma em atraso{% endif %}</span>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-clock fa-2x mb-2"></i>
-                <h3>{{ semester_pending }}</h3>
-                <p class="card-text">A Fazer</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card bg-info text-white">
-            <div class="card-body text-center">
-                <i class="fas fa-calendar-plus fa-2x mb-2"></i>
-                <h3>{{ semester_scheduled }}</h3>
-                <p class="card-text">Agendadas</p>
-            </div>
-        </div>
+    <div class="kpi">
+        <span class="kpi-label">Docentes cadastrados</span>
+        <span class="kpi-value">{{ total_teachers }}</span>
+        <span class="kpi-note">{{ total_evaluations }} avaliações no total</span>
     </div>
 </div>
 
-<!-- Progress Overview -->
-<div class="row mb-4">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-chart-pie me-2"></i>Progresso das Avaliações - {{ current_semester.name if current_semester else 'Nenhum Semestre Ativo' }}
-                </h5>
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="card-title h5">Andamento do semestre</h2>
+                {% if current_semester and semester_scheduled > 0 %}
+                <span class="text-muted small">{{ semester_completed }} de {{ semester_scheduled }} concluídas</span>
+                {% endif %}
             </div>
             <div class="card-body">
                 {% if current_semester and semester_scheduled > 0 %}
-                <div class="row text-center mb-3">
-                    <div class="col-6">
-                        <h2 class="text-success">{{ semester_completed }}</h2>
-                        <p class="text-muted">Realizadas</p>
-                    </div>
-                    <div class="col-6">
-                        <h2 class="text-warning">{{ semester_pending }}</h2>
-                        <p class="text-muted">A Fazer</p>
-                    </div>
-                </div>
-                <div class="progress" style="height: 30px;">
-                    <div class="progress-bar bg-success" role="progressbar" 
-                         style="width: {{ (semester_completed / semester_scheduled * 100) if semester_scheduled > 0 else 0 }}%"
-                         aria-valuenow="{{ semester_completed }}" 
-                         aria-valuemin="0" 
-                         aria-valuemax="{{ semester_scheduled }}">
-                        {{ '%.1f'|format(semester_completed / semester_scheduled * 100) if semester_scheduled > 0 else '0' }}% Concluído
-                    </div>
-                </div>
-                <p class="mt-2 text-center text-muted">
-                    <small>{{ semester_completed }} de {{ semester_scheduled }} avaliações concluídas</small>
-                </p>
-                {% else %}
-                <div class="text-center py-4">
-                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">Nenhuma avaliação agendada para este semestre.</p>
-                    <a href="{{ url_for('scheduling') }}" class="btn btn-primary">
-                        <i class="fas fa-calendar-plus"></i> Agendar Avaliações
-                    </a>
+                <div class="progress mb-4" style="height: 10px;" role="progressbar" aria-label="Observações concluídas"
+                     aria-valuenow="{{ semester_completed }}" aria-valuemin="0" aria-valuemax="{{ semester_scheduled }}">
+                    <div class="progress-bar bg-success" style="width: {{ (semester_completed / semester_scheduled * 100) }}%"></div>
                 </div>
                 {% endif %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-muted">Agendadas e concluídas por mês</span>
+                    <span class="small d-flex gap-3">
+                        <span><span class="d-inline-block rounded-1 me-1" style="width:10px;height:10px;background:#9AA5B1"></span>Agendadas</span>
+                        <span><span class="d-inline-block rounded-1 me-1" style="width:10px;height:10px;background:#E30613"></span>Concluídas</span>
+                    </span>
+                </div>
+                <div style="height: 240px;"><canvas id="monthlyChart" aria-label="Agendamentos por mês"></canvas></div>
+                <div id="monthTooltip" class="border rounded mt-3 p-3" style="display: none;">
+                    <h3 class="h6 mb-2" id="tooltipTitle">Detalhes do mês</h3>
+                    <div id="tooltipContent"></div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card">
+    <div class="col-lg-4">
+        <div class="card h-100">
             <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-percentage me-2"></i>Desempenho Médio
-                </h5>
+                <h2 class="card-title h5">Desempenho médio</h2>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between">
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
                         <span>Planejamento</span>
                         <strong>{{ avg_planning }}%</strong>
                     </div>
-                    <div class="progress">
-                        <div class="progress-bar bg-info" style="width: {{ avg_planning }}%"></div>
-                    </div>
+                    <div class="progress"><div class="progress-bar bg-secondary" style="width: {{ avg_planning }}%"></div></div>
                 </div>
                 <div>
-                    <div class="d-flex justify-content-between">
-                        <span>Condução da Aula</span>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Condução da aula</span>
                         <strong>{{ avg_class }}%</strong>
                     </div>
-                    <div class="progress">
-                        <div class="progress-bar bg-success" style="width: {{ avg_class }}%"></div>
-                    </div>
+                    <div class="progress"><div class="progress-bar bg-secondary" style="width: {{ avg_class }}%"></div></div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Monthly Schedule Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-chart-line me-2"></i>Progresso de Agendamentos por Mês - {{ current_semester.name if current_semester else 'Semestre Atual' }}
-                </h5>
-            </div>
-            <div class="card-body">
-                <canvas id="monthlyChart" style="height: 200px; max-height: 200px;"></canvas>
-                
-                <!-- Chart Legend -->
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-primary rounded me-2" style="width: 15px; height: 15px;"></div>
-                            <small>Agendamentos Total</small>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-success rounded me-2" style="width: 15px; height: 15px;"></div>
-                            <small>Avaliações Concluídas</small>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Tooltip for detailed info -->
-                <div id="monthTooltip" class="card mt-3" style="display: none;">
-                    <div class="card-header">
-                        <h6 class="mb-0" id="tooltipTitle">Detalhes do Mês</h6>
-                    </div>
-                    <div class="card-body">
-                        <div id="tooltipContent"></div>
-                    </div>
-                </div>
+                <p class="text-muted small mt-4 mb-0">Percentual de itens atendidos nas avaliações registradas.</p>
             </div>
         </div>
     </div>
@@ -188,7 +104,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-clock me-2"></i>Avaliações Recentes
+                    Avaliações Recentes
                 </h5>
             </div>
             <div class="card-body">
@@ -237,7 +153,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-bell me-2"></i>Alertas e Pendências
+                    Alertas e Pendências
                 </h5>
             </div>
             <div class="card-body">
@@ -245,7 +161,6 @@
                 {% if overdue_alerts %}
                 <div class="mb-3">
                     <h6 class="text-danger">
-                        <i class="fas fa-exclamation-circle me-1"></i>
                         Avaliações em Atraso ({{ overdue_alerts|length }})
                     </h6>
                     <ul class="list-unstyled mb-0">
@@ -282,7 +197,6 @@
                 {% if pending_alerts %}
                 <div class="mb-3">
                     <h6 class="text-warning">
-                        <i class="fas fa-clock me-1"></i>
                         Pendentes Este Mês ({{ pending_alerts|length }})
                     </h6>
                     <ul class="list-unstyled mb-0">
@@ -316,7 +230,6 @@
                 {% if teachers_without_evaluation %}
                 <div class="mb-3">
                     <h6 class="text-info">
-                        <i class="fas fa-user-plus me-1"></i>
                         Sem Agendamento ({{ teachers_without_evaluation|length }})
                     </h6>
                     <ul class="list-unstyled mb-0">
@@ -350,46 +263,9 @@
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-bolt me-2"></i>Ações Rápidas
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 mb-2">
-                        <a href="{{ url_for('new_evaluation') }}" class="btn btn-primary w-100">
-                            <i class="fas fa-plus me-1"></i>Nova Avaliação
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="{{ url_for('add_teacher') }}" class="btn btn-secondary w-100">
-                            <i class="fas fa-user-plus me-1"></i>Novo Docente
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="{{ url_for('add_course') }}" class="btn btn-secondary w-100">
-                            <i class="fas fa-graduation-cap me-1"></i>Novo Curso
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="{{ url_for('reports') }}" class="btn btn-info w-100">
-                            <i class="fas fa-file-pdf me-1"></i>Relatórios
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // Monthly schedule data from server
 const monthlyData = {{ monthly_schedule_summary | tojson }};
@@ -412,7 +288,7 @@ function createMonthlyChart() {
     
     for (let i = 1; i <= 12; i++) {
         if (monthlyData[i]) {
-            months.push(monthlyData[i].name);
+            months.push(monthlyData[i].name.slice(0, 3));
             scheduledData.push(monthlyData[i].scheduled);
             completedData.push(monthlyData[i].completed);
         }
@@ -426,19 +302,17 @@ function createMonthlyChart() {
                 {
                     label: 'Agendados',
                     data: scheduledData,
-                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                    borderColor: '#0d6efd',
-                    borderWidth: 2,
-                    borderRadius: 8,
+                    backgroundColor: '#9AA5B1',
+                    borderWidth: 0,
+                    borderRadius: 2,
                     borderSkipped: false,
                 },
                 {
                     label: 'Concluídos',
                     data: completedData,
-                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
-                    borderColor: '#198754',
-                    borderWidth: 2,
-                    borderRadius: 8,
+                    backgroundColor: '#E30613',
+                    borderWidth: 0,
+                    borderRadius: 2,
                     borderSkipped: false,
                 }
             ]

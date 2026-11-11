@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Agendamento de Avaliações{% endblock %}
+{% block title %}Agendamentos | SENAI{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -11,10 +11,10 @@
 }
 
 .month-header {
-    background: linear-gradient(135deg, #6c757d, #495057);
-    color: white;
-    padding: 15px;
-    font-weight: bold;
+    background: #fff;
+    color: var(--ink);
+    padding: 12px 15px;
+    font-weight: 600;
     border-bottom: 1px solid #dee2e6;
 }
 
@@ -31,13 +31,13 @@
 }
 
 .completed-item {
-    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    background: #F4F5F7;
     border-left: 4px solid #28a745;
     color: #155724;
 }
 
 .pending-item {
-    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    background: #F4F5F7;
     border-left: 4px solid #ffc107;
     color: #856404;
 }

@@ -1,8 +1,8 @@
-# Sistema de Ação Docente SENAI Morvan Figueiredo
+# Sistema de Acompanhamento da Ação Docente SENAI
 
 ## Overview
 
-This is a web-based teacher evaluation and monitoring system designed for SENAI Morvan Figueiredo educational institution. The system digitizes the traditional paper-based teacher evaluation process, providing a comprehensive platform for coordinators to register, track, and analyze teaching performance. The application supports teacher evaluation workflows, automatic report generation, user management with role-based access control, and digital signature capabilities for evaluation approvals.
+This is a web-based teacher evaluation and monitoring system designed for SENAI educational institution. The system digitizes the traditional paper-based teacher evaluation process, providing a comprehensive platform for coordinators to register, track, and analyze teaching performance. The application supports teacher evaluation workflows, automatic report generation, user management with role-based access control, and digital signature capabilities for evaluation approvals.
 
 ## User Preferences
 
@@ -87,4 +87,4 @@ Password hashing uses Werkzeug's security utilities, and sessions are managed wi
 - **Server**: Gunicorn with auto-reload for development
 - **Dependencies**: All Python packages installed via uv package manager
 
-The system is designed to reduce paper usage, increase evaluation efficiency, and provide comprehensive analytics for educational quality improvement at SENAI Morvan Figueiredo.
+The system is designed to reduce paper usage, increase evaluation efficiency, and provide comprehensive analytics for educational quality improvement at SENAI.

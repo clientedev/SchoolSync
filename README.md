@@ -1,10 +1,10 @@
-# Sistema de Avaliação Docente SENAI Morvan Figueiredo
+# Sistema de Avaliação Docente SENAI
 
-## 📋 Visão Geral
+## Visão Geral
 
-O **Sistema de Avaliação Docente** é uma plataforma web desenvolvida para digitalizar e otimizar o processo de avaliação de professores do SENAI Morvan Figueiredo. O sistema substitui o antigo processo manual baseado em papel, oferecendo uma solução completa para registro, acompanhamento e análise do desempenho docente.
+O **Sistema de Avaliação Docente** é uma plataforma web desenvolvida para digitalizar e otimizar o processo de avaliação de professores do SENAI. O sistema substitui o antigo processo manual baseado em papel, oferecendo uma solução completa para registro, acompanhamento e análise do desempenho docente.
 
-### 🎯 Objetivos do Sistema
+### Objetivos do Sistema
 
 - **Digitalização** do processo de avaliação docente
 - **Automatização** da geração de relatórios e consolidados
@@ -15,9 +15,9 @@ O **Sistema de Avaliação Docente** é uma plataforma web desenvolvida para dig
 
 ---
 
-## 👥 Perfis de Usuário e Funcionalidades
+## Perfis de Usuário e Funcionalidades
 
-### 🔧 Administrador (Admin)
+### Administrador (Admin)
 
 O administrador possui acesso total ao sistema e pode realizar todas as operações de gerenciamento:
 
@@ -90,7 +90,7 @@ O administrador possui acesso total ao sistema e pode realizar todas as operaç�
 - **Relatórios consolidados** por docente em PDF
 - **Análise** de tendências e performance
 
-### 📊 Avaliador
+### Avaliador
 
 Os avaliadores têm acesso às funcionalidades de avaliação e acompanhamento:
 
@@ -113,7 +113,7 @@ Os avaliadores têm acesso às funcionalidades de avaliação e acompanhamento:
 - **Gerar** consolidados por docente
 - **Acessar** métricas de desempenho
 
-### 👨‍🏫 Docente
+### ‍Docente
 
 Os docentes possuem acesso restrito às suas próprias informações:
 
@@ -135,11 +135,11 @@ Os docentes possuem acesso restrito às suas próprias informações:
 
 ---
 
-## 📊 Formulário de Avaliação
+## Formulário de Avaliação
 
 O sistema utiliza um formulário detalhado dividido em duas seções principais:
 
-### 📝 Seção 1: Planejamento (8 critérios)
+### Seção 1: Planejamento (8 critérios)
 1. **Cronograma de aula** - Elabora cronograma estruturado
 2. **Planejamento de aula** - Planeja adequadamente as atividades
 3. **Instrumentos de avaliação** - Planeja ferramentas de avaliação
@@ -149,7 +149,7 @@ O sistema utiliza um formulário detalhado dividido em duas seções principais:
 7. **Disponibilização de ferramentas** - Organiza recursos necessários
 8. **Portal Educacional** - Utiliza recursos digitais da instituição
 
-### 📚 Seção 2: Período da Aula (19 critérios)
+### Seção 2: Período da Aula (19 critérios)
 1. **Apresentação pessoal** - Mantém postura profissional
 2. **Conhecimento dos assuntos** - Demonstra domínio do conteúdo
 3. **Acompanhamento do desempenho** - Monitora progresso dos alunos
@@ -170,7 +170,7 @@ O sistema utiliza um formulário detalhado dividido em duas seções principais:
 18. **Orientação de máquinas/equipamentos** - Instrui uso seguro de recursos
 19. **Procedimentos de segurança** - Cumpre e ensina normas de segurança
 
-### 📝 Campos Adicionais
+### Campos Adicionais
 - **Observações por seção** - Comentários específicos sobre planejamento e aula
 - **Observações gerais** - Feedback geral sobre a avaliação
 - **Anexos** - Upload de fotos, documentos e evidências (até 16MB)
@@ -178,11 +178,11 @@ O sistema utiliza um formulário detalhado dividido em duas seções principais:
 
 ---
 
-## 🗄️ Estrutura do Banco de Dados
+## Estrutura do Banco de Dados
 
 O sistema utiliza **PostgreSQL** como banco de dados principal, com as seguintes tabelas:
 
-### 👤 Tabela `user`
+### Tabela `user`
 Armazena informações dos usuários do sistema.
 ```sql
 - id (PRIMARY KEY)
@@ -196,7 +196,7 @@ Armazena informações dos usuários do sistema.
 - created_by (FOREIGN KEY → user.id)
 ```
 
-### 👨‍🏫 Tabela `teacher`
+### ‍Tabela `teacher`
 Dados dos docentes da instituição.
 ```sql
 - id (PRIMARY KEY)
@@ -207,7 +207,7 @@ Dados dos docentes da instituição.
 - created_at
 ```
 
-### 📚 Tabela `course`
+### Tabela `course`
 Informações dos cursos oferecidos.
 ```sql
 - id (PRIMARY KEY)
@@ -218,7 +218,7 @@ Informações dos cursos oferecidos.
 - created_at
 ```
 
-### 📖 Tabela `curricular_unit`
+### Tabela `curricular_unit`
 Unidades curriculares vinculadas aos cursos.
 ```sql
 - id (PRIMARY KEY)
@@ -228,7 +228,7 @@ Unidades curriculares vinculadas aos cursos.
 - created_at
 ```
 
-### 👥 Tabela `evaluator`
+### Tabela `evaluator`
 Dados dos avaliadores do sistema.
 ```sql
 - id (PRIMARY KEY)
@@ -238,7 +238,7 @@ Dados dos avaliadores do sistema.
 - created_at
 ```
 
-### 📋 Tabela `evaluation`
+### Tabela `evaluation`
 Registros de avaliações realizadas.
 ```sql
 - id (PRIMARY KEY)
@@ -283,7 +283,7 @@ Registros de avaliações realizadas.
 - updated_at
 ```
 
-### 📎 Tabela `evaluation_attachment`
+### Tabela `evaluation_attachment`
 Anexos das avaliações.
 ```sql
 - id (PRIMARY KEY)
@@ -295,7 +295,7 @@ Anexos das avaliações.
 - uploaded_at
 ```
 
-### 📅 Tabela `semester`
+### Tabela `semester`
 Períodos semestrais do sistema.
 ```sql
 - id (PRIMARY KEY)
@@ -306,7 +306,7 @@ Períodos semestrais do sistema.
 - created_at
 ```
 
-### 🗓️ Tabela `scheduled_evaluation`
+### Tabela `scheduled_evaluation`
 Cronograma de avaliações.
 ```sql
 - id (PRIMARY KEY)
@@ -323,7 +323,7 @@ Cronograma de avaliações.
 - created_at
 ```
 
-### ✍️ Tabela `digital_signature`
+### Tabela `digital_signature`
 Assinaturas digitais das avaliações.
 ```sql
 - id (PRIMARY KEY)
@@ -337,15 +337,15 @@ Assinaturas digitais das avaliações.
 
 ---
 
-## 🚀 Instalação e Configuração
+## Instalação e Configuração
 
-### 📋 Pré-requisitos
+### Pré-requisitos
 
 - **Python 3.11+**
 - **PostgreSQL 12+**
 - **pip** ou **uv** (gerenciador de pacotes Python)
 
-### 🔧 Dependências Principais
+### Dependências Principais
 
 ```toml
 [dependencies]
@@ -365,7 +365,7 @@ sqlalchemy = ">=2.0.43"
 email-validator = ">=2.3.0"
 ```
 
-### 🔧 Configuração do Ambiente
+### Configuração do Ambiente
 
 1. **Clone o repositório:**
 ```bash
@@ -403,7 +403,7 @@ pip install -r requirements.txt
 # Certifique-se de que o PostgreSQL está rodando e acessível
 ```
 
-### 🚀 Execução
+### Execução
 
 #### Desenvolvimento
 ```bash
@@ -423,62 +423,62 @@ uv run gunicorn --bind 0.0.0.0:5000 --reuse-port production_app:app
 gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 production_app:app
 ```
 
-### 🔑 Usuário Inicial
+### Usuário Inicial
 
 O sistema cria automaticamente um usuário administrador:
 - **Usuário:** `******`
 - **Senha:** `*********`
 - **Função:** Administrador
 
-**⚠️ IMPORTANTE:** Altere esta senha padrão imediatamente após o primeiro login!
+**IMPORTANTE:** Altere esta senha padrão imediatamente após o primeiro login!
 
 ---
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 sistema-avaliacao-docente/
-├── 📄 app.py                 # Configuração principal da aplicação
-├── 📄 production_app.py      # Configuração otimizada para produção
-├── 📄 models.py             # Modelos do banco de dados (SQLAlchemy)
-├── 📄 routes.py             # Rotas e lógica de negócio
-├── 📄 forms.py              # Formulários (WTForms)
-├── 📄 utils.py              # Funções utilitárias
-├── 📄 pyproject.toml        # Dependências e configurações do projeto
-├── 📄 Procfile              # Configuração para deploy
-├── 📄 railway.json          # Configuração específica Railway
-├── 📁 templates/            # Templates HTML (Jinja2)
-│   ├── 📄 base.html
-│   ├── 📄 dashboard.html
-│   ├── 📄 login.html
-│   ├── 📄 evaluation_form.html
-│   ├── 📄 teachers.html
-│   ├── 📄 users.html
+├── app.py                 # Configuração principal da aplicação
+├── production_app.py      # Configuração otimizada para produção
+├── models.py             # Modelos do banco de dados (SQLAlchemy)
+├── routes.py             # Rotas e lógica de negócio
+├── forms.py              # Formulários (WTForms)
+├── utils.py              # Funções utilitárias
+├── pyproject.toml        # Dependências e configurações do projeto
+├── Procfile              # Configuração para deploy
+├── railway.json          # Configuração específica Railway
+├── templates/            # Templates HTML (Jinja2)
+│   ├── base.html
+│   ├── dashboard.html
+│   ├── login.html
+│   ├── evaluation_form.html
+│   ├── teachers.html
+│   ├── users.html
 │   └── ... (outros templates)
-├── 📁 static/               # Arquivos estáticos
-│   ├── 📁 css/
-│   │   └── 📄 custom.css
-│   └── 📁 js/
-│       └── 📄 app.js
-└── 📁 uploads/              # Diretório para arquivos enviados
+├── static/               # Arquivos estáticos
+│   ├── css/
+│   │   └── custom.css
+│   └── js/
+│       └── app.js
+└── uploads/              # Diretório para arquivos enviados
 ```
 
 ---
 
-## 🎨 Interface e Design
+## Interface e Design
 
-### 🎭 Tema Visual
+### Tema Visual
 - **Bootstrap 5** com tema escuro personalizado
 - **Font Awesome** para ícones consistentes
 - **Design responsivo** otimizado para tablets e desktop
 - **Cores institucionais** do SENAI
 
-### 📱 Responsividade
+### Responsividade
 - **Desktop:** Interface completa com todas as funcionalidades
 - **Tablet:** Layout adaptado para avaliações em campo
 - **Mobile:** Navegação essencial e consultas
 
-### 🖼️ Recursos Visuais
+### Recursos Visuais
 - **Dashboard** com gráficos e indicadores
 - **Formulários** intuitivos com validação em tempo real
 - **Tabelas** responsivas com paginação
@@ -487,34 +487,34 @@ sistema-avaliacao-docente/
 
 ---
 
-## 📈 Funcionalidades Avançadas
+## Funcionalidades Avançadas
 
-### 📊 Relatórios em PDF
+### Relatórios em PDF
 - **ReportLab** para geração de PDFs profissionais
 - **Relatórios individuais** com dados completos da avaliação
 - **Consolidados** com histórico e análise temporal
 - **Layout personalizado** com logo e identidade visual
 
-### 📧 Sistema de Email
+### Sistema de Email
 - **Notificações automáticas** para docentes e avaliadores
 - **Lembretes** de avaliações pendentes
 - **Envio de relatórios** por email
 - **Templates** personalizados para cada tipo de comunicação
 
-### 📥 Importação de Dados
+### Importação de Dados
 - **Templates Excel** padronizados para cada entidade
 - **Validação** automática dos dados importados
 - **Feedback** detalhado sobre erros de importação
 - **Processamento em lote** para grandes volumes
 
-### 🔐 Segurança
+### Segurança
 - **Autenticação** baseada em sessões Flask-Login
 - **Hashing** seguro de senhas com Werkzeug
 - **Controle de acesso** baseado em roles
 - **Assinaturas digitais** com timestamp e rastreabilidade
 - **Logs de auditoria** para ações críticas
 
-### 📊 Analytics e Métricas
+### Analytics e Métricas
 - **Dashboard** com indicadores em tempo real
 - **Percentuais** automáticos por seção de avaliação
 - **Trending** de performance ao longo do tempo
@@ -523,16 +523,16 @@ sistema-avaliacao-docente/
 
 ---
 
-## 🚀 Deploy e Produção
+## Deploy e Produção
 
-### ☁️ Replit Deploy
+### Replit Deploy
 O sistema está configurado para deploy automático no Replit:
 ```bash
 # Comando de produção configurado
 uv run gunicorn --bind 0.0.0.0:5000 --reuse-port production_app:app
 ```
 
-### 🚂 Railway (Alternativo)
+### Railway (Alternativo)
 Configuração para Railway incluída:
 ```json
 {
@@ -546,7 +546,7 @@ Configuração para Railway incluída:
 }
 ```
 
-### 🔧 Configurações de Produção
+### Configurações de Produção
 - **Gunicorn** como servidor WSGI
 - **ProxyFix** para headers corretos
 - **Pool de conexões** otimizado para PostgreSQL
@@ -557,30 +557,30 @@ Configuração para Railway incluída:
 
 ## 🆘 Suporte e Manutenção
 
-### 🔍 Monitoramento
+### Monitoramento
 - **Endpoint de saúde:** `/health`
 - **Logs estruturados** com timestamps
 - **Métricas** de performance automáticas
 - **Alertas** de sistema via dashboard
 
-### 🛠️ Backup e Recuperação
+### Backup e Recuperação
 - **Backup automático** do PostgreSQL
 - **Retenção** configurável de dados
 - **Restore** de checkpoints quando necessário
 
-### 📞 Suporte Técnico
+### Suporte Técnico
 Para suporte técnico ou dúvidas sobre o sistema:
-- **Desenvolvedor:** Sistema desenvolvido para SENAI Morvan Figueiredo
+- **Desenvolvedor:** Sistema desenvolvido para SENAI
 - **Documentação:** Este README contém todas as informações necessárias
 - **Logs:** Use `/health` para verificar status do sistema
 
 ---
 
-## 📝 Licença
+## Licença
 
-Sistema desenvolvido exclusivamente para **SENAI Morvan Figueiredo**.
+Sistema desenvolvido exclusivamente para **SENAI**.
 Todos os direitos reservados.
 
 ---
 
-*Desenvolvido com ❤️ para modernizar a educação técnica do SENAI Morvan Figueiredo*
+*Desenvolvido com para modernizar a educação técnica do SENAI*

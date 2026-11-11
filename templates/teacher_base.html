@@ -1,102 +1,67 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sistema de Ação Docente SENAI Morvan Figueiredo{% endblock %}</title>
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
-    
+{% include "_head.html" %}
+    <title>{% block title %}Área do docente | SENAI{% endblock %}</title>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation - Restricted for Teachers -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('teacher_dashboard') }}">
-                <i class="fas fa-chalkboard-teacher me-2"></i>
-                SENAI Morvan Figueiredo - Área do Docente
-            </a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">
-                            <i class="fas fa-home me-1"></i>Minhas Avaliações
-                        </a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav">
+    <a href="#conteudo" class="skip-to-content">Pular para o conteúdo</a>
+
+    {% set ep = request.endpoint or '' %}
+    <header class="app-header">
+        <nav class="navbar navbar-expand-lg" aria-label="Navegação do docente">
+            <div class="container-xl">
+                <a class="brand" href="{{ url_for('teacher_dashboard') }}">
+                    <img src="{{ url_for('static', filename='img/senai-logo.png') }}" alt="SENAI">
+                    <span class="brand-name">Área do docente<small>Acompanhamento pedagógico</small></span>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navDocente" aria-controls="navDocente" aria-expanded="false" aria-label="Abrir menu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navDocente">
                     {% if current_user.is_authenticated %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user me-1"></i>{{ current_user.name }}
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link {% if ep == 'teacher_dashboard' %}active{% endif %}" href="{{ url_for('teacher_dashboard') }}">Início</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if ep in ('teacher_evaluations', 'teacher_view_evaluation_details') %}active{% endif %}" href="{{ url_for('teacher_evaluations') }}">Minhas avaliações</a>
+                        </li>
+                    </ul>
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle user-chip" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="user-avatar" aria-hidden="true">{{ (current_user.name or 'D')[:1]|upper }}</span>
+                            <span>{{ current_user.name.split(' ')[0] if current_user.name else current_user.username }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ url_for('change_user_password', id=current_user.id) }}">
-                                <i class="fas fa-key me-1"></i>Alterar Senha
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
-                                <i class="fas fa-sign-out-alt me-1"></i>Sair
-                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('change_user_password', id=current_user.id) }}">Alterar senha</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Sair</a></li>
                         </ul>
-                    </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Flash Messages -->
-    <div class="container mt-3">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </header>
 
-    <!-- Main Content -->
-    <main class="container my-4">
+    {% include "_flash.html" %}
+
+    <main id="conteudo" class="container-xl my-4">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-light py-3 mt-5">
-        <div class="container text-center">
-            <p class="mb-0">
-                <i class="fas fa-school me-1"></i>
-                SENAI Morvan Figueiredo - Sistema de Ação Docente &copy; {{ current_year or 2025 }}
-            </p>
+    <footer class="app-footer">
+        <div class="container-xl d-flex flex-wrap justify-content-between gap-2">
+            <span>Sistema de Acompanhamento da Ação Docente do SENAI</span>
+            <span>&copy; {{ current_year or 2026 }}</span>
         </div>
     </footer>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

@@ -1,0 +1,75 @@
+{% extends "teacher_base.html" %}
+
+{% block title %}Minhas avaliações | Área do docente | SENAI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Minhas avaliações</h1>
+        <p>{{ evaluations|length }} {{ 'avaliação encontrada' if evaluations|length == 1 else 'avaliações encontradas' }}</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-sm-4 col-lg-3">
+                <label for="start_date" class="form-label">De</label>
+                <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date or '' }}">
+            </div>
+            <div class="col-sm-4 col-lg-3">
+                <label for="end_date" class="form-label">Até</label>
+                <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date or '' }}">
+            </div>
+            <div class="col-sm-4 col-lg-6 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary">Filtrar</button>
+                {% if start_date or end_date %}
+                <a href="{{ url_for('teacher_evaluations') }}" class="btn btn-outline-secondary">Limpar</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    {% if evaluations %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Curso</th>
+                    <th>Unidade curricular</th>
+                    <th>Período</th>
+                    <th>Planejamento</th>
+                    <th>Aula</th>
+                    <th>Situação</th>
+                    <th class="text-end"><span class="visually-hidden">Ações</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for evaluation in evaluations %}
+                <tr>
+                    <td>{{ evaluation.evaluation_date.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ evaluation.course.name }}</td>
+                    <td>{{ evaluation.curricular_unit.name if evaluation.curricular_unit else evaluation.course.curriculum_component }}</td>
+                    <td>{{ evaluation.period }}</td>
+                    <td>{{ evaluation.calculate_planning_percentage() }}%</td>
+                    <td>{{ evaluation.calculate_class_percentage() }}%</td>
+                    <td>{% include "_teacher_eval_status.html" %}</td>
+                    <td class="text-end text-nowrap">
+                        <a href="{{ url_for('teacher_view_evaluation_details', id=evaluation.id) }}" class="btn btn-outline-secondary btn-sm">Abrir</a>
+                        <a href="{{ url_for('teacher_download_evaluation_pdf', id=evaluation.id) }}" class="btn btn-outline-secondary btn-sm" title="Baixar PDF">PDF</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>{% if start_date or end_date %}Nenhuma avaliação no período escolhido. Ajuste as datas ou limpe o filtro.{% else %}Você ainda não recebeu avaliações.{% endif %}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

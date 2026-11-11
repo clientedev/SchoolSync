@@ -78,7 +78,7 @@ with app.app_context():
     try:
         # Test database connection first
         db.engine.connect()
-        print("✅ Database connection successful")
+        print("Database connection successful")
         
         db.create_all()
         # Ensure the column exists if create_all didn't add it to an existing table
@@ -89,7 +89,7 @@ with app.app_context():
         except Exception as e:
             db.session.rollback()
             print(f"Column migration warning: {e}")
-        print("✅ Database tables created/verified")
+        print("Database tables created/verified")
         
         # Create admin user if it doesn't exist
         from models import User
@@ -103,9 +103,9 @@ with app.app_context():
             admin_user.set_password('senai103103')
             db.session.add(admin_user)
             db.session.commit()
-            print("✅ Admin user created successfully")
+            print("Admin user created successfully")
     except Exception as e:
-        print(f"❌ Database initialization error: {e}")
+        print(f"Database initialization error: {e}")
         print(f"Database URL: {app.config['SQLALCHEMY_DATABASE_URI'][:50]}...")
         # Don't fail completely, let the app start and show the error
 

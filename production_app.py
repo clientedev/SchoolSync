@@ -38,9 +38,8 @@ if not database_url:
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-app.config.update({
-    "SQLALCHEMY_DATABASE_URI": database_url,
-    "SQLALCHEMY_ENGINE_OPTIONS": {
+if database_url.startswith("postgresql"):
+    engine_options = {
         "pool_size": 10,
         "pool_recycle": 300,
         "pool_pre_ping": True,
@@ -51,11 +50,21 @@ app.config.update({
             "connect_timeout": 10,
             "client_encoding": "utf8",
         }
-    },
+    }
+else:
+    # SQLite não aceita as opções específicas do PostgreSQL.
+    # Garante que a pasta do arquivo exista (ex.: volume montado em /data).
+    if database_url.startswith("sqlite:////"):
+        os.makedirs(os.path.dirname(database_url.replace("sqlite:///", "", 1)), exist_ok=True)
+    engine_options = {"pool_pre_ping": True, "connect_args": {"timeout": 30}}
+
+app.config.update({
+    "SQLALCHEMY_DATABASE_URI": database_url,
+    "SQLALCHEMY_ENGINE_OPTIONS": engine_options,
     "SQLALCHEMY_TRACK_MODIFICATIONS": False,
     
     # File upload configuration
-    "UPLOAD_FOLDER": "/tmp/uploads",
+    "UPLOAD_FOLDER": os.environ.get("UPLOAD_FOLDER", "/tmp/uploads"),
     "MAX_CONTENT_LENGTH": 16 * 1024 * 1024,  # 16MB
     
     # Mail configuration - optimized for Railway deployment
@@ -83,6 +92,11 @@ app.config['WTF_CSRF_ENABLED'] = False
 # csrf.init_app(app)  # Commented out CSRF initialization
 login_manager.login_view = 'login'  # type: ignore
 login_manager.login_message = 'Faça login para acessar esta página.'
+
+@app.context_processor
+def inject_globals():
+    from datetime import datetime as _dt
+    return {"current_year": _dt.now().year}
 
 # CSRF disabled - no need for csrf_token in templates
 # @app.context_processor
@@ -164,9 +178,9 @@ with app.app_context():
         try:
             connection = db.engine.connect()
             connection.close()
-            logging.info("✅ Database connection successful")
+            logging.info("Database connection successful")
         except Exception as db_error:
-            logging.warning(f"⚠️ Database connection failed: {db_error}")
+            logging.warning(f"Database connection failed: {db_error}")
             # Continue anyway for Railway startup
         
         # Create tables if needed
@@ -178,10 +192,10 @@ with app.app_context():
                 db.session.commit()
             except Exception as e:
                 db.session.rollback()
-                logging.warning(f"⚠️ plain_password column migration warning: {e}")
-            logging.info("✅ Database tables verified")
+                logging.warning(f"plain_password column migration warning: {e}")
+            logging.info("Database tables verified")
         except Exception as table_error:
-            logging.warning(f"⚠️ Table creation failed: {table_error}")
+            logging.warning(f"Table creation failed: {table_error}")
         
         # Create admin user if it doesn't exist
         try:
@@ -195,23 +209,23 @@ with app.app_context():
                 admin_user.set_password('senai103103')
                 db.session.add(admin_user)
                 db.session.commit()
-                logging.info("✅ Admin user created")
+                logging.info("Admin user created")
         except Exception as user_error:
-            logging.warning(f"⚠️ Admin user creation failed: {user_error}")
+            logging.warning(f"Admin user creation failed: {user_error}")
         
         # Import routes after everything is set up
         try:
             import routes
-            logging.info("✅ Routes imported successfully")
+            logging.info("Routes imported successfully")
         except Exception as route_error:
-            logging.error(f"❌ Routes import failed: {route_error}")
+            logging.error(f"Routes import failed: {route_error}")
             import traceback
             logging.error(traceback.format_exc())
         
-        logging.info("✅ Application initialized successfully")
+        logging.info("Application initialized successfully")
         
     except Exception as e:
-        logging.error(f"❌ Application initialization error: {e}")
+        logging.error(f"Application initialization error: {e}")
         # Log the full traceback for debugging
         import traceback
         logging.error(traceback.format_exc())

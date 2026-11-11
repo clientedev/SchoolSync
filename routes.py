@@ -3,7 +3,7 @@ import logging
 import secrets
 import hashlib
 from cryptography.fernet import Fernet
-from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, session
+from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, current_app, session, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from production_app import csrf
 from datetime import datetime, timedelta
@@ -82,6 +82,27 @@ def logout():
     logout_user()
     flash('Você foi desconectado com sucesso.', 'info')
     return redirect(url_for('login'))
+
+# Docentes só acessam a área do docente. Qualquer outra tela redireciona para o painel do docente.
+TEACHER_ALLOWED_ENDPOINTS = {
+    'static', 'login', 'logout', 'index', 'health_check',
+    'teacher_dashboard', 'teacher_evaluations', 'teacher_view_evaluation_details',
+    'teacher_sign_evaluation_new', 'teacher_download_evaluation_pdf',
+    'change_user_password', 'download_attachment',
+}
+
+
+@app.before_request
+def restrict_teacher_area():
+    if not current_user.is_authenticated or not current_user.is_teacher():
+        return None
+    if request.endpoint is None or request.endpoint in TEACHER_ALLOWED_ENDPOINTS:
+        return None
+    if request.path.startswith('/api/') or request.method != 'GET':
+        return jsonify({'error': 'Acesso negado'}), 403
+    flash('Essa área é restrita à coordenação.', 'warning')
+    return redirect(url_for('teacher_dashboard'))
+
 
 @app.route('/health')
 def health_check():
@@ -392,7 +413,7 @@ def change_user_password(id):
 def teachers():
     """List all teachers"""
     # DEBUG: Log requests to help diagnose 405 errors
-    logging.info(f"🔍 DEBUG teachers() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
+    logging.info(f"DEBUG teachers() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
     
     teachers_list = Teacher.query.all()
     form = TeacherForm()  # Always provide form for modal
@@ -403,8 +424,8 @@ def teachers():
 @login_required 
 def teachers_post_redirect():
     """DEBUG: Catch POST requests that should go to /teachers/add"""
-    logging.warning(f"🚨 DEBUG: POST request to /teachers (should be /teachers/add) - Method: {request.method}, Path: {request.path}")
-    logging.warning(f"🚨 Form data: {dict(request.form)}")
+    logging.warning(f"DEBUG: POST request to /teachers (should be /teachers/add) - Method: {request.method}, Path: {request.path}")
+    logging.warning(f"Form data: {dict(request.form)}")
     flash('Redirecionando cadastro para URL correta...', 'info')
     return redirect(url_for('add_teacher'), code=307)  # 307 preserves POST method
 
@@ -477,7 +498,7 @@ def teacher_profile(id):
 def add_teacher():
     """Add new teacher"""
     # DEBUG: Log requests to help diagnose 405 errors
-    logging.info(f"🔍 DEBUG add_teacher() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
+    logging.info(f"DEBUG add_teacher() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
     
     form = TeacherForm()
     
@@ -584,9 +605,9 @@ def add_teacher():
         
         except Exception as e:
             db.session.rollback()
-            app.logger.error(f"❌ Erro ao criar professor: {str(e)}")
+            app.logger.error(f"Erro ao criar professor: {str(e)}")
             import traceback
-            app.logger.error(f"🔍 Traceback completo: {traceback.format_exc()}")
+            app.logger.error(f"Traceback completo: {traceback.format_exc()}")
             flash(f'Erro ao criar docente: {str(e)}', 'error')
             return render_template('teachers.html', form=form, teachers=Teacher.query.all())
     
@@ -997,7 +1018,7 @@ def import_teachers_excel():
 def courses():
     """List all courses"""
     # DEBUG: Log requests to help diagnose 405 errors
-    logging.info(f"🔍 DEBUG courses() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
+    logging.info(f"DEBUG courses() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
     
     courses_list = Course.query.all()
     form = CourseForm()
@@ -1008,8 +1029,8 @@ def courses():
 @login_required 
 def courses_post_redirect():
     """DEBUG: Catch POST requests that should go to /courses/add"""
-    logging.warning(f"🚨 DEBUG: POST request to /courses (should be /courses/add) - Method: {request.method}, Path: {request.path}")
-    logging.warning(f"🚨 Form data: {dict(request.form)}")
+    logging.warning(f"DEBUG: POST request to /courses (should be /courses/add) - Method: {request.method}, Path: {request.path}")
+    logging.warning(f"Form data: {dict(request.form)}")
     flash('Redirecionando cadastro para URL correta...', 'info')
     return redirect(url_for('add_course'), code=307)  # 307 preserves POST method
 
@@ -1018,7 +1039,7 @@ def courses_post_redirect():
 def add_course():
     """Add new course"""
     # DEBUG: Log requests to help diagnose 405 errors
-    logging.info(f"🔍 DEBUG add_course() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
+    logging.info(f"DEBUG add_course() - Method: {request.method}, Path: {request.path}, Full URL: {request.url}")
     
     form = CourseForm()
     
@@ -1429,14 +1450,14 @@ def new_evaluation():
         
         # Notificação por email via Resend
         if evaluation.teacher.user and evaluation.teacher.user.email:
-            current_app.logger.info(f"📧 Enviando email de avaliação para: {evaluation.teacher.user.email}")
+            current_app.logger.info(f"Enviando email de avaliação para: {evaluation.teacher.user.email}")
             try:
                 from utils import send_evaluation_notification_resend
                 send_evaluation_notification_resend(evaluation)
             except Exception as e:
-                current_app.logger.error(f"❌ Erro ao enviar email de avaliação via Resend: {e}")
+                current_app.logger.error(f"Erro ao enviar email de avaliação via Resend: {e}")
         else:
-            current_app.logger.warning(f"⚠️ Docente {evaluation.teacher.name} não possui email para notificação.")
+            current_app.logger.warning(f"Docente {evaluation.teacher.name} não possui email para notificação.")
         
         # Enviar email de notificação para o docente (SMTP legacy)
         try:
@@ -1755,7 +1776,14 @@ def edit_evaluation(id):
 def download_attachment(attachment_id):
     """Download an evaluation attachment"""
     attachment = EvaluationAttachment.query.get_or_404(attachment_id)
-    
+
+    # Docente só baixa anexos das próprias avaliações
+    if current_user.is_teacher():
+        evaluation = Evaluation.query.get(attachment.evaluation_id)
+        teacher = Teacher.query.filter_by(user_id=current_user.id).first()
+        if not evaluation or not teacher or evaluation.teacher_id != teacher.id:
+            abort(403)
+
     # Verify file exists
     if not os.path.exists(attachment.file_path):
         flash('Arquivo não encontrado.', 'error')
@@ -2764,13 +2792,13 @@ def teacher_dashboard():
     """Dashboard for logged-in teachers"""
     if not current_user.is_teacher():
         flash('Acesso negado. Esta área é apenas para docentes.', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('index'))
     
     # Get teacher profile
     teacher = Teacher.query.filter_by(user_id=current_user.id).first()
     if not teacher:
         flash('Perfil de docente não encontrado.', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('index'))
     
     # Get teacher's evaluations
     evaluations = Evaluation.query.filter_by(teacher_id=teacher.id).order_by(Evaluation.evaluation_date.desc()).all()
@@ -2801,12 +2829,12 @@ def teacher_view_evaluation_details(id):
     """View evaluation details for teacher"""
     if not current_user.is_teacher():
         flash('Acesso negado.', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('index'))
     
     teacher = Teacher.query.filter_by(user_id=current_user.id).first()
     if not teacher:
         flash('Perfil de docente não encontrado.', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('index'))
     
     evaluation = Evaluation.query.filter_by(id=id, teacher_id=teacher.id).first_or_404()
     
@@ -2891,12 +2919,12 @@ def teacher_evaluations():
     """List teacher's evaluations with filters"""
     if not current_user.is_teacher():
         flash('Acesso negado.', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('index'))
     
     teacher = Teacher.query.filter_by(user_id=current_user.id).first()
     if not teacher:
         flash('Perfil de docente não encontrado.', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('index'))
     
     # Get filter parameters
     start_date = request.args.get('start_date')

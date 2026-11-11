@@ -1,145 +1,68 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistema de Ação Docente SENAI Morvan Figueiredo</title>
-    
-    <!-- Bootstrap Dark Theme CSS -->
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+{% include "_head.html" %}
+    <title>Entrar | Acompanhamento da Ação Docente | SENAI</title>
 </head>
-<body class="bg-dark">
-    <div class="container-fluid vh-100 d-flex align-items-center justify-content-center py-3">
-        <div class="row w-100 justify-content-center">
-            <div class="col-11 col-sm-10 col-md-8 col-lg-6 col-xl-5 col-xxl-4">
-                <div class="card shadow-lg hover-lift">
-                    <div class="card-header text-center bg-primary">
-                        <div class="py-2 py-md-3">
-                            <i class="fas fa-chalkboard-teacher fa-2x fa-md-3x text-white mb-2 mb-md-3"></i>
-                            <h2 class="h5 h-md-4 text-white mb-1 fw-bold">
-                                <span class="d-none d-sm-inline">SENAI Morvan Figueiredo</span>
-                                <span class="d-sm-none">SENAI<br>Morvan Figueiredo</span>
-                            </h2>
-                            <p class="text-white-50 mb-0 small">Sistema de Ação Docente</p>
-                        </div>
-                    </div>
-                    <div class="card-body p-3 p-md-4">
-                        <div class="text-center mb-3 mb-md-4">
-                            <h3 class="h6 h-md-5 mb-1 mb-md-2">Acesso ao Sistema</h3>
-                            <p class="text-muted small">Faça login para continuar</p>
-                        </div>
-
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                                        {{ message }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
-
-                        <form method="POST" class="fade-in">
-                            {{ form.hidden_tag() }}
-                            
-                            <div class="mb-3">
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fas fa-user"></i>
-                                    </span>
-                                    {{ form.username(class="form-control form-control-lg", placeholder="Usuário") }}
-                                </div>
-                                {% if form.username.errors %}
-                                    <div class="text-danger small mt-1">
-                                        <i class="fas fa-exclamation-triangle me-1"></i>
-                                        {% for error in form.username.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-3 mb-md-4">
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fas fa-lock"></i>
-                                    </span>
-                                    {{ form.password(class="form-control form-control-lg", placeholder="Senha") }}
-                                </div>
-                                {% if form.password.errors %}
-                                    <div class="text-danger small mt-1">
-                                        <i class="fas fa-exclamation-triangle me-1"></i>
-                                        {% for error in form.password.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-sign-in-alt me-2"></i>Entrar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="card-footer text-center text-muted py-2 py-md-3">
-                        <small class="d-block">
-                            <i class="fas fa-shield-alt me-1"></i>
-                            Sistema protegido
-                        </small>
-                    </div>
-                </div>
-                
-                <!-- Informações do sistema -->
-                <div class="text-center mt-3 mt-md-4 px-3">
-                    <small class="text-muted d-block">
-                        <i class="fas fa-info-circle me-1"></i>
-                        <span class="d-none d-md-inline">Versão 2.0 - Desenvolvido para SENAI Morvan Figueiredo</span>
-                        <span class="d-md-none">v2.0 - SENAI Morvan Figueiredo</span>
-                    </small>
-                </div>
+<body>
+    <div class="login-page">
+        <section class="login-aside" aria-hidden="true">
+            <div></div>
+            <div>
+                <h1>Acompanhamento da ação docente</h1>
+                <p>Registro das observações de aula, planejamento e assinatura das avaliações entre coordenação e docentes.</p>
+                <ul>
+                    <li>Agendamento das observações por semestre</li>
+                    <li>Checklist de planejamento e condução da aula</li>
+                    <li>Assinatura digital e relatório em PDF</li>
+                </ul>
             </div>
-        </div>
+            <small class="text-white-50">SENAI</small>
+        </section>
+
+        <main class="login-panel">
+            <img class="logo" src="{{ url_for('static', filename='img/senai-logo.png') }}" alt="SENAI">
+
+            <h2>Entrar</h2>
+            <p class="text-muted mb-4">Use o usuário e a senha fornecidos pela coordenação.</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category in ('error', 'danger') else category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                </div>
+                {% endfor %}
+            {% endwith %}
+
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="mb-3">
+                    <label class="form-label" for="{{ form.username.id }}">Usuário</label>
+                    {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), autocomplete="username", autofocus=True) }}
+                    {% for error in form.username.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" for="{{ form.password.id }}">Senha</label>
+                    {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="current-password") }}
+                    {% for error in form.password.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2" id="btnEntrar">Entrar</button>
+            </form>
+
+            <p class="text-muted small mt-4 mb-0">Esqueceu a senha? Solicite a redefinição à coordenação.</p>
+        </main>
     </div>
 
-    <!-- Background pattern - responsive -->
-    <div class="position-fixed top-0 start-0 w-100 h-100 d-none d-md-block" style="z-index: -1; opacity: 0.05;">
-        <div class="d-flex align-items-center justify-content-center h-100">
-            <i class="fas fa-graduation-cap" style="font-size: clamp(8rem, 15vw, 20rem);"></i>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Add focus enhancement -->
+    <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Focus on username field
-            const usernameField = document.querySelector('input[name="username"]');
-            if (usernameField) {
-                usernameField.focus();
-            }
-            
-            // Add loading state to form submission
-            const form = document.querySelector('form');
-            const submitBtn = document.querySelector('button[type="submit"]');
-            
-            if (form && submitBtn) {
-                form.addEventListener('submit', function() {
-                    submitBtn.classList.add('loading');
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Entrando...';
-                });
-            }
+        document.querySelector('form').addEventListener('submit', function () {
+            const btn = document.getElementById('btnEntrar');
+            btn.disabled = true;
+            btn.textContent = 'Entrando…';
         });
     </script>
 </body>

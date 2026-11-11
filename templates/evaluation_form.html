@@ -70,7 +70,7 @@ Nova Avaliação - {{ super() }}
         <!-- Evaluations List View -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="fas fa-clipboard-check me-2"></i>Avaliações
+                Avaliações
             </h1>
             <a href="{{ url_for('new_evaluation') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i>Nova Avaliação
@@ -196,7 +196,6 @@ Nova Avaliação - {{ super() }}
         <!-- Single Evaluation Form/View -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>
-                <i class="fas fa-clipboard-check me-2"></i>
                 {% if view_only %}
                 Acompanhamento da Ação Docente
                 {% elif edit_mode %}
@@ -226,15 +225,6 @@ Nova Avaliação - {{ super() }}
             </div>
         </div>
 
-        <!-- SENAI Header -->
-        <div class="card mb-4">
-            <div class="card-header text-center bg-primary">
-                <h4 class="mb-0 text-white">
-                    <i class="fas fa-school me-2"></i>SENAI - ACOMPANHAMENTO DA A&Ccedil;&Atilde;O DOCENTE
-                </h4>
-            </div>
-        </div>
-
         {% if not view_only %}
         <form method="POST"
             action="{% if edit_mode %}{{ url_for('edit_evaluation', id=evaluation.id) }}{% elif scheduled %}{{ url_for('new_evaluation_from_schedule', schedule_id=scheduled.id) }}{% else %}{{ url_for('new_evaluation') }}{% endif %}"
@@ -246,7 +236,7 @@ Nova Avaliação - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-info-circle me-2"></i>Informações Básicas
+                        Informações Básicas
                     </h5>
                 </div>
                 <div class="card-body">
@@ -331,7 +321,7 @@ Nova Avaliação - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-tasks me-2"></i>Aspectos Observados no Período de Planejamento
+                        Aspectos Observados no Período de Planejamento
                     </h5>
                     {% if not view_only %}
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChecklistItem('planning')">
@@ -489,7 +479,7 @@ Nova Avaliação - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chalkboard-teacher me-2"></i>Aspectos Observados no Período da Aula
+                        Aspectos Observados no Período da Aula
                     </h5>
                     {% if not view_only %}
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChecklistItem('class')">
@@ -599,8 +589,8 @@ Nova Avaliação - {{ super() }}
                                 objetivos e associando-os ao projeto do curso"),
                                 (evaluation.class_objectives, "Explicita objetivos e associa-os ao projeto do curso"),
                                 (evaluation.class_questions, "Propõe questões, previamente planejadas, que permite
-                                verificar se o conteÍºdo ministrado estÍ¡ sendo assimilado"),
-                                (evaluation.class_content_assimilation, "Verifica se o conteÍºdo ministrado estÍ¡ sendo
+                                verificar se o conteúdo ministrado está sendo assimilado"),
+                                (evaluation.class_content_assimilation, "Verifica se o conteúdo ministrado está sendo
                                 assimilado"),
                                 (evaluation.class_student_participation, "Estimula a participação dos alunos durante a
                                 aula"),
@@ -662,7 +652,7 @@ Nova Avaliação - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-comments me-2"></i>Observações Gerais e Anexos
+                        Observações Gerais e Anexos
                     </h5>
                 </div>
                 <div class="card-body">
@@ -704,8 +694,8 @@ Nova Avaliação - {{ super() }}
                         <input type="file" name="attachments" id="fileInput" class="form-control" multiple
                             accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
                         <small class="form-text text-muted">
-                            Arquivos permitidos: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX (mÍ¡x. 16MB cada). VocÍª pode
-                            selecionar mÍºltiplos arquivos.
+                            Arquivos permitidos: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX (máx. 16MB cada). Você pode
+                            selecionar múltiplos arquivos.
                         </small>
 
                         <!-- Preview of selected files -->
@@ -718,7 +708,7 @@ Nova Avaliação - {{ super() }}
                     <!-- Show existing attachments in edit mode -->
                     {% if evaluation and evaluation.attachments %}
                     <div class="mb-3">
-                        <label class="form-label"><strong>Anexos jÍ¡ salvos:</strong></label>
+                        <label class="form-label"><strong>Anexos já salvos:</strong></label>
                         <ul class="list-group">
                             {% for attachment in evaluation.attachments %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -744,7 +734,7 @@ Nova Avaliação - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-pie me-2"></i>Resumo de Desempenho
+                        Resumo de Desempenho
                     </h5>
                 </div>
                 <div class="card-body">
@@ -783,7 +773,7 @@ Nova Avaliação - {{ super() }}
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-signature me-2"></i>Assinaturas
+                        Assinaturas
                     </h5>
                 </div>
                 <div class="card-body">
