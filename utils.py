@@ -140,7 +140,7 @@ def send_evaluation_notification_resend(evaluation):
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h1 style="color: #B8050F;">Finalização de Avaliação - Assinatura Necessária</h1>
+        <h1 style="color: #45494E;">Finalização de Avaliação - Assinatura Necessária</h1>
         <p>Olá <strong>{evaluation.teacher.name}</strong>,</p>
         <p>Uma nova avaliação foi concluída para você e <strong>necessita de sua assinatura digital</strong>.</p>
         
@@ -153,8 +153,8 @@ def send_evaluation_notification_resend(evaluation):
             </ul>
         </div>
 
-        <div style="background-color: #FDECEE; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h2 style="margin-top: 0; font-size: 18px; color: #B8050F;">Acesso ao Sistema:</h2>
+        <div style="background-color: #EDEEF0; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="margin-top: 0; font-size: 18px; color: #45494E;">Acesso ao Sistema:</h2>
             <p>Suas credenciais de acesso (Login e Senha) estão no <strong>PDF em anexo</strong> a este e-mail.</p>
             <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
         </div>
@@ -232,7 +232,7 @@ def send_scheduling_notification_resend(scheduled):
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h1 style="color: #B8050F;">Novo Agendamento de Avaliação</h1>
+        <h1 style="color: #45494E;">Novo Agendamento de Avaliação</h1>
         <p>Olá <strong>{scheduled.teacher.name}</strong>,</p>
         <p>Um novo agendamento de avaliação foi criado para você.</p>
         
@@ -244,8 +244,8 @@ def send_scheduling_notification_resend(scheduled):
             </ul>
         </div>
 
-        <div style="background-color: #FDECEE; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h2 style="margin-top: 0; font-size: 18px; color: #B8050F;">Acesso ao Sistema:</h2>
+        <div style="background-color: #EDEEF0; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="margin-top: 0; font-size: 18px; color: #45494E;">Acesso ao Sistema:</h2>
             <p>Suas credenciais de acesso (Login e Senha) estão no <strong>PDF em anexo</strong> a este e-mail.</p>
             <p style="margin-bottom: 5px;"><strong>Link do Sistema:</strong> <a href="{system_link}">{system_link}</a></p>
         </div>
