@@ -47,6 +47,7 @@
                                     <th>NIF</th>
                                     <th>Nome</th>
                                     <th>Área</th>
+                                    <th>E-mail</th>
                                     <th>Avaliações</th>
                                     <th>Ações</th>
                                 </tr>
@@ -63,20 +64,21 @@
                                             </a>
                                         </td>
                                         <td>{{ teacher.area }}</td>
+                                        <td>{% if teacher.user and teacher.user.email %}{{ teacher.user.email }}{% else %}<span class="text-muted small">Sem e-mail</span>{% endif %}</td>
                                         <td>
                                             <span class="badge bg-info">{{ teacher.evaluations|length }}</span>
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
                                                 <button class="btn btn-outline-primary" 
-                                                        onclick="editTeacher({{ teacher.id }}, '{{ teacher.nif }}', '{{ teacher.name }}', '{{ teacher.area }}')">
+                                                        onclick='editTeacher({{ teacher.id }}, {{ teacher.nif|tojson }}, {{ teacher.name|tojson }}, {{ teacher.area|tojson }}, {{ (teacher.user.email if teacher.user and teacher.user.email else "")|tojson }})'>
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <a href="{{ url_for('reports') }}?teacher_id={{ teacher.id }}" class="btn btn-outline-info">
                                                     <i class="fas fa-chart-bar"></i>
                                                 </a>
                                                 <button class="btn btn-outline-danger" 
-                                                        onclick="confirmDelete('{{ teacher.name }}', '{{ url_for('delete_teacher', id=teacher.id) }}')">
+                                                        onclick='confirmDelete({{ teacher.name|tojson }}, {{ url_for("delete_teacher", id=teacher.id)|tojson }})'>
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -128,6 +130,16 @@
                             {% if form.name.errors %}
                                 <div class="text-danger small">
                                     {% for error in form.name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control", type="email", placeholder="nome@exemplo.com", autocomplete="off") }}
+                            <small class="form-text text-muted">Usado para enviar o acesso, os agendamentos e os pedidos de assinatura.</small>
+                            {% if form.email.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.email.errors %}{{ error }}{% endfor %}
                                 </div>
                             {% endif %}
                         </div>
@@ -238,7 +250,7 @@ function resetToAddMode() {
     document.getElementById('teacherForm').reset();
 }
 
-function editTeacher(id, nif, name, area) {
+function editTeacher(id, nif, name, area, email) {
     document.getElementById('modalTitle').textContent = 'Editar Docente';
     document.getElementById('teacherForm').action = `/teachers/edit/${id}`;
     
@@ -246,6 +258,7 @@ function editTeacher(id, nif, name, area) {
     document.querySelector('input[name="nif"]').value = nif;
     document.querySelector('input[name="name"]').value = name;
     document.querySelector('input[name="area"]').value = area;
+    document.querySelector('input[name="email"]').value = email || '';
     
     // Show modal
     new bootstrap.Modal(document.getElementById('teacherModal')).show();

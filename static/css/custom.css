@@ -534,7 +534,7 @@ code { color: var(--ink-2); font-size: 0.875em; }
 
 /* ----- Modais ------------------------------------------------------------- */
 
-.modal-content { border: 1px solid var(--line); border-radius: var(--bs-border-radius-lg); box-shadow: 0 16px 40px rgba(31, 41, 51, 0.18); }
+.modal-content { background: var(--surface); border: 1px solid var(--line); border-radius: var(--bs-border-radius-lg); box-shadow: 0 16px 40px rgba(31, 41, 51, 0.18); }
 .modal-header { border-bottom: 1px solid var(--line); }
 .modal-footer { border-top: 1px solid var(--line); background: var(--canvas); }
 .modal-header.bg-primary, .modal-header.bg-danger, .modal-header.bg-success,

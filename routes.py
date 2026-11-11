@@ -493,6 +493,16 @@ def teacher_profile(id):
                          avg_planning=avg_planning,
                          avg_class=avg_class)
 
+def _flash_form_errors(form, prefix='Não foi possível salvar'):
+    msgs = []
+    for field, errs in form.errors.items():
+        label = getattr(getattr(form, field, None), 'label', None)
+        name = label.text if label else field
+        msgs.append(f"{name}: {'; '.join(errs)}")
+    if msgs:
+        flash(f"{prefix}. " + ' | '.join(msgs), 'error')
+
+
 @app.route('/teachers/add', methods=['GET', 'POST'], strict_slashes=False)
 @login_required
 def add_teacher():
@@ -519,6 +529,7 @@ def add_teacher():
             teacher_user = User()  # type: ignore
             teacher_user.username = form.nif.data.lower() if form.nif.data else ''  # Use NIF as username
             teacher_user.name = form.name.data
+            teacher_user.email = (form.email.data or '').strip().lower() or None
             teacher_user.role = 'teacher'
             teacher_user.created_by = current_user.id
             
@@ -611,6 +622,9 @@ def add_teacher():
             flash(f'Erro ao criar docente: {str(e)}', 'error')
             return render_template('teachers.html', form=form, teachers=Teacher.query.all())
     
+    if request.method == 'POST':
+        _flash_form_errors(form, 'Docente não cadastrado')
+        return redirect(url_for('teachers'))
     return render_template('teachers.html', form=form, teachers=Teacher.query.all())
 
 @app.route('/teacher_credentials')
@@ -910,6 +924,8 @@ def edit_teacher(id):
     """Edit teacher"""
     teacher = Teacher.query.get_or_404(id)
     form = TeacherForm(obj=teacher)
+    if request.method == 'GET' and teacher.user:
+        form.email.data = teacher.user.email
     
     if form.validate_on_submit():
         # Check if NIF already exists (but not for current teacher)
@@ -921,12 +937,17 @@ def edit_teacher(id):
         teacher.nif = form.nif.data.upper() if form.nif.data else ''
         teacher.name = form.name.data
         teacher.area = form.area.data
+        if teacher.user:
+            teacher.user.name = form.name.data
+            teacher.user.email = (form.email.data or '').strip().lower() or None
         db.session.commit()
         
         flash(f'Docente {teacher.name} atualizado com sucesso!', 'success')
         return redirect(url_for('teachers'))
     
-    return render_template('teachers.html', form=form, teacher=teacher, teachers=Teacher.query.all())
+    if request.method == 'POST':
+        _flash_form_errors(form, 'Alterações não salvas')
+    return redirect(url_for('teachers'))
 
 @app.route('/teachers/delete/<int:id>')
 @login_required

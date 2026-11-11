@@ -867,7 +867,8 @@ def generate_teachers_excel_template():
     data = {
         'NIF': ['SN1234567', 'SN7654321'],
         'Nome': ['João Silva', 'Maria Santos'],
-        'Área': ['Eletrônica', 'Informática']
+        'Área': ['Eletrônica', 'Informática'],
+        'E-mail': ['joao.silva@exemplo.com', 'maria.santos@exemplo.com']
     }
     
     df = pd.DataFrame(data)
@@ -966,7 +967,8 @@ def process_teachers_excel_import(file_path):
         locale.setlocale(locale.LC_ALL, 'C.UTF-8')
         
         # Read Excel file with explicit engine
-        df = pd.read_excel(file_path, sheet_name='Docentes', engine='openpyxl')
+        _sheets = pd.ExcelFile(file_path, engine='openpyxl').sheet_names
+        df = pd.read_excel(file_path, sheet_name=('Docentes' if 'Docentes' in _sheets else 0), engine='openpyxl')
         
         # Clean column names
         df.columns = df.columns.str.strip()
@@ -987,6 +989,11 @@ def process_teachers_excel_import(file_path):
                 nif = str(row['NIF']).strip().upper() if not pd.isna(row['NIF']) else ''
                 name = str(row.get('Nome', '')).strip() if not pd.isna(row.get('Nome', '')) else ''
                 area = str(row.get('Área', '')).strip() if not pd.isna(row.get('Área', '')) else ''
+                raw_email = row.get('E-mail', row.get('Email', ''))
+                email = '' if pd.isna(raw_email) else str(raw_email).strip().lower()
+                if email and ('@' not in email or '.' not in email.split('@')[-1]):
+                    results['warnings'].append(f'Linha {index + 2}: e-mail "{email}" inválido, docente cadastrado sem e-mail')
+                    email = ''
                 
                 # Validate required fields
                 if not nif:
@@ -1031,6 +1038,7 @@ def process_teachers_excel_import(file_path):
                 user = User()  # type: ignore
                 user.username = nif.lower()
                 user.name = name
+                user.email = email or None
                 user.role = 'teacher'
                 user.set_password(password)
                 
@@ -1184,7 +1192,8 @@ def process_courses_excel_import(file_path):
         locale.setlocale(locale.LC_ALL, 'C.UTF-8')
         
         # Read Excel file with explicit engine
-        df = pd.read_excel(file_path, sheet_name='Cursos', engine='openpyxl')
+        _sheets = pd.ExcelFile(file_path, engine='openpyxl').sheet_names
+        df = pd.read_excel(file_path, sheet_name=('Cursos' if 'Cursos' in _sheets else 0), engine='openpyxl')
         
         # Clean column names
         df.columns = df.columns.str.strip()
@@ -1347,7 +1356,8 @@ def process_curricular_units_excel_import(file_path):
         locale.setlocale(locale.LC_ALL, 'C.UTF-8')
         
         # Read Excel file with explicit engine  
-        df = pd.read_excel(file_path, sheet_name="Unidades Curriculares", engine='openpyxl')
+        _sheets = pd.ExcelFile(file_path, engine='openpyxl').sheet_names
+        df = pd.read_excel(file_path, sheet_name=("Unidades Curriculares" if "Unidades Curriculares" in _sheets else 0), engine='openpyxl')
         
         results = {
             "success": 0,

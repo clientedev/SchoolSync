@@ -7,6 +7,8 @@ class TeacherForm(FlaskForm):
     nif = StringField('NIF (ex: SN1234567)', validators=[DataRequired(), Length(min=9, max=9)])
     name = StringField('Nome', validators=[DataRequired(), Length(max=100)])
     area = StringField('Área', validators=[DataRequired(), Length(max=100)])
+    email = StringField('E-mail', filters=[lambda v: v.strip().lower() if isinstance(v, str) else v],
+                        validators=[Optional(), Email(message='Informe um e-mail válido.'), Length(max=120)])
 
 class CourseForm(FlaskForm):
     name = StringField('Nome do Curso', validators=[DataRequired(), Length(max=100)])
