@@ -734,8 +734,13 @@ def generate_teacher_credentials(teacher_id):
     if teacher_user.email:
         try:
             from utils import send_credentials_email
-            send_credentials_email(teacher_user.email, teacher, teacher_user, new_password)
-            email_status = "Email enviado com sucesso"
+            sent = send_credentials_email(teacher_user.email, {
+                'teacher_name': teacher.name,
+                'teacher_nif': teacher.nif,
+                'teacher_area': teacher.area,
+                'username': teacher_user.username,
+            }, new_password)
+            email_status = "Email enviado com sucesso" if sent else "Falha no envio do email"
         except Exception as e:
             current_app.logger.error(f"Erro ao enviar email de credenciais: {str(e)}")
             email_status = "Erro no envio do email"
@@ -1459,74 +1464,6 @@ def new_evaluation():
         else:
             current_app.logger.warning(f"Docente {evaluation.teacher.name} não possui email para notificação.")
         
-        # Enviar email de notificação para o docente (SMTP legacy)
-        try:
-            teacher_email = None
-            teacher_user = None
-            
-            # Buscar email do docente
-            if evaluation.teacher.user and evaluation.teacher.user.email:
-                teacher_email = evaluation.teacher.user.email
-                teacher_user = evaluation.teacher.user
-            
-            # Se não tem usuário vinculado ou email, tentar buscar usuario pelo NIF
-            if not teacher_email:
-                # Buscar usuário com username igual ao NIF do professor
-                potential_user = User.query.filter_by(username=evaluation.teacher.nif).first()
-                if potential_user and potential_user.email:
-                    teacher_email = potential_user.email
-                    teacher_user = potential_user
-            
-            # Enviar email se tiver endereço (não-bloqueante)
-            if teacher_email:
-                try:
-                    from utils import send_simple_evaluation_email
-                    # Execute email sending in a separate thread to avoid blocking
-                    import threading
-                    
-                    # Extract data needed for email before thread to avoid ORM detachment
-                    email_data = {
-                        'teacher_name': evaluation.teacher.name,
-                        'course_name': evaluation.course.name,
-                        'evaluation_date': evaluation.evaluation_date.strftime("%d/%m/%Y"),
-                        'period': evaluation.period,
-                        'evaluator_name': evaluation.evaluator.name if evaluation.evaluator else 'Coordenação',
-                        'planning_percentage': evaluation.calculate_planning_percentage(),
-                        'class_percentage': evaluation.calculate_class_percentage(),
-                        'teacher_username': teacher_user.username if teacher_user else None
-                    }
-                    
-                    # Capture app instance for thread context
-                    flask_app = current_app._get_current_object()
-                    
-                    def send_email_async():
-                        # Use proper Flask app context for background thread
-                        with flask_app.app_context():
-                            try:
-                                # Simple email function that doesn't require ORM objects
-                                email_sent = send_simple_evaluation_email(teacher_email, email_data)
-                                if email_sent:
-                                    flask_app.logger.info(f"Email de notificação enviado para {teacher_email}")
-                                else:
-                                    flask_app.logger.warning(f"Falha ao enviar email para {teacher_email}")
-                            except Exception as e:
-                                flask_app.logger.error(f"Erro assíncrono no envio de email: {str(e)}")
-                    
-                    # Start email sending in background thread with proper app context
-                    email_thread = threading.Thread(target=send_email_async, daemon=True)
-                    email_thread.start()
-                    
-                    app.logger.info(f"Email de avaliação iniciado em segundo plano para {teacher_email}")
-                    
-                except Exception as e:
-                    app.logger.error(f"Erro ao iniciar envio de email: {str(e)}")
-            else:
-                app.logger.warning(f"Email não enviado: docente {evaluation.teacher.name} não possui email cadastrado")
-                
-        except Exception as e:
-            app.logger.error(f"Erro ao enviar email de notificação: {str(e)}")
-            # Não falhar a criação da avaliação por causa do email
-        
         flash('Avaliação criada com sucesso!', 'success')
         return redirect(url_for('view_evaluation', id=evaluation.id))
     elif request.method == 'POST':
@@ -1856,7 +1793,7 @@ def complete_evaluation(id):
     evaluation = Evaluation.query.get_or_404(id)
     
     evaluation.is_completed = True
-    evaluation.teacher_signature_date = datetime.utcnow()
+    # A assinatura do docente só é registrada quando ele próprio assina na área do docente
     evaluation.evaluator_signature_date = datetime.utcnow()
     
     # Update the corresponding scheduled evaluation if it exists
@@ -1886,18 +1823,9 @@ def complete_evaluation(id):
     # Send email notification
     if evaluation.teacher.user and evaluation.teacher.user.email:
         try:
-            report_buffer = generate_evaluation_report(evaluation)
-            report_path = os.path.join(current_app.config['UPLOAD_FOLDER'], f'temp_report_{evaluation.id}.pdf')
-            
-            with open(report_path, 'wb') as f:
-                f.write(report_buffer.read())
-            
-            send_evaluation_email(evaluation.teacher.user.email, evaluation, report_path)
-            
-            # Clean up temp file
-            if os.path.exists(report_path):
-                os.remove(report_path)
-                
+            from utils import send_evaluation_notification_resend
+            if not send_evaluation_notification_resend(evaluation):
+                raise RuntimeError('Resend não aceitou o envio')
             flash('Avaliação finalizada e relatório enviado por email!', 'success')
         except Exception as e:
             flash('Avaliação finalizada, mas houve erro no envio do email.', 'warning')

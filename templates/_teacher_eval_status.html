@@ -1,9 +1,7 @@
-{% if evaluation.is_completed %}
-    <span class="badge bg-success">Concluída</span>
-{% elif evaluation.teacher_signed %}
-    <span class="badge bg-info">Assinada, em análise</span>
-{% elif evaluation.evaluator_signed %}
+{% if not evaluation.teacher_signed %}
     <span class="badge bg-warning">Aguardando sua assinatura</span>
+{% elif evaluation.is_completed %}
+    <span class="badge bg-success">Concluída e assinada</span>
 {% else %}
-    <span class="badge bg-secondary">Em andamento</span>
+    <span class="badge bg-info">Assinada, em análise</span>
 {% endif %}

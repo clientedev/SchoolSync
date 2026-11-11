@@ -114,50 +114,15 @@ def ping():
 
 @app.route('/test-email')
 def test_email():
-    """Test email functionality for Railway debugging"""
-    try:
-        from flask_mail import Message
-        
-        # Debug email configuration
-        config_debug = {
-            'MAIL_SERVER': app.config.get('MAIL_SERVER'),
-            'MAIL_PORT': app.config.get('MAIL_PORT'),
-            'MAIL_USE_TLS': app.config.get('MAIL_USE_TLS'),
-            'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
-            'Has_Password': bool(app.config.get('MAIL_PASSWORD')),
-            'MAIL_DEFAULT_SENDER': app.config.get('MAIL_DEFAULT_SENDER'),
-            'MAIL_TIMEOUT': app.config.get('MAIL_TIMEOUT'),
-        }
-        
-        # Try to send a test email
-        msg = Message(
-            'Test Email from Railway',
-            recipients=['edson.lemes@senai.br'],  # Send to admin
-            body='Este é um email de teste para verificar se o SMTP está funcionando no Railway.'
-        )
-        
-        mail.send(msg)
-        
-        return {
-            'status': 'success',
-            'message': 'Email enviado com sucesso!',
-            'config': config_debug
-        }, 200
-        
-    except Exception as e:
-        import traceback
-        return {
-            'status': 'error',
-            'message': f'Erro ao enviar email: {str(e)}',
-            'traceback': traceback.format_exc(),
-            'config': {
-                'MAIL_SERVER': app.config.get('MAIL_SERVER'),
-                'MAIL_PORT': app.config.get('MAIL_PORT'),
-                'MAIL_USE_TLS': app.config.get('MAIL_USE_TLS'),
-                'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
-                'Has_Password': bool(app.config.get('MAIL_PASSWORD')),
-            }
-        }, 500
+    """Diagnóstico do e-mail (somente administrador): status do domínio no Resend e envio de teste.
+    Uso: /test-email?to=endereco@exemplo.com"""
+    from flask import request, jsonify
+    from flask_login import current_user
+    if not current_user.is_authenticated or not current_user.is_admin():
+        return jsonify({"error": "Acesso restrito ao administrador"}), 403
+    from utils import email_diagnostics
+    to = request.args.get("to") or current_user.email
+    return jsonify(email_diagnostics(to))
 
 # Configure user loader early
 @login_manager.user_loader
@@ -230,6 +195,26 @@ with app.app_context():
         import traceback
         logging.error(traceback.format_exc())
         # Still allow the app to start to see error pages
+
+def _email_startup_check():
+    """Registra no log o status do Resend ao iniciar. Se EMAIL_SELFTEST_TO estiver definida, envia um teste."""
+    import threading
+
+    def run():
+        try:
+            with app.app_context():
+                from utils import email_diagnostics
+                info = email_diagnostics(os.environ.get("EMAIL_SELFTEST_TO"))
+                logging.info(f"[email] diagnóstico na inicialização: {info}")
+        except Exception as e:
+            logging.error(f"[email] diagnóstico falhou: {e}")
+
+    threading.Thread(target=run, daemon=True).start()
+
+
+if os.environ.get("RESEND_API_KEY"):
+    _email_startup_check()
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

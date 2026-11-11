@@ -7,31 +7,102 @@ from flask_mail import Message
 from production_app import mail
 from io import BytesIO
 
+DEFAULT_MAIL_FROM = "Ação Docente <nao-responda@acaodocente.online>"
+
+
+def mail_from():
+    """Remetente usado em todos os e-mails (variável MAIL_FROM no Railway)."""
+    return os.environ.get("MAIL_FROM") or os.environ.get("MAIL_DEFAULT_SENDER") or DEFAULT_MAIL_FROM
+
+
+def system_url():
+    """Endereço público do sistema usado nos links dos e-mails."""
+    url = os.environ.get("DOMAIN") or os.environ.get("RAILWAY_PUBLIC_DOMAIN") or ""
+    if url and not url.startswith("http"):
+        url = "https://" + url
+    return url.rstrip("/") + "/" if url else ""
+
+
+def email_layout(title, body_html):
+    """Moldura padrão dos e-mails do sistema."""
+    return f"""
+    <div style="background:#E6E6E6;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;">
+      <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border-top:6px solid #5F6368;">
+        <div style="padding:20px 28px;border-bottom:1px solid #E5E7EB;">
+          <span style="font-size:13px;color:#5F6368;font-weight:bold;">Ação Docente</span>
+        </div>
+        <div style="padding:24px 28px;color:#1F2933;font-size:15px;line-height:1.6;">
+          {f'<h1 style="font-size:20px;margin:0 0 16px;color:#1F2933;">{title}</h1>' if title else ''}
+          {body_html}
+        </div>
+        <div style="padding:16px 28px;background:#45494E;color:#E5E7EB;font-size:11px;line-height:1.5;">
+          E-mail automático, não responda.<br>
+          Aviso: Ferramenta desenvolvida para uso interno das unidades. Não possui vínculo direto com o SENAI-SP nem substitui seus sistemas ou procedimentos oficiais.
+        </div>
+      </div>
+    </div>
+    """
+
+
 def send_resend_email(to_email, subject, html_content, attachments=None):
-    """Send email using Resend API with optional attachments"""
+    """Envia e-mail pelo Resend. Retorna True se o Resend aceitou o envio."""
     resend_api_key = os.environ.get("RESEND_API_KEY")
     if not resend_api_key:
-        current_app.logger.warning("RESEND_API_KEY not configured - skipping email")
+        current_app.logger.warning("RESEND_API_KEY não configurada - e-mail não enviado")
         return False
-    
+    if not to_email:
+        return False
+
     try:
         resend.api_key = resend_api_key
         params = {
-            "from": current_app.config.get('MAIL_DEFAULT_SENDER', 'onboarding@resend.dev'),
+            "from": mail_from(),
             "to": [to_email],
             "subject": subject,
             "html": html_content,
         }
-        
+        reply_to = os.environ.get("MAIL_REPLY_TO")
+        if reply_to:
+            params["reply_to"] = reply_to
         if attachments:
             params["attachments"] = attachments
-            
+
         r = resend.Emails.send(params)
-        current_app.logger.info(f"Email sent via Resend to {to_email}: {r}")
+        email_id = r.get("id") if isinstance(r, dict) else getattr(r, "id", r)
+        current_app.logger.info(f"[email] enviado via Resend para {to_email} | assunto='{subject}' | id={email_id}")
         return True
     except Exception as e:
-        current_app.logger.error(f"Resend error sending email to {to_email}: {str(e)}")
+        current_app.logger.error(f"[email] falha no Resend para {to_email} | assunto='{subject}' | erro={e}")
         return False
+
+def email_diagnostics(send_to=None):
+    """Verifica a chave e o domínio no Resend e, se informado, envia um e-mail de teste."""
+    result = {
+        "remetente": mail_from(),
+        "chave_configurada": bool(os.environ.get("RESEND_API_KEY")),
+        "link_sistema": system_url(),
+    }
+    if not result["chave_configurada"]:
+        return result
+    resend.api_key = os.environ.get("RESEND_API_KEY")
+    sender_domain = mail_from().split("@")[-1].strip(" >").lower()
+    try:
+        domains = resend.Domains.list()
+        items = domains.get("data", []) if isinstance(domains, dict) else getattr(domains, "data", [])
+        result["dominios"] = [{"nome": d.get("name"), "status": d.get("status")} for d in items]
+        match = [d for d in result["dominios"] if (d["nome"] or "").lower() == sender_domain]
+        result["dominio_remetente_verificado"] = bool(match and match[0]["status"] == "verified")
+    except Exception as e:
+        result["dominios_erro"] = str(e)
+    if send_to:
+        result["teste_para"] = send_to
+        result["teste_enviado"] = send_resend_email(
+            send_to,
+            "Teste de envio - Ação Docente",
+            email_layout("Teste de envio", "<p>Se você recebeu esta mensagem, o envio de e-mails do sistema está funcionando.</p>"),
+        )
+    return result
+
 
 def send_message_notification_resend(to_email, recipient_name, message_content):
     """Send notification email for a message"""
@@ -46,7 +117,7 @@ def send_message_notification_resend(to_email, recipient_name, message_content):
         <p>Acesse o sistema para responder.</p>
     </div>
     """
-    return send_resend_email(to_email, subject, html_content)
+    return send_resend_email(to_email, subject, email_layout("", html_content))
 
 def send_signature_notification_evaluator(evaluation):
     """Send notification email to the evaluator when a teacher signs the evaluation"""
@@ -74,11 +145,11 @@ def send_signature_notification_evaluator(evaluation):
         <p>A avaliação agora está formalmente concluída com ambas as assinaturas.</p>
 
         <p style="color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
-            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI.
+            Este é um e-mail automático enviado pelo sistema Ação Docente.
         </p>
     </div>
     """
-    return send_resend_email(evaluator_email, subject, html_content)
+    return send_resend_email(evaluator_email, subject, email_layout("", html_content))
 
 def send_evaluation_notification_resend(evaluation):
     """Send notification email when an evaluation is completed"""
@@ -90,7 +161,7 @@ def send_evaluation_notification_resend(evaluation):
     subject = f"Nova Avaliação Docente - Assinatura Necessária - {evaluation.evaluation_date.strftime('%d/%m/%Y')}"
     
     # Credenciais e Link
-    system_link = os.environ.get("DOMAIN") or "https://web-production-a43ed.up.railway.app/"
+    system_link = system_url()
     username = teacher_user.username
     
     # Senha - Tenta pegar a senha real de forma mais abrangente
@@ -168,11 +239,11 @@ def send_evaluation_notification_resend(evaluation):
         </ol>
 
         <p style="color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
-            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI.
+            Este é um e-mail automático enviado pelo sistema Ação Docente.
         </p>
     </div>
     """
-    return send_resend_email(teacher_email, subject, html_content, attachments=attachments)
+    return send_resend_email(teacher_email, subject, email_layout("", html_content), attachments=attachments)
 
 def send_scheduling_notification_resend(scheduled):
     """Send notification email when a new schedule is created"""
@@ -184,7 +255,7 @@ def send_scheduling_notification_resend(scheduled):
     subject = f"Novo Agendamento de Avaliação - {scheduled.teacher.name}"
     
     # Credenciais e Link
-    system_link = os.environ.get("DOMAIN") or "https://web-production-a43ed.up.railway.app/"
+    system_link = system_url()
     username = teacher_user.username
     
     # Senha - Tenta pegar a senha real de forma mais abrangente
@@ -253,11 +324,11 @@ def send_scheduling_notification_resend(scheduled):
         <p>Acesse o sistema para mais informações e para se preparar para a avaliação.</p>
 
         <p style="color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
-            Este é um e-mail automático enviado pelo Sistema de Avaliação Docente SENAI.
+            Este é um e-mail automático enviado pelo sistema Ação Docente.
         </p>
     </div>
     """
-    return send_resend_email(teacher_email, subject, html_content, attachments=attachments)
+    return send_resend_email(teacher_email, subject, email_layout("", html_content), attachments=attachments)
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
@@ -329,202 +400,32 @@ def save_uploaded_file(file):
     return None
 
 def send_credentials_email(teacher_email, teacher_data, password):
-    """Send credentials email to newly created teacher"""
+    """Envia as credenciais de acesso para o docente (via Resend)."""
     if not teacher_email:
         return False
-        
-    try:
-        msg = Message(
-            subject=f'Credenciais de Acesso - Sistema de Avaliação Docente SENAI',
-            recipients=[teacher_email],
-            sender=current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br')
-        )
-        
-        msg.body = f"""
-Prezado(a) {teacher_data['teacher_name']},
+    link = system_url()
+    body = f"""
+      <p>Olá, <strong>{teacher_data.get('teacher_name', '')}</strong>.</p>
+      <p>Seu acesso ao sistema de Acompanhamento da Ação Docente foi criado.</p>
+      <table style="border-collapse:collapse;margin:16px 0;font-size:14px;">
+        <tr><td style="padding:6px 12px 6px 0;color:#5F6368;">Usuário</td><td style="padding:6px 0;"><strong>{teacher_data.get('username', '')}</strong></td></tr>
+        <tr><td style="padding:6px 12px 6px 0;color:#5F6368;">Senha</td><td style="padding:6px 0;"><strong>{password}</strong></td></tr>
+        <tr><td style="padding:6px 12px 6px 0;color:#5F6368;">NIF</td><td style="padding:6px 0;">{teacher_data.get('teacher_nif', '')}</td></tr>
+      </table>
+      {f'<p><a href="{link}" style="display:inline-block;background:#5F6368;color:#ffffff;text-decoration:none;padding:10px 22px;border-radius:40px;font-weight:bold;">Acessar o sistema</a></p>' if link else ''}
+      <p style="font-size:13px;color:#5F6368;">No primeiro acesso, troque a senha pelo menu com o seu nome, em "Alterar senha".</p>
+    """
+    return send_resend_email(
+        teacher_email,
+        "Seu acesso ao sistema Ação Docente",
+        email_layout("Credenciais de acesso", body),
+    )
 
-Bem-vindo(a) ao Sistema de Avaliação Docente do SENAI!
 
-Suas credenciais de acesso foram criadas com sucesso:
+def send_evaluation_email(teacher_email, evaluation, *args, **kwargs):
+    """Compatibilidade: notificação de avaliação agora sempre via Resend."""
+    return send_evaluation_notification_resend(evaluation)
 
-DADOS PESSOAIS:
-Nome: {teacher_data['teacher_name']}
-NIF: {teacher_data['teacher_nif']}
-Área: {teacher_data['teacher_area']}
-
-CREDENCIAIS DE ACESSO:
-Usuário (Login): {teacher_data['username']}
-Senha: {password}
-
-INSTRUÇÕES PARA PRIMEIRO ACESSO:
-1. Acesse o sistema usando o usuário e senha fornecidos acima
-2. Após o login, clique no seu nome no canto superior direito
-3. Selecione "Alterar Senha" para definir uma nova senha segura
-4. Guarde suas novas credenciais em local seguro
-
-IMPORTANTE:
-- Altere sua senha no primeiro acesso por motivos de segurança
-- Mantenha suas credenciais em sigilo
-- Em caso de dúvidas, entre em contato com a coordenação
-
-Atenciosamente,
-Coordenação Pedagógica
-SENAI
-
----
-Este é um email automático. Por favor, não responda.
-"""
-        
-        # Send email via SMTP (working on paid Railway)
-        try:
-            # Force immediate send and log everything
-            current_app.logger.info(f"Iniciando envio de credenciais para {teacher_email}")
-            current_app.logger.info(f"SMTP Server: {current_app.config.get('MAIL_SERVER')}:{current_app.config.get('MAIL_PORT')}")
-            
-            mail.send(msg)
-            
-            current_app.logger.info(f"Credentials email sent successfully via SMTP to {teacher_email}")
-            return True
-        except Exception as smtp_error:
-            current_app.logger.error(f"SMTP failed for credentials to {teacher_email}. Detailed error: {str(smtp_error)}")
-            current_app.logger.error(f"Error type: {type(smtp_error).__name__}")
-            
-            # Log specific Gmail errors
-            error_str = str(smtp_error).lower()
-            if '534' in error_str or 'password' in error_str:
-                current_app.logger.error("Gmail authentication error - App password needed")
-            elif '535' in error_str:
-                current_app.logger.error("Gmail credentials invalid")
-            elif 'connection' in error_str and 'refused' in error_str:
-                current_app.logger.error("SMTP connection refused - possible Railway blocking")
-            
-            return False
-        
-    except Exception as e:
-        current_app.logger.error(f"Error sending credentials email to {teacher_email}: {str(e)}")
-        return False
-
-def send_evaluation_email(teacher_email, evaluation, teacher_user=None, report_path=None):
-    """Send evaluation notification email"""
-    if not teacher_email:
-        return False
-    
-    # Check if email is properly configured
-    mail_server = current_app.config.get('MAIL_SERVER', 'localhost')
-    mail_username = current_app.config.get('MAIL_USERNAME', '')
-    
-    # Skip email if not properly configured (avoid hanging on localhost)
-    if mail_server == 'localhost' and not mail_username:
-        current_app.logger.warning("Email not configured properly - skipping email sending")
-        return False
-    
-    # Additional check for valid email server
-    if not mail_server or mail_server.strip() == '':
-        current_app.logger.warning("No email server configured - skipping email sending")
-        return False
-        
-    try:
-        # Get teacher user credentials if linked  
-        teacher_credentials = ""
-        if teacher_user and hasattr(teacher_user, '_password_plain'):
-            # Show actual password if available (from recent registration)
-            teacher_credentials = f"""
-ACESSO AO SISTEMA:
-Para acessar o sistema e assinar sua avaliação, utilize:
-- Usuário: {teacher_user.username}
-- Senha: {teacher_user._password_plain}
-
-IMPORTANTE: Altere sua senha no primeiro acesso por motivos de segurança.
-Guarde essas credenciais em local seguro.
-"""
-        elif teacher_user:
-            # Include username, password will be shown generically for security
-            teacher_credentials = f"""
-ACESSO AO SISTEMA:
-Para acessar o sistema e assinar sua avaliação, utilize:
-- Usuário: {teacher_user.username}
-- Senha: Sua senha é a mesma fornecida pela coordenação
-
-IMPORTANTE: Altere sua senha no primeiro acesso por motivos de segurança.
-Se você não lembra da senha, entre em contato com a coordenação.
-"""
-        elif evaluation.teacher.user:
-            teacher_credentials = f"""
-ACESSO AO SISTEMA:
-Para acessar o sistema e assinar sua avaliação, utilize:
-- Usuário: {evaluation.teacher.user.username}
-- Senha: Sua senha é a mesma fornecida pela coordenação
-
-IMPORTANTE: Altere sua senha no primeiro acesso por motivos de segurança.
-Se você não lembra da senha, entre em contato com a coordenação.
-"""
-        else:
-            teacher_credentials = """
-ACESSO AO SISTEMA:
-Entre em contato com a coordenação para obter suas credenciais de acesso ao sistema.
-Seu usuário será seu número SN (NIF) e a senha será fornecida pela coordenação.
-"""
-        
-        msg = Message(
-            subject=f'Nova Avaliação Docente - Assinatura Necessária - {evaluation.evaluation_date.strftime("%d/%m/%Y")}',
-            recipients=[teacher_email],
-            sender=current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br')
-        )
-        
-        msg.body = f"""
-Prezado(a) {evaluation.teacher.name},
-
-Você recebeu uma nova avaliação docente que precisa ser assinada no sistema.
-
-DETALHES DA AVALIAÇÃO:
-Curso: {evaluation.course.name}
-Data: {evaluation.evaluation_date.strftime("%d/%m/%Y")}
-Período: {evaluation.period}
-Avaliador: {evaluation.evaluator.name if evaluation.evaluator else 'Coordenação'}
-
-RESULTADOS:
-Planejamento: {evaluation.calculate_planning_percentage()}% atendido
-Condução da aula: {evaluation.calculate_class_percentage()}% atendido
-
-{teacher_credentials}
-
-PRÓXIMOS PASSOS:
-1. Acesse o sistema usando suas credenciais
-2. Vá até a seção "Avaliações"
-3. Localize sua avaliação do dia {evaluation.evaluation_date.strftime("%d/%m/%Y")}
-4. Revise os dados e assine digitalmente
-
-Observações gerais:
-{evaluation.general_observations or 'Nenhuma observação adicional registrada.'}
-
-IMPORTANTE: Esta avaliação precisa ser assinada no sistema para ser finalizada.
-
-Atenciosamente,
-Coordenação Pedagógica
-SENAI
-
----
-Este é um e-mail automático do Sistema de Avaliação Docente.
-Para dúvidas, entre em contato com a coordenação.
-"""
-        
-        if report_path and os.path.exists(report_path):
-            with open(report_path, 'rb') as f:
-                msg.attach(f"relatorio_{evaluation.teacher.name.replace(' ', '_')}.pdf", 
-                          "application/pdf", f.read())
-        
-        # Send email with SMTP timeout (safer than signals)
-        try:
-            mail.send(msg)
-            current_app.logger.info(f"Email successfully sent to {teacher_email}")
-            return True
-        except Exception as smtp_error:
-            current_app.logger.error(f"SMTP error sending email to {teacher_email}: {str(smtp_error)}")
-            return False
-            
-    except Exception as e:
-        current_app.logger.error(f"Error sending email to {teacher_email}: {str(e)}")
-        return False
 
 def send_email_via_sendgrid(to_email, subject, content_text, sender_email=None):
     """Send email using SendGrid API (works on Railway free plan)"""
@@ -560,100 +461,12 @@ def send_email_via_sendgrid(to_email, subject, content_text, sender_email=None):
         return False
 
 def send_simple_evaluation_email(teacher_email, email_data):
-    """Send evaluation notification email with primitive data (thread-safe)"""
-    if not teacher_email:
-        return False
-        
-    try:
-        # Build credentials section
-        teacher_credentials = ""
-        if email_data.get('teacher_username'):
-            teacher_credentials = f"""
-ACESSO AO SISTEMA:
-Para acessar o sistema e assinar sua avaliação, utilize:
-- Usuário: {email_data['teacher_username']}
-- Senha: Sua senha é a mesma fornecida pela coordenação
-
-IMPORTANTE: Altere sua senha no primeiro acesso por motivos de segurança.
-Se você não lembra da senha, entre em contato com a coordenação.
-"""
-        else:
-            teacher_credentials = """
-ACESSO AO SISTEMA:
-Entre em contato com a coordenação para obter suas credenciais de acesso ao sistema.
-Seu usuário será seu número SN (NIF) e a senha será fornecida pela coordenação.
-"""
-        
-        msg = Message(
-            subject=f'Nova Avaliação Docente - Assinatura Necessária - {email_data["evaluation_date"]}',
-            recipients=[teacher_email],
-            sender=current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@senai.br')
-        )
-        
-        msg.body = f"""
-Prezado(a) {email_data['teacher_name']},
-
-Você recebeu uma nova avaliação docente que precisa ser assinada no sistema.
-
-DETALHES DA AVALIAÇÃO:
-Curso: {email_data['course_name']}
-Data: {email_data['evaluation_date']}
-Período: {email_data['period']}
-Avaliador: {email_data['evaluator_name']}
-
-RESULTADOS:
-Planejamento de Aula: {email_data['planning_percentage']:.1f}%
-Condução da Aula: {email_data['class_percentage']:.1f}%
-
-{teacher_credentials}
-
-PRÓXIMOS PASSOS:
-1. Acesse o sistema de avaliação docente
-2. Localize sua avaliação na área "Minhas Avaliações"
-3. Revise os dados da avaliação
-4. Assine digitalmente para confirmar ciência
-
-IMPORTANTE:
-- Você tem 7 dias para assinar esta avaliação
-- Após a assinatura, você receberá uma cópia em PDF por email
-- Em caso de dúvidas, entre em contato com a coordenação
-
-Atenciosamente,
-Coordenação Pedagógica
-SENAI
-
----
-Este é um email automático. Por favor, não responda.
-"""
-        
-        # Send email via SMTP (working on paid Railway)
-        try:
-            # Force immediate send and log everything
-            current_app.logger.info(f"Iniciando envio de avaliação para {teacher_email}")
-            current_app.logger.info(f"SMTP Server: {current_app.config.get('MAIL_SERVER')}:{current_app.config.get('MAIL_PORT')}")
-            
-            mail.send(msg)
-            
-            current_app.logger.info(f"Evaluation email sent successfully via SMTP to {teacher_email}")
-            return True
-        except Exception as smtp_error:
-            current_app.logger.error(f"SMTP failed for evaluation to {teacher_email}. Detailed error: {str(smtp_error)}")
-            current_app.logger.error(f"Error type: {type(smtp_error).__name__}")
-            
-            # Log specific Gmail errors
-            error_str = str(smtp_error).lower()
-            if '534' in error_str or 'password' in error_str:
-                current_app.logger.error("Gmail authentication error - App password needed")
-            elif '535' in error_str:
-                current_app.logger.error("Gmail credentials invalid") 
-            elif 'connection' in error_str and 'refused' in error_str:
-                current_app.logger.error("SMTP connection refused - possible Railway blocking")
-                
-            return False
-            
-    except Exception as e:
-        current_app.logger.error(f"Error sending simple evaluation email to {teacher_email}: {str(e)}")
-        return False
+    """Compatibilidade: substituída pela notificação via Resend."""
+    body = f"""
+      <p>Olá, <strong>{email_data.get('teacher_name', '')}</strong>.</p>
+      <p>Uma avaliação de {email_data.get('evaluation_date', '')} ({email_data.get('course_name', '')}) foi registrada e aguarda a sua assinatura.</p>
+    """
+    return send_resend_email(teacher_email, "Nova avaliação aguardando sua assinatura", email_layout("Nova avaliação", body))
 
 def generate_evaluation_report(evaluation):
     """Generate PDF report for a single evaluation"""
