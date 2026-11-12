@@ -874,16 +874,8 @@ def create_account_for_teacher(teacher_id):
     # Create user account
     teacher_user = User()
     
-    # Generate username from email or name
-    if teacher.email:
-        username = teacher.email.split('@')[0].lower().replace('.', '_').replace('-', '_')
-    else:
-        # Create username from name
-        name_parts = (teacher.name or '').lower().split()
-        if len(name_parts) >= 2:
-            username = f"{name_parts[0]}.{name_parts[-1]}"
-        else:
-            username = name_parts[0] if name_parts else 'docente'
+    # Padrão do sistema: o usuário do docente é o NIF em minúsculas
+    username = (teacher.nif or '').strip().lower() or 'docente'
     
     # Ensure username is unique
     base_username = username
@@ -895,7 +887,6 @@ def create_account_for_teacher(teacher_id):
     teacher_user.username = username
     teacher_user.name = teacher.name
     teacher_user.role = 'teacher'
-    teacher_user.email = teacher.email
     teacher_user.created_by = current_user.id
     
     # Generate secure password
@@ -949,20 +940,38 @@ def edit_teacher(id):
         _flash_form_errors(form, 'Alterações não salvas')
     return redirect(url_for('teachers'))
 
-@app.route('/teachers/delete/<int:id>')
+@app.route('/teachers/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_teacher(id):
-    """Delete teacher"""
+    """Exclui um docente sem avaliações, junto com agendamentos pendentes e a conta de acesso."""
     teacher = Teacher.query.get_or_404(id)
-    
+    name = teacher.name
+
+    eval_count = Evaluation.query.filter_by(teacher_id=teacher.id).count()
+    if eval_count:
+        flash(f'O docente {name} tem {eval_count} avaliação(ões) registrada(s) e não pode ser excluído. '
+              f'Para bloquear o acesso, desative a conta em Contas de docentes.', 'error')
+        return redirect(url_for('teachers'))
+
     try:
+        from models import TemporaryCredential
+        ScheduledEvaluation.query.filter_by(teacher_id=teacher.id).delete(synchronize_session=False)
+        TemporaryCredential.query.filter_by(teacher_id=teacher.id).delete(synchronize_session=False)
+        user = db.session.get(User, teacher.user_id) if teacher.user_id else None
+        teacher.user_id = None
+        db.session.flush()
+        if user and user.role == 'teacher':
+            TemporaryCredential.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+            DigitalSignature.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+            db.session.delete(user)
         db.session.delete(teacher)
         db.session.commit()
-        flash(f'Professor {teacher.name} excluído com sucesso!', 'success')
+        flash(f'Docente {name} excluído com sucesso, junto com a conta de acesso e os agendamentos pendentes.', 'success')
     except Exception as e:
-        flash('Erro ao excluir professor. Verifique se não existem avaliações vinculadas.', 'error')
         db.session.rollback()
-    
+        app.logger.error(f'Erro ao excluir docente {id}: {e}')
+        flash('Não foi possível excluir o docente. Tente novamente.', 'error')
+
     return redirect(url_for('teachers'))
 
 @app.route('/teachers/template')
@@ -1202,20 +1211,43 @@ def get_course_curricular_units(course_id):
         'course_name': course.name
     })
 
-@app.route('/courses/delete/<int:id>')
+@app.route('/courses/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_course(id):
-    """Delete course"""
+    """Exclui um curso sem avaliações, junto com suas unidades curriculares e agendamentos pendentes."""
     course = Course.query.get_or_404(id)
-    
+    name = course.name
+
+    eval_count = Evaluation.query.filter_by(course_id=course.id).count()
+    if eval_count:
+        flash(f'O curso {name} tem {eval_count} avaliação(ões) registrada(s) e não pode ser excluído, para preservar o histórico.', 'error')
+        return redirect(url_for('courses'))
+
+    unit_ids = [u.id for u in CurricularUnit.query.filter_by(course_id=course.id).all()]
+    if unit_ids:
+        unit_evals = Evaluation.query.filter(Evaluation.curricular_unit_id.in_(unit_ids)).count()
+        done = ScheduledEvaluation.query.filter(ScheduledEvaluation.curricular_unit_id.in_(unit_ids),
+                                                ScheduledEvaluation.is_completed.is_(True)).count()
+        if unit_evals or done:
+            flash(f'O curso {name} tem unidades curriculares com avaliações realizadas e não pode ser excluído.', 'error')
+            return redirect(url_for('courses'))
+
     try:
+        removed_schedules = 0
+        if unit_ids:
+            removed_schedules = ScheduledEvaluation.query.filter(
+                ScheduledEvaluation.curricular_unit_id.in_(unit_ids)).delete(synchronize_session=False)
+            CurricularUnit.query.filter(CurricularUnit.id.in_(unit_ids)).delete(synchronize_session=False)
         db.session.delete(course)
         db.session.commit()
-        flash(f'Curso {course.name} excluído com sucesso!', 'success')
+        extra = f' e {len(unit_ids)} unidade(s) curricular(es)' if unit_ids else ''
+        extra += f', {removed_schedules} agendamento(s) pendente(s)' if removed_schedules else ''
+        flash(f'Curso {name}{extra} excluído(s) com sucesso.', 'success')
     except Exception as e:
-        flash('Erro ao excluir curso. Verifique se não existem avaliações vinculadas.', 'error')
         db.session.rollback()
-    
+        app.logger.error(f'Erro ao excluir curso {id}: {e}')
+        flash('Não foi possível excluir o curso. Tente novamente.', 'error')
+
     return redirect(url_for('courses'))
 
 @app.route('/courses/template')
@@ -1762,7 +1794,7 @@ def delete_evaluation(id):
     logging.info(f"Delete evaluation request for ID: {id} by user: {current_user.id}")
     
     # Check if request is AJAX (contains proper headers)
-    if not request.is_json and 'application/json' not in request.content_type:
+    if not request.is_json and 'application/json' not in (request.content_type or ''):
         logging.warning(f"Non-AJAX delete request for evaluation {id}")
         return jsonify({'error': 'Requisição inválida.'}), 400
     
@@ -2619,11 +2651,12 @@ def delete_curricular_unit(id):
     if unit.evaluations:
         return jsonify({'error': 'Não é possível excluir unidade curricular com avaliações vinculadas'}), 400
     
-    # Check if unit has scheduled evaluations
-    scheduled_count = ScheduledEvaluation.query.filter_by(curricular_unit_id=unit.id).count()
-    if scheduled_count > 0:
-        return jsonify({'error': 'Não é possível excluir unidade curricular com agendamentos'}), 400
+    # Agendamentos já realizados preservam histórico; pendentes são removidos junto
+    done_count = ScheduledEvaluation.query.filter_by(curricular_unit_id=unit.id, is_completed=True).count()
+    if done_count > 0:
+        return jsonify({'error': 'Não é possível excluir unidade curricular com observações já realizadas'}), 400
     
+    ScheduledEvaluation.query.filter_by(curricular_unit_id=unit.id).delete(synchronize_session=False)
     db.session.delete(unit)
     db.session.commit()
     
@@ -3027,7 +3060,10 @@ def delete_checklist_item():
                     return jsonify({'success': False, 'message': 'Acesso negado'}), 403
                 
                 db.session.delete(item)
-                # Don't commit yet, wait for template sync
+                db.session.commit()
+                # Item de uma avaliação existente: remove só ele. O modelo das próximas
+                # avaliações já é a avaliação mais recente, então nada mais é apagado.
+                return jsonify({'success': True, 'message': 'Item removido'})
         
         # 2. Sync with "Global Template" (remove from the most recent evaluation)
         latest_eval = Evaluation.query.filter(Evaluation.checklist_items.any()).order_by(desc(Evaluation.updated_at)).first()

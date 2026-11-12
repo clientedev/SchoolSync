@@ -91,15 +91,15 @@
                                         <td>
                                             <div class="btn-group btn-group-sm">
                                                 <button class="btn btn-outline-primary" 
-                                                        onclick="editCourse({{ course.id }}, '{{ course.name }}', '{{ course.period }}', '{{ course.curriculum_component }}', '{{ course.class_code or '' }}')">
+                                                        onclick='editCourse({{ course.id }}, {{ course.name|tojson }}, {{ course.period|tojson }}, {{ course.curriculum_component|tojson }}, {{ (course.class_code or "")|tojson }})'>
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <button class="btn btn-outline-info" 
-                                                        onclick="manageCurricularUnits({{ course.id }}, '{{ course.name }}')">
+                                                        onclick='manageCurricularUnits({{ course.id }}, {{ course.name|tojson }})'>
                                                     <i class="fas fa-book"></i>
                                                 </button>
                                                 <button class="btn btn-outline-danger" 
-                                                        onclick="confirmDelete('{{ course.name }}', '{{ url_for('delete_course', id=course.id) }}')">
+                                                        onclick='confirmDelete({{ course.name|tojson }}, {{ url_for("delete_course", id=course.id)|tojson }})'>
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -212,13 +212,17 @@
             </div>
             <div class="modal-body">
                 <p>Tem certeza que deseja excluir o curso <strong id="deleteItemName"></strong>?</p>
-                <p class="text-danger small">Esta ação não pode ser desfeita.</p>
+                <p class="small text-muted mb-1">As unidades curriculares e os agendamentos pendentes deste curso também serão excluídos.</p>
+                <p class="small text-muted mb-1">Cursos com avaliações registradas não podem ser excluídos.</p>
+                <p class="text-danger small mb-0">Esta ação não pode ser desfeita.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
-                    <i class="fas fa-trash me-1"></i>Excluir
-                </a>
+                <form id="confirmDeleteForm" method="POST" action="#" class="d-inline">
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash me-1"></i>Excluir
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -298,13 +302,13 @@ function editCourse(id, name, period, curriculum_component, class_code) {
     loadCurricularUnitsForEdit(id);
     
     // Show modal
-    new bootstrap.Modal(document.getElementById('courseModal')).show();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('courseModal')).show();
 }
 
 function confirmDelete(itemName, deleteUrl) {
     document.getElementById('deleteItemName').textContent = itemName;
-    document.getElementById('confirmDeleteBtn').href = deleteUrl;
-    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    document.getElementById('confirmDeleteForm').action = deleteUrl;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteModal')).show();
 }
 
 // Reset form when modal is closed - use the same resetCourseToAddMode function

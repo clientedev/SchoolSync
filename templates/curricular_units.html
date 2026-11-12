@@ -284,7 +284,7 @@ function editUnit(button) {
     document.getElementById('edit_workload').value = workload || '';
     document.getElementById('edit_description').value = description;
     
-    const editModal = new bootstrap.Modal(document.getElementById('editUnitModal'));
+    const editModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editUnitModal'));
     editModal.show();
 }
 

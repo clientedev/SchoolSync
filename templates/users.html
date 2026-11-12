@@ -258,7 +258,7 @@
 // Auto-open modal if there are form errors
 {% if form and form.errors and not (user and user.id) %}
 document.addEventListener('DOMContentLoaded', function() {
-    var modal = new bootstrap.Modal(document.getElementById('addUserModal'));
+    var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('addUserModal'));
     modal.show();
 });
 {% endif %}

@@ -164,7 +164,7 @@
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm">
                                                 <button class="btn btn-outline-primary" 
-                                                        onclick="generateIndividualReport({{ teacher_data.teacher.id }}, '{{ teacher_data.teacher.name }}')">
+                                                        onclick='generateIndividualReport({{ teacher_data.teacher.id }}, {{ teacher_data.teacher.name|tojson }})'>
                                                     <i class="fas fa-file-pdf"></i>
                                                 </button>
                                                 <a href="{{ url_for('new_evaluation') }}?teacher_id={{ teacher_data.teacher.id }}" 
@@ -265,7 +265,7 @@
 function generateIndividualReport(teacherId, teacherName) {
     document.getElementById('teacher_select').value = teacherId;
     document.getElementById('individualReportForm').action = `/reports/consolidated/${teacherId}`;
-    new bootstrap.Modal(document.getElementById('individualReportModal')).show();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('individualReportModal')).show();
 }
 
 // Performance Chart

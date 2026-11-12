@@ -85,6 +85,20 @@ from models import db
 
 # Initialize extensions
 db.init_app(app)
+
+if database_url.startswith("sqlite"):
+    # SQLite não valida chaves estrangeiras por padrão; ativa para manter os vínculos íntegros
+    from sqlalchemy import event as _sa_event
+    from sqlalchemy.engine import Engine as _SAEngine
+
+    @_sa_event.listens_for(_SAEngine, "connect")
+    def _sqlite_fk_pragma(dbapi_connection, connection_record):
+        try:
+            cur = dbapi_connection.cursor()
+            cur.execute("PRAGMA foreign_keys=ON")
+            cur.close()
+        except Exception:
+            pass
 mail.init_app(app)
 login_manager.init_app(app)
 # Disable CSRF completely for this application - we have other security layers

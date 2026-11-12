@@ -62,11 +62,11 @@
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <button class="btn btn-outline-warning" 
-                                                    onclick="resetPassword({{ user.id }}, '{{ user.name|e }}')">
+                                                    onclick='resetPassword({{ user.id }}, {{ user.name|tojson }})'>
                                                 <i class="fas fa-key"></i> Redefinir Senha
                                             </button>
                                             <button class="btn btn-outline-{{ 'secondary' if user.is_active else 'success' }}" 
-                                                    onclick="toggleAccount({{ user.id }}, '{{ user.name|e }}', {{ user.is_active|lower }})">
+                                                    onclick='toggleAccount({{ user.id }}, {{ user.name|tojson }}, {{ user.is_active|lower }})'>
                                                 <i class="fas fa-{{ 'pause' if user.is_active else 'play' }}"></i>
                                                 {{ 'Desativar' if user.is_active else 'Ativar' }}
                                             </button>
@@ -124,7 +124,7 @@
                                     <td>{{ teacher.email or '-' }}</td>
                                     <td>
                                         <button class="btn btn-sm btn-primary" 
-                                                onclick="createAccount({{ teacher.id }}, '{{ teacher.name|e }}')">
+                                                onclick='createAccount({{ teacher.id }}, {{ teacher.name|tojson }})'>
                                             <i class="fas fa-plus"></i> Criar Conta
                                         </button>
                                     </td>
@@ -239,7 +239,7 @@ function resetPassword(userId, teacherName) {
         if (data.success) {
             document.getElementById('passwordTeacherName').textContent = teacherName;
             document.getElementById('newPassword').value = data.new_password;
-            const modal = new bootstrap.Modal(document.getElementById('passwordModal'));
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('passwordModal'));
             modal.show();
         } else {
             alert('Erro: ' + (data.error || 'Erro desconhecido'));
@@ -295,7 +295,7 @@ function createAccount(teacherId, teacherName) {
             document.getElementById('accountTeacherName').textContent = teacherName;
             document.getElementById('newUsername').value = data.username;
             document.getElementById('newAccountPassword').value = data.password;
-            const modal = new bootstrap.Modal(document.getElementById('accountModal'));
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('accountModal'));
             modal.show();
         } else {
             alert('Erro: ' + (data.error || 'Erro desconhecido'));
